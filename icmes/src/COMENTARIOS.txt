@@ -1,0 +1,7 @@
+----- 10.ago.2015
+- para los estudios de Luciano (Np peaks): ./config_luciano_Npeaks.txt, sino mirar:
+    ./tt2.py_bckp.config.luciano.Npeaks_10ago2015
+    ./rebineo.py_bckp.config.luciano.Npeaks_10ago2015
+
+
+

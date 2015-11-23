@@ -1,0 +1,59 @@
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#++++++++++++++++++ begin: SELECCION DE EVENTOS ++++++++++++++++++++++
+#------- fechas
+BETW1998_2006   = np.ones(n_icmes, dtype=bool)
+for i in range(307, n_icmes)+range(0, 26):
+        BETW1998_2006[i]=False # 'False' para excluir eventos
+
+#------- seleccionamos MCs con label-de-catalogo (lepping=2, etc)
+#MCwant  = {'flags':     ('0', '1', '2', '2H'),
+#           'alias':     '0.1.2.2H'}       # para "flagear" el nombre/ruta de las figuras
+#MCwant  = {'flags':     ('1', '2', '2H'),
+#           'alias':     '1.2.2H'}         # para "flagear" el nombre/ruta de las figuras
+#MCwant  = {'flags':     ('2', '2H'),
+#           'alias':     '2.2H'}           # para "flagear" el nombre/ruta de las figuras
+MCwant  = {'flags':     ('2',),
+           'alias':     '2'}            # para "flagear" el nombre/ruta de las figuras
+MC_FLAG = np.ones(n_icmes, dtype=bool)
+for i in range(n_icmes):
+        MC_FLAG[i]  = MCsig[i] in MCwant['flags']
+
+#------- excluimos eventos de 2MCs
+EVENTS_with_2MCs= (26, 148, 259, 295)
+MCmultiple      = False                         # True para incluir eventos multi-MC
+MCmulti         = np.ones(n_icmes, dtype=bool)  # False para eventos multi-MC (SI, escribi bien)
+if(~MCmultiple):
+    for i in EVENTS_with_2MCs:
+        MCmulti[i] &= False
+
+#------- orientacion del shock (catalogo Wang)                                                                                                                         
+ThetaThres     = -1 #90 #-1 #130.       # rango : [90:180]
+ThetaCond      = thetacond(ThetaThres, ThetaSh)
+
+#------- duration of sheaths
+dt_mc       = diff_dates(tend_mc, tini_mc)/day     # [day]
+DURATION    = dt_mc > dTday
+
+#------- speed of icmes
+v_lo        = 100.0      #550.0  #450.0 #100.0
+v_hi        = 3000.0     #3000.0 #550.0 #450.0
+SpeedCond   = (i_V>=v_lo) & (i_V<v_hi)
+
+#------- z expansion (a. gulisano)
+z_filter_on = False         # por default, no esta activado este filtro
+z_lo        = -50.0 #0.65  #0.80 #-50.0
+z_hi        = 0.65  #0.80  #50.0 #0.75
+z_cond      = (z_exp>=z_lo) & (z_exp<z_hi)
+
+#------- filtro total
+SELECC  = np.ones(n_icmes, dtype=bool)
+SELECC  &= BETW1998_2006    # nos mantenemos en este periodo de anios
+SELECC  &= MCmulti          # nubes multiples
+SELECC  &= MC_FLAG          # catalogo de nubes
+SELECC  &= DURATION         # no queremos sheaths q duran 1hr xq solo aportan ruido
+SELECC  &= ThetaCond        # cerca a 180 es nariz del shock
+SELECC  &= SpeedCond
+SELECC  &= z_cond; z_filter_on=True # para desactivar este filtro, comentar esta linea
+#+++++++++++++++++ end: SELECCION DE EVENTOS +++++++++++++++++++++++++
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
