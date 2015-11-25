@@ -96,6 +96,7 @@ emgr.FILTER['vsw_filter']    = True
 #emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = LOW, MID1 # 100.0, 450.0
 emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID1, MID2 # 450.0, 550.0
 #emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID2, TOP # 550.0, 3000.0
+
 #++++++++++++++++++++++++++++++++++++++++++++++++++
 emgr.filter_events()
 ids     = []
