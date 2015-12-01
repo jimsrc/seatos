@@ -7,7 +7,6 @@
 *.tar
 *.zip
 *.gz
-*.vim
 *BCKP*
 *bckp*
 
