@@ -7,13 +7,20 @@ import os
 import matplotlib.patches as patches
 import matplotlib.transforms as transforms
 from numpy import array
+from matplotlib.gridspec import GridSpec
+import matplotlib.pyplot as plt
 
 class gral:
     def __init__(self):
         self.name='name'
 
+
+TS  = 11
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-def makefig(fig, ax, mc, sh, TEXT, TEXT_LOC, YLIMS, varname):
+
+def makefig(ax, mc, sh, TEXT, TEXT_LOC, YLIMS, varname):
+    LW  = 0.3                # linewidth
+    MS  = 1.5
     fmc,fsh = 3.0, 1.0      # escaleos temporales
     if(varname == 'Temp'):
         mc.med      /= 1.0e4; sh.med      /= 1.0e4
@@ -26,8 +33,8 @@ def makefig(fig, ax, mc, sh, TEXT, TEXT_LOC, YLIMS, varname):
     # curvas del mc
     time = fsh+fmc*mc.tnorm
     cc = time>=fsh
-    ax.plot(time[cc], mc.avr[cc], 'o-', color='black', markersize=1, label='mean')
-    ax.plot(time[cc], mc.med[cc], 'o-', color='red', alpha=.8, markersize=1, markeredgecolor='none', label='median')
+    ax.plot(time[cc], mc.avr[cc], 'o-', color='black', markersize=MS, label='mean', lw=LW)
+    ax.plot(time[cc], mc.med[cc], 'o-', color='red', alpha=.8, markersize=MS, markeredgecolor='none', label='median', lw=LW)
     # sombra del mc
     inf     = mc.avr + mc.std_err/np.sqrt(mc.nValues)
     sup     = mc.avr - mc.std_err/np.sqrt(mc.nValues)
@@ -42,8 +49,8 @@ def makefig(fig, ax, mc, sh, TEXT, TEXT_LOC, YLIMS, varname):
     # curvas del sheath
     time = fsh*sh.tnorm
     cc = time<=fsh
-    ax.plot(time[cc], sh.avr[cc], 'o-', color='black', markersize=1)
-    ax.plot(time[cc], sh.med[cc], 'o-', color='red', alpha=.8, markersize=1, markeredgecolor='none')
+    ax.plot(time[cc], sh.avr[cc], 'o-', color='black', markersize=MS, lw=LW)
+    ax.plot(time[cc], sh.med[cc], 'o-', color='red', alpha=.8, markersize=MS, markeredgecolor='none', lw=LW)
     # sombra del sheath
     inf     = sh.avr + sh.std_err/np.sqrt(sh.nValues)
     sup     = sh.avr - sh.std_err/np.sqrt(sh.nValues)
@@ -56,27 +63,25 @@ def makefig(fig, ax, mc, sh, TEXT, TEXT_LOC, YLIMS, varname):
     ax.add_patch(rect1)
 
     #ax.legend(loc='best', fontsize=10)
-    ax.tick_params(labelsize=7)
+    ax.tick_params(labelsize=TS)
     ax.grid()
     ax.set_xlim(-2.0, 7.0)
     ax.set_ylim(YLIMS)
-    #ax.text(TEXT_LOC['mc'][0], TEXT_LOC['mc'][1], TEXT['mc'], fontsize=7)
-    #ax.text(TEXT_LOC['sh'][0], TEXT_LOC['sh'][1], TEXT['sh'], fontsize=7)
-    #ax.set_xlabel('time normalized to sheath/MC passage [1]', fontsize=7)
-    #ax.set_ylabel(YLAB, fontsize=7)
+    ax.text(TEXT_LOC['mc'][0], TEXT_LOC['mc'][1], TEXT['mc'], fontsize=7)
+    ax.text(TEXT_LOC['sh'][0], TEXT_LOC['sh'][1], TEXT['sh'], fontsize=7)
 
     if(varname in ('beta','Temp', 'rmsB', 'rmsBoB')):
         ax.set_yscale('log')
     else:
         ax.set_yscale('linear')
 
-    return fig, ax
+    return ax
 
 
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 stf = {}
 stf['B']    = {
-                'label': 'B [T]',
+                'label': 'B [nT]',
                 'ylims': [5., 29.],
                 'text_loc_1': {'mc':[4.5, 15.0], 'sh':[-1.95, 12.0]},
                 'text_loc_2': {'mc':[4.5, 18.0], 'sh':[-1.95, 12.0]},
@@ -84,7 +89,7 @@ stf['B']    = {
                 'nrow': 1
                 }
 stf['V']    = {
-                'label': 'Vsw [Km/s]',
+                'label': 'Vsw [km/s]',
                 'ylims': [350., 800.],
                 'text_loc_1': {'mc':[4.5, 500.0], 'sh':[-1.95, 520.0]},
                 'text_loc_2': {'mc':[4.5, 600.0], 'sh':[-1.95, 600.0]},
@@ -104,10 +109,11 @@ stf['rmsB']    = {
                 'ylims': [0.1, 4.0],
                 'text_loc_1': {'mc':[4.5, 1.0], 'sh':[-1.95, 1.3]},
                 'text_loc_2': {'mc':[4.5, 1.0], 'sh':[-1.95, 1.3]},
-                'text_loc_3': {'mc':[4.5, 1.0], 'sh':[-1.95, 1.3]}
+                'text_loc_3': {'mc':[4.5, 1.0], 'sh':[-1.95, 1.3]},
+                'nrow': 1
                 }
 stf['beta']    = {
-                'label': 'beta [1]',
+                'label': '$\\beta$ [1]',
                 'ylims': [0.02, 10.0],
                 'text_loc_1': {'mc':[4.5, 0.1], 'sh':[-1.95, 0.2]},
                 'text_loc_2': {'mc':[4.5, 0.1], 'sh':[-1.95, 0.2]},
@@ -115,7 +121,7 @@ stf['beta']    = {
                 'nrow': 5
                 }
 stf['Pcc']    = {
-                'label': 'proton density [#/cc]',
+                'label': '$n_p$ [#/cc]',
                 'ylims': [1, 23],
                 'text_loc_1': {'mc':[4.5, 14], 'sh':[-1.95, 16.0]},
                 'text_loc_2': {'mc':[4.5, 14], 'sh':[-1.95, 16.0]},
@@ -123,7 +129,7 @@ stf['Pcc']    = {
                 'nrow': 3
                 }
 stf['Temp']    = {
-                'label': 'Temp ($\\times 10^4$) [K]',
+                'label': 'T ($\\times 10^4$) [K]',
                 'ylims': [1e4, 100e4],
                 'text_loc_1': {'mc':[4.5, 18.0e4], 'sh':[-1.95, 20.0e4]},
                 'text_loc_2': {'mc':[4.5,  2.0e4], 'sh':[-1.95, 20.0e4]},
@@ -138,11 +144,12 @@ stf['AlphaRatio']    = {
                 'text_loc_3': {'mc':[4.5, 0.022], 'sh':[-1.95, 0.07]}
                 }
 stf['CRs']    = {
-                'label': 'GCR relative rate [%]',
-                'ylims': [-8.0, 1.0],
+                'label': '$n_{CR}$ [%]',
+                'ylims': [-8.0, 2.0],
                 'text_loc_1': {'mc':[4.5, -4.0], 'sh':[-1.95, -4.5]},
                 'text_loc_2': {'mc':[4.5, -7.0], 'sh':[-1.95, -4.5]},
-                'text_loc_3': {'mc':[4.5, -7.5], 'sh':[-1.95, -4.5]}
+                'text_loc_3': {'mc':[4.5, -7.5], 'sh':[-1.95, -4.5]},
+                'nrow': 2
                 }
 
 TEXT = {}
@@ -164,30 +171,35 @@ print " nvars: ", nvars
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 i=2
-fig     = figure(1, figsize=(12, 15))
+#fig = figure(1, figsize=(12, 15))
+f   = plt.figure(1, figsize=(9, 5.8))
+nr  = 1         # scale for row size
+gs  = GridSpec(nrows=3*nr, ncols=2*3)
+gs.update(left=0.1, right=0.98, hspace=0.13, wspace=0.15)
+
 for i in range(3):
     fname_inp = 'MCflag2_2before.4after_fgap0.2_Wang90.0_vlo.%3.1f.vhi.%3.1f' % (vlo[i], vhi[i])
     fname_inp_nro_mc   = dir_inp_mc + '/n.events_' + fname_inp + '.txt'
     fname_inp_nro_sh   = dir_inp_sh + '/n.events_' + fname_inp + '.txt'
-    fnro_mc = open(fname_inp_nro_mc, 'r')
-    fnro_sh = open(fname_inp_nro_sh, 'r')
-    n       = 1     # number of row
+
+    #n       = 1     # number of row
     print " ______ col %d ______" % i
     
-    for lmc, lsh in zip(fnro_mc, fnro_sh):
-        l_mc    = lmc.split()
-        l_sh    = lsh.split()
-        varname = l_mc[0]       # nombre de la variable
-        if varname in ('AlphaRatio', 'CRs', 'rmsB'):
-            continue
+    for varname in ('rmsB', 'CRs'):
+        # abro el file para averiguar el nro de eventos
+        fnro_mc = open(fname_inp_nro_mc, 'r')
+        fnro_sh = open(fname_inp_nro_sh, 'r')
+        for lmc, lsh in zip(fnro_mc, fnro_sh):
+            l_mc    = lmc.split()
+            l_sh    = lsh.split()
+            if varname==l_mc[0]:       # nombre de la variable
+                n       = stf[varname]['nrow']
+                ax      = plt.subplot(gs[(n-1)*nr:n*nr, (2*i):(2*(i+1))])
+                Nfinal_mc, Nfinal_sh  = int(l_mc[1]), int(l_sh[1]) # nmbr of events
+                fnro_mc.close(); fnro_sh.close()
+                break
 
-        n       = stf[varname]['nrow']
-        nax     = 3*(n-1) + i+1 #(i+1)*n   # axis index
-
-        ax      = fig.add_subplot(nvars, 3, nax)
-        Nfinal_mc, Nfinal_sh  = int(l_mc[1]), int(l_sh[1])
-        print " %s"%varname, '  Nfinal_mc:%d' % Nfinal_mc, 'Nfinal_sh:%d' % Nfinal_sh,
-        print " nax: %d" % nax
+        print " %s"%varname, '  Nfinal_mc:%d' % Nfinal_mc, 'Nfinal_sh:%d' % Nfinal_sh
         mc, sh  = gral(), gral()
 
         fname_inp_mc = dir_inp_mc + '/' + fname_inp + '_%s.txt' % varname
@@ -210,11 +222,12 @@ for i in range(3):
 
         ylims       = array(stf[varname]['ylims']) #[4., 17.]
         ylabel      = stf[varname]['label'] #'B [nT]'
-        fig, ax = makefig(fig, ax, mc, sh, TEXT, TEXT_LOC, ylims, varname)
+        ax = makefig(ax, mc, sh, TEXT, TEXT_LOC, ylims, varname)
 
         # ticks & labels x
-        if n==6: #n==nvars-1:
-            ax.set_xlabel('time normalized to sheath/MC passage [1]', fontsize=7)
+        ax.tick_params(labelsize=TS)
+        if n==3: #n==nvars-1:
+            ax.set_xlabel('time normalized to\nsheath/MC passage [1]', fontsize=11)
         else:
             ax.set_xlabel('')
             #ax.get_xaxis().set_ticks([])
@@ -222,21 +235,65 @@ for i in range(3):
 
         # ticks & labels y
         if i==0:
-            ax.set_ylabel(ylabel, fontsize=7)
+            ax.set_ylabel(ylabel, fontsize=15)
         else:
             ax.set_ylabel('')
             #ax.get_yaxis().set_ticks([])
             ax.yaxis.set_ticklabels([])
 
-        #n += 1  # next row/axis
+#+++++++++++++++++++++++++ nCR & model-fit
+dirs            = {}
+dirs['sheath']  = '../../../../sheaths/ascii/MCflag2/wShiftCorr/_test_Vmc_'
+dirs['mc']      = '../../../../mcs/ascii/MCflag2/wShiftCorr/_test_Vmc_'
+dirs['fname_inputs'] = 'MCflag2_2before.4after_fgap0.2_Wang90.0'
+dirs['figs']    = '../figs'
 
-    fnro_mc.close()
-    fnro_sh.close()
+par = {}
+par['lo']   = {
+    'vlo': 100.0,
+    'vhi': 450.0,
+    'tau': 2.36,
+    'bp' : 0.0,
+    'q'  : -9.373,
+    'off': 0.89,
+    'bo' : 16.15
+}
+par['mid'] = {
+    'vlo': 450.0,
+    'vhi': 550.0,
+    'tau': 4.18,
+    'bp' : -0.9,
+    'q'  : -6.02,
+    'off': 0.0,
+    'bo' : 11.87
+}
+par['hi'] = {
+    'vlo': 550.0,
+    'vhi': 3000.0,
+    'tau': 5.78,
+    'bp' : -0.18,
+    'q'  : -5.53,
+    'off': 1.01,
+    'bo' : 14.48
+}
 
-fig.tight_layout()
+from funcs import build_plot
+n   = 3; i=0
+for i, name in zip(range(3), ('lo', 'mid', 'hi')):
+    ax  = plt.subplot(gs[(n-1)*nr:n*nr, (2*i):(2*(i+1))])
+    build_plot(dirs, par[name], ax)
+    if i==0:
+        ax.set_ylabel('$n_{CR}$ [%]', fontsize=15)
+    else:
+        ax.set_ylabel('')
+        ax.yaxis.set_ticklabels([])
+
+#+++++++++++++++++++++++++++++++++++++++++
+
+#fig.tight_layout()
 #fname_fig   = dir_figs + '/fig_vlo.%3.1f_vhi.%3.1f_%s.png'%(vlo, vhi, varname)
-fname_fig = './test.png'
-savefig(fname_fig, dpi=100, bbox_inches='tight')
+fname_fig = '%s/figs_splitted_2.png' % dir_figs
+savefig(fname_fig, dpi=150, bbox_inches='tight')
 close()
 
 print "\n output en:\n %s\n" % fname_fig
