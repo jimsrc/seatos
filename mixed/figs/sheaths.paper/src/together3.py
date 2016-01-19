@@ -121,7 +121,7 @@ stf['beta']    = {
                 'nrow': 5
                 }
 stf['Pcc']    = {
-                'label': '$n_p$ [#/cc]',
+                'label': '$n_p$ [$cm^{-3}$]',
                 'ylims': [1, 23],
                 'text_loc_1': {'mc':[4.5, 14], 'sh':[-1.95, 16.0]},
                 'text_loc_2': {'mc':[4.5, 14], 'sh':[-1.95, 16.0]},
@@ -144,7 +144,7 @@ stf['AlphaRatio']    = {
                 'text_loc_3': {'mc':[4.5, 0.022], 'sh':[-1.95, 0.07]}
                 }
 stf['CRs']    = {
-                'label': '$n_{CR}$ [%]',
+                'label': '$n_{GCR}$ [%]',
                 'ylims': [-8.0, 2.0],
                 'text_loc_1': {'mc':[4.5, -4.0], 'sh':[-1.95, -4.5]},
                 'text_loc_2': {'mc':[4.5, -7.0], 'sh':[-1.95, -4.5]},
@@ -283,7 +283,7 @@ for i, name in zip(range(3), ('lo', 'mid', 'hi')):
     ax  = plt.subplot(gs[(n-1)*nr:n*nr, (2*i):(2*(i+1))])
     build_plot(dirs, par[name], ax)
     if i==0:
-        ax.set_ylabel('$n_{CR}$ [%]', fontsize=15)
+        ax.set_ylabel('$n_{GCR}$ [%]', fontsize=15)
     else:
         ax.set_ylabel('')
         ax.yaxis.set_ticklabels([])

@@ -79,7 +79,7 @@ def makefig(ax, mc, sh, TEXT, TEXT_LOC, YLIMS, varname):
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 stf = {}
 stf['B']    = {
-                'label': 'B [T]',
+                'label': 'B [nT]',
                 'ylims': [5., 29.],
                 'text_loc_1': {'mc':[4.5, 15.0], 'sh':[-1.95, 12.0]},
                 'text_loc_2': {'mc':[4.5, 18.0], 'sh':[-1.95, 12.0]},
@@ -87,7 +87,7 @@ stf['B']    = {
                 'nrow': 1
                 }
 stf['V']    = {
-                'label': 'Vsw [km/s]',
+                'label': 'V [km/s]',
                 'ylims': [350., 800.],
                 'text_loc_1': {'mc':[4.5, 500.0], 'sh':[-1.95, 520.0]},
                 'text_loc_2': {'mc':[4.5, 600.0], 'sh':[-1.95, 600.0]},
@@ -118,7 +118,7 @@ stf['beta']    = {
                 'nrow': 5
                 }
 stf['Pcc']    = {
-                'label': '$n_p$ [#/cc]',
+                'label': '$n_p$ [$cm^{-3}$]',
                 'ylims': [1, 23],
                 'text_loc_1': {'mc':[4.5, 14], 'sh':[-1.95, 16.0]},
                 'text_loc_2': {'mc':[4.5, 14], 'sh':[-1.95, 16.0]},
@@ -126,7 +126,7 @@ stf['Pcc']    = {
                 'nrow': 3
                 }
 stf['Temp']    = {
-                'label': 'T ($\\times 10^4$) [K]',
+                'label': 'Tp ($\\times 10^4$) [K]',
                 'ylims': [1e4, 100e4],
                 'text_loc_1': {'mc':[4.5, 18.0e4], 'sh':[-1.95, 20.0e4]},
                 'text_loc_2': {'mc':[4.5,  2.0e4], 'sh':[-1.95, 20.0e4]},
