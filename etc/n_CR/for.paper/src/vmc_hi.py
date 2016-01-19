@@ -98,6 +98,7 @@ ax.set_xlim(-2,+7)
 ax.set_ylim(-8, +2.)
 """
 savefig(fname_fig, dpi=135, bbox_inches='tight')
+print " ---> generamos: " + fname_fig
 close()
 """
 #+++++ guardo ajuste en ascii
