@@ -83,7 +83,7 @@ ax.set_ylim(0.3, 2.1)
 XTICKS = range(len(VNAMES))
 ax.set_xticks(XTICKS)
 #ax.set_xticklabels(VARNAMES, fontsize=12, rotation='40')
-VNAMES2 = ['B', 'V', '$n_p$', '$T_p$', '$\\beta$', 'rmsBoB', 'rmsB', '$n_{CR}$']
+VNAMES2 = ['B', 'V', '$n_p$', '$T_p$', '$\\beta$', 'rmsBoB', 'rmsB', '$n_{GCR}$']
 ax.set_xticklabels(VNAMES2, fontsize=12, rotation='40')
 
 #ax.plot(XTICKS, np.ones(len(VARNAMES)), '-', color='black', lw=3 ,alpha=0.3)
