@@ -109,7 +109,7 @@ stf['Pcc']    = {
                 'text_loc': {'mc':[4.5, 11], 'sh':[-1.95, 14.0]}
                 }
 stf['Temp']    = {
-                'label': 'T ($\\times 10^4$) [K]',
+                'label': 'Tp ($\\times 10^4$) [K]',
                 'ylims': [1e4, 33e4],
                 'text_loc': {'mc':[4.5, 2.0e4], 'sh':[-1.95, 20.0e4]}
                 }
