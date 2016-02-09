@@ -372,6 +372,11 @@ class general:
         self.name = 'name'
 
 
+class boundaries:
+    def __init__(self):
+        name = 'name'
+
+
 class events_mgr:
     def __init__(self, gral, FILTER, CUTS, bd, nBin, fgap, tb, z_exp):
         #self.fnames     = fnames
@@ -966,7 +971,6 @@ class events_mgr:
     def filter_events(self):
         tb              = self.tb
         FILTER          = self.FILTER
-        ThetaThres      = self.CUTS['ThetaThres']
         dTday           = self.CUTS['dTday']
         day             = 86400.
         AU_o_km         = 1./(150.0e6)
@@ -1015,6 +1019,7 @@ class events_mgr:
 
         #------- orientacion del shock (catalogo Wang)
         if FILTER['wang']:
+            ThetaThres  = self.CUTS['ThetaThres']
             ThetaCond   = thetacond(ThetaThres, ThetaSh)
 
         #------- duration of sheaths
