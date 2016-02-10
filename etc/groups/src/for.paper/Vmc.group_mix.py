@@ -88,6 +88,7 @@ ax.set_xticklabels(VNAMES2, fontsize=12, rotation='40')
 
 #ax.plot(XTICKS, np.ones(len(VARNAMES)), '-', color='black', lw=3 ,alpha=0.3)
 ax.plot(XTICKS, np.ones(len(VNAMES)), '-', color='black', lw=3 ,alpha=0.3)
+ax.set_ylabel('normalized values')
 
 fname_fig = '../../plots/__paper__deviations_mix_Vmc.group.png'
 #if FILTER['vsw_filter']:        fname_fig += '_Vmc.group' #'_vsw.group'
