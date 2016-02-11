@@ -424,6 +424,97 @@ class events_mgr:
         #self.build_params_file()
 
 
+    """
+    collects data from filtered events
+    """
+    def collect_data(self):
+        """
+        rebineo de c/evento
+        """
+        nvars   = self.nvars #len(VARS)
+        n_icmes = self.tb.n_icmes
+        bd      = self.bd
+        VARS    = self.VARS
+        nbin    = self.nBin['total']
+        nwndw   = [self.nBin['before'], self.nBin['after']]
+        day     = 86400.
+
+        #---- quiero una lista de los eventos-id q van a incluirse en c/promedio :-)
+        IDs     = {}
+        Enough  = {}
+        nEnough = {}
+        self.__ADAP__       = ADAP    = []   # conjunto de varios 'adap' (uno x c/variable)
+        for varname in VARS.keys():
+            IDs[varname]        = []
+            Enough[varname]     = []
+            nEnough[varname]    = 0     # contador
+
+        # recorremos los eventos:
+        nok=0; nbad=0;
+        nnn     = 0     # nro de evento q pasan el filtro a-priori
+        self.out = {}
+        self.out['events_data'] = {} # bag to save data from events
+        for i in range(n_icmes):
+            #nok=0; nbad=0;
+            ok=False
+            try: #no todos los elementos de 'tend' son fechas (algunos eventos no tienen fecha definida)
+                dT      = (bd.tend[i] - bd.tini[i]).total_seconds()/day  # [day]
+                ok = True
+            except:
+                continue    # saltar al sgte evento 'i'
+
+            ADAP += [ {} ] # agrego un diccionario a la lista
+            #np.set_printoptions(4)         # nro de digitos a imprimir cuando use numpy.arrays
+            if (ok & self.SELECC[i]):# (MCsig[i]>=MCwant)):  ---FILTRO--- (*1)
+                nnn += 1
+                print ccl.Gn + " id:%d ---> dT/day:%g" % (i, dT) + ccl.W
+                print self.tb.tshck[i]
+                nok +=1
+                evdata = self.out['events_data']['id_%03d'%i] = {} # evdata is just a pointer
+                # recorremos las variables:
+                for varname in VARS.keys():
+                    dt      = dT*(1+nwndw[0]+nwndw[1])/nbin
+                    t, var  = selecc_window_ii(
+                                nwndw, #rango ploteo
+                                [self.t_utc, VARS[varname]['value']],
+                                bd.tini[i],
+                                bd.tend[i]
+                              )
+                    evdata['t_days'] = t
+                    evdata[varname] = var
+
+                    if self.data_name=='McMurdo':
+                        var = 100.*(var - self.rate_pre[i]) / self.rate_pre[i]
+
+                    elif self.data_name=='Auger':
+                        #print " ---> var.size: ", var.size
+                        var = 100.*(var - self.rate_pre_Auger[i]) / self.rate_pre_Auger[i]
+
+                    # rebinea usando 'dt' como el ancho de nuevo bineo
+                    out       = adaptar_ii(nwndw, dT, nbin, dt, t, var, self.fgap)
+                    enough    = out[0]       # True: data con menos de 100*'fgap'% de gap
+                    Enough[varname]         += [ enough ]
+                    ADAP[nok-1][varname]    = out[1]  # donde: out[1] = [tiempo, variable]
+
+                    if enough:
+                        IDs[varname]     += [i]
+                        nEnough[varname] += 1
+
+            else:
+                print ccl.Rn + " id:%d ---> dT/day:%g" % (i, dT), " -->SELECC: ", self.SELECC[i], ccl.W
+                nbad +=1
+
+        print " ----> len.ADAP: %d" % len(ADAP)
+        self.__nok__    = nok
+        self.__nbad__   = nbad
+        #self.out = {}
+        self.out['nok']     = nok
+        self.out['nbad']    = nbad
+        self.out['IDs']     = IDs
+        self.out['nEnough'] = nEnough
+        self.out['Enough']  = Enough
+
+
     def rebine(self):
         """
         rebineo de c/evento
@@ -701,7 +792,7 @@ class events_mgr:
         day         = 86400.
 
         #----------------------------------------------------------
-        self.f_sc       = netcdf_file(self.gral.fnames[self.gral.data_name], 'r')
+        self.f_sc   = netcdf_file(self.gral.fnames[self.gral.data_name], 'r')
         print " leyendo tiempo..."
         t_utc   = utc_from_omni(self.f_sc)
         print " Ready."
