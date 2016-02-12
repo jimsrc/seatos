@@ -93,7 +93,7 @@ emgr    = events_mgr(gral, FILTER, CUTS, bounds, nBin, fgap, tb, z_exp)
 LOW, MID1, MID2, TOP = 100.0, 450.0, 550.0, 3000.0
 
 emgr.FILTER['vsw_filter']    = True
-emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = LOW, MID1 # 100.0, 450.0
+emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID2, TOP #MID1, MID2 #LOW, MID1 #
 #emgr.run_all()
 emgr.filter_events()
 emgr.load_data_and_timeshift()
