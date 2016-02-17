@@ -28,5 +28,6 @@ sheaths.icmes/ascii
 #mixed/figs
 #mixed/plots
 
-
+# incluyamos la tabla larga
+!etc/table_paper.sheaths/src/long_table.txt
 
