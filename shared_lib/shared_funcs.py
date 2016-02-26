@@ -22,8 +22,8 @@ def flags2nan(VAR, FLAG):
 
 def date_to_utc(fecha):
     utc = datetime(1970, 1, 1, 0, 0, 0, 0)
-    time = (fecha - utc).total_seconds()
-    return time
+    sec_utc = (fecha - utc).total_seconds()
+    return sec_utc
 
 
 def dates_from_omni(t):
@@ -187,21 +187,21 @@ def adaptar_ii(nwndw, dT, n, dt, t, r, fgap):
 
 
 def selecc_window_ii(nwndw, data, tini, tend):
-    time    = data[0]       #[s] utc sec
-    y   = data[1]
+    time = data[0]       #[s] utc sec
+    y    = data[1]
 
     day     = 86400.                # [seg]
     utc     = datetime(1970, 1, 1, 0, 0, 0, 0)
-    tini_utc    = (tini - utc).total_seconds()      # [s] utc sec
-    tend_utc    = (tend - utc).total_seconds()      # [s] utc sec
+    tini_utc = (tini - utc).total_seconds()  # [s] utc sec
+    tend_utc = (tend - utc).total_seconds()  # [s] utc sec
 
-    dt  = tend_utc - tini_utc
-    ti  = tini_utc - nwndw[0]*dt            # [seg] utc
-    tf  = tend_utc + nwndw[1]*dt
-    cond    = (time > ti) & (time < tf)
+    dt   = tend_utc - tini_utc
+    ti   = tini_utc - nwndw[0]*dt            # [seg] utc
+    tf   = tend_utc + nwndw[1]*dt
+    cond = (time > ti) & (time < tf)
 
-    time    = (time[cond] - tini_utc) / day     # [days] since 'ti'
-    y   = y[cond]
+    time = (time[cond] - tini_utc) / day     # [days] since 'ti'
+    y    = y[cond]
     return (time, y)
 
 
@@ -250,12 +250,6 @@ def mvs_for_each_event(VAR_adap, nbin, nwndw, Enough):
     mvs         = np.zeros(nok)            # valores medios por cada evento
     binsPerTimeUnit = nbin/(1+nwndw[0]+nwndw[1])    # nro de bines por u. de tiempo
     start       = nwndw[0]*binsPerTimeUnit  # en este bin empieza la MC
-    #print " ----> binsPerTimeUnit: ", binsPerTimeUnit
-    #print " ----> nok:  ", nok
-    #print " ----> VAR_adap.shape: ", VAR_adap.shape
-    #print " ----> VAR_adap: \n", VAR_adap
-    #raw_input()
-
     for i in range(nok):
         aux = VAR_adap[i, start:start+binsPerTimeUnit]  # (*)
         cc  = ~isnan(aux)                   # pick good-data only
@@ -421,7 +415,7 @@ class events_mgr:
         #----- hacer ploteos
         self.make_plots()
         #----- archivos "stuff"
-        #self.build_params_file()
+        self.build_params_file()
 
 
     """
@@ -455,11 +449,12 @@ class events_mgr:
         self.out = {}
         self.out['events_data'] = {} # bag to save data from events
         for i in range(n_icmes):
-            #nok=0; nbad=0;
             ok=False
             try: #no todos los elementos de 'tend' son fechas (algunos eventos no tienen fecha definida)
-                dT      = (bd.tend[i] - bd.tini[i]).total_seconds()/day  # [day]
-                ok = True
+                dT  = (bd.tend[i] - bd.tini[i]).total_seconds()/day  # [day]
+                # this 'i' event must be contained in our data
+                ok  =  date_to_utc(bd.tini[i]) >= self.t_utc[0] #True
+                ok  &= date_to_utc(bd.tend[i]) <= self.t_utc[-1]
             except:
                 continue    # saltar al sgte evento 'i'
 
@@ -541,11 +536,12 @@ class events_mgr:
         nok=0; nbad=0;
         nnn     = 0     # nro de evento q pasan el filtro a-priori
         for i in range(n_icmes):
-            #nok=0; nbad=0;
             ok=False
             try: #no todos los elementos de 'tend' son fechas (algunos eventos no tienen fecha definida)
-                dT      = (bd.tend[i] - bd.tini[i]).total_seconds()/day  # [day]
-                ok = True
+                dT  =  (bd.tend[i] - bd.tini[i]).total_seconds()/day  # [day]
+                # this 'i' event must be contained in our data
+                ok  =  date_to_utc(bd.tini[i]) >= self.t_utc[0] #True
+                ok  &= date_to_utc(bd.tend[i]) <= self.t_utc[-1]
             except:
                 continue    # saltar al sgte evento 'i'
 
@@ -570,7 +566,6 @@ class events_mgr:
                         var = 100.*(var - self.rate_pre[i]) / self.rate_pre[i]
 
                     elif self.data_name=='Auger':
-                        #print " ---> var.size: ", var.size
                         var = 100.*(var - self.rate_pre_Auger[i]) / self.rate_pre_Auger[i]
 
                     # rebinea usando 'dt' como el ancho de nuevo bineo
@@ -739,14 +734,13 @@ class events_mgr:
         bd          = self.bd
         day         = 86400.
         fname_inp   = self.gral.fnames[self.data_name]
-        #data_murdo  = np.loadtxt(fname_inp)
         f5          = h5py.File(fname_inp, 'r')
         self.t_utc  = t_utc = f5['auger/time_seg_utc'][...].copy() #data_murdo[:,0]
         CRs         = f5['auger/sc_wAoP_wPres'][...].copy() #data_murdo[:,1]
         print " -------> variables leidas!"
 
         self.VARS   = VARS = {} #[]
-        VARS['CRs'] = {
+        VARS['CRs.'+self.data_name] = {
             'value' : CRs,
             'lims'  : [-1.0, 1.0],
             'label' : 'Auger rate [%]'
@@ -763,17 +757,14 @@ class events_mgr:
         nBin        = self.nBin
         bd          = self.bd
         day         = 86400.
-        #HOME        = os.environ['HOME']
-        #fname_inp_murdo = '%s/actividad_solar/neutron_monitors/mcmurdo/mcmurdo_utc_correg.dat' % HOME
         fname_inp   = self.gral.fnames[self.data_name]
         data_murdo  = np.loadtxt(fname_inp)
         self.t_utc  = t_utc = data_murdo[:,0]
         CRs         = data_murdo[:,1]
         print " -------> variables leidas!"
 
-        self.VARS   = VARS = {} #[]
-        #VARS        += [[CRs, 'CRs', [-8.0, 1.0], 'mcmurdo rate [%]']]
-        VARS['CRs'] = {
+        self.VARS   = VARS = {} 
+        VARS['CRs.'+self.data_name] = {
             'value' : CRs,
             'lims'  : [-8.0, 1.0],
             'label' : 'mcmurdo rate [%]'
@@ -822,42 +813,42 @@ class events_mgr:
         #self.VARS = VARS = []
         self.VARS = VARS = {}
         # variable, nombre archivo, limite vertical, ylabel
-        VARS['B'] = {
+        VARS['B.'+self.data_name] = {
             'value' : B,
             'lims'  : [5., 18.],
             'label' : 'B [nT]'
         }
-        VARS['V'] = {
+        VARS['V.'+self.data_name] = {
             'value' : Vsw,
             'lims'  : [380., 650.],
             'label' : 'Vsw [km/s]'
         }
-        VARS['rmsBoB'] = {
+        VARS['rmsBoB.'+self.data_name] = {
             'value' : rmsBoB,
             'lims'  : [0.01, 0.2],
             'label' : 'rms($\hat B$/|B|) [1]'
         }
-        VARS['rmsB'] = {
+        VARS['rmsB.'+self.data_name] = {
             'value' : rmsB,
             'lims'  : [0.05, 2.0],
             'label' : 'rms($\hat B$) [nT]'
         }
-        VARS['beta'] = {
+        VARS['beta.'+self.data_name] = {
             'value' : beta,
             'lims'  : [0.001, 5.],
             'label' : '$\\beta$ [1]'
         }
-        VARS['Pcc'] = {
+        VARS['Pcc.'+self.data_name] = {
             'value' : Pcc,
             'lims'  : [2, 17.],
             'label' : 'proton density [#/cc]'
         }
-        VARS['Temp'] = {
+        VARS['Temp.'+self.data_name] = {
             'value' : Temp,
             'lims'  : [1e4, 4e5],
             'label' : 'Temp [K]'
         }
-        VARS['AlphaRatio'] = {
+        VARS['AlphaRatio.'+self.data_name] = {
             'value' : alphar,
             'lims'  : [1e-3, 0.1],
             'label' : 'alpha ratio [1]'
@@ -996,19 +987,19 @@ class events_mgr:
 
     def build_params_file(self):
         """
-        #---- construye archivo q contiene cosas de los eventos seleccionados:
-        # - valores medios de los observables (B, Vsw, Temp, beta, etc)
-        # - los IDs de los eventos
-        # - duracion de los MCs y las sheaths
+        Construye archivo q tiene cosas de los eventos seleccionados:
+        - valores medios de los observables (B, Vsw, Temp, beta, etc)
+        - los IDs de los eventos
+        - duracion de los MCs y las sheaths
         """
         DIR_ASCII   = self.DIR_ASCII
         FNAMEs      = self.FNAMEs
-        #---------------------------------------------- begin: NC_FILE
-        print "\n**************************************** begin: NC_FILE"
+        #-------------------------------------------- begin: NC_FILE
+        print "\n*********************************** begin: NC_FILE"
         #------- generamos registro de id's de los
         #        eventos q entraron en los promedios.
         #        Nota: un registro por variable.
-        fname_out   = DIR_ASCII+'/'+'_stuff_'+FNAMEs+'.nc' #'./test.nc'
+        fname_out = DIR_ASCII+'/'+'_stuff_'+FNAMEs+'.nc' #'./test.nc'
         #---FLAG_001
         if self.data_name==self.data_name_:
             fout        = netcdf_file(fname_out, 'w')
@@ -1018,11 +1009,10 @@ class events_mgr:
             # de eventos al final del archivo 'fname_out'
 
         print "\n ----> generando: %s\n" % fname_out
-
+        #IDs_avail = self.filter_avail_IDs()
+        #(IDs, tini=self.t_utc[0], tend=self.t_utc[-1])
         IDs = self.out['IDs']
-        #for i in range(len(self.VARS)):
         for varname in self.VARS.keys():
-            #varname  = self.VARS[i][1]
             print " ----> " + varname
             n_events = len(IDs[varname])
             dimname  = 'nevents_'+varname
@@ -1034,13 +1024,13 @@ class events_mgr:
             prom     = prom[~cc]
             print " nprom: ", prom.size
             dims     = (dimname,)
-            write_variable(fout, varname, dims,
-                    prom, 'd', 'average_values per event')
+            write_variable(fout, varname, dims, prom, 'd', 
+                'average_values per event')
             #---------- IDs de esta variable
             ids      = map(int, IDs[varname])
             vname    = 'IDs_'+varname
             write_variable(fout, vname, dims, ids, 'i',
-                    'event IDs that enter in this parameter average')
+                'event IDs that enter in this parameter average')
             #---------- duracion de la estructura
             dtsh     = np.zeros(len(ids))
             dtmc     = np.zeros(len(ids))
