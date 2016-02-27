@@ -27,14 +27,15 @@ class boundaries:
         name = 'name'
 
 HOME                = os.environ['HOME']
+PAO                 = os.environ['PAO']
 gral                = general()
 day                 = 86400.
 #---- cosas input
 gral.fnames = fnames = {}
 fnames['ACE']       = '%s/data_ace/64sec_mag-swepam/ace.1998-2014.nc' % HOME
 fnames['McMurdo']   = '%s/actividad_solar/neutron_monitors/mcmurdo/mcmurdo_utc_correg.dat' % HOME
+fnames['Auger']     = '%s/data_auger/estudios_AoP/data/unir_con_presion/data_final_2006-2013.h5' % PAO
 fnames['table_richardson']  = '%s/ASOC_ICME-FD/icmes_richardson/data/rich_events_ace.nc' % HOME
-fnames['Auger']     = '%s/ccin2p3/in2p3_data/data_auger/estudios_AoP/data/unir_con_presion/data_final_2006-2013.h5' % HOME
 
 #---- directorios de salida
 gral.dirs =  dirs   = {}
@@ -87,15 +88,17 @@ bounds.tini = tb.tshck #tb.tini_mc #tb.tini_mc #tb.tshck
 bounds.tend = tb.tini_icme #tb.tend_mc #tb.tend_mc #tb.tini_mc
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-gral.data_name      = 'McMurdo' #'ACE'
+gral.data_name      = 'Auger' #'McMurdo' #'ACE'
 
 FILTER['vsw_filter']    = False
 emgr    = events_mgr(gral, FILTER, CUTS, bounds, nBin, fgap, tb, z_exp)
 emgr.run_all()
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-emgr.data_name      = 'Auger' #'McMurdo'
-emgr.FILTER['vsw_filter']    = False
+emgr.data_name      = 'ACE' #'Auger' #'McMurdo'
+emgr.run_all()
+
+emgr.data_name      = 'McMurdo' #'Auger' #'McMurdo'
 emgr.run_all()
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

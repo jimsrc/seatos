@@ -9,6 +9,10 @@ import os
 import matplotlib.patches as patches
 import matplotlib.transforms as transforms
 import h5py
+from numpy import (
+    mean, median, nanmean, nanmedian, std, nan, 
+    isnan, min, max, zeros, ones
+)
 
 #from read_NewTable import tshck, tini_icme, tend_icme, tini_mc, tend_mc, n_icmes, MCsig
 #from z_expansion_gulisano import z as z_exp
@@ -161,27 +165,30 @@ def adaptar(nwndw, dT, n, dt, t, r):
 
 
 def adaptar_ii(nwndw, dT, n, dt, t, r, fgap):
-    #n  = int(5./dt)            # nro de puntos en todo el intervalo de ploteo
-    tt  = zeros(n)
-    rr  = zeros(n)
+    tt      = zeros(n)
+    rr      = zeros(n)
     _nbin_  = n/(1+nwndw[0]+nwndw[1])   # nro de bins en la sheath/mc
-    cc  = (t>0.) & (t<dT)       # intervalo de la sheath/mc
+    cc      = (t>0.) & (t<dT)           # intervalo de la sheath/mc
     #print " r[cc]: ", r[cc]
     if len(r[cc])==0:           # no hay data en esta ventana
         rr      = nan*ones(n)
         enough  = False
     else:
         enough  = enoughdata(r[cc], fgap)   # [bool] True si hay mas del 80% de data buena.
-    if not(enough): rr  = nan*ones(n)   # si no hay suficiente data, este evento no aporta
+
+    if not(enough): 
+        rr  = nan*ones(n)   # si no hay suficiente data, este evento no aporta
+
     for i in range(n):
         tmin    = (i-nwndw[0]*_nbin_)*dt
         tmax    = tmin + dt
-        cond    = (t>tmin) & (t<tmax)
+        cond    = (t>=tmin) & (t<=tmax)
         #tt[i]   = mean(t[cond])#; print "tt:", t[i]; pause(1) # bug
-        tt[i]   = tmin + .5*dt     # bug corregido
+        tt[i]   = tmin + .5*dt          # bug corregido
         if enough:
-            cc    = ~isnan(r[cond])     # no olvidemos filtrar los gaps
-            rr[i] = mean(r[cond][cc])
+            #cc    = ~isnan(r[cond])    # no olvidemos filtrar los gaps
+            #rr[i] = mean(r[cond][cc])
+            rr[i] = nanmean(r[cond])
 
     return enough, [tt/dT, rr]          # tiempo normalizado x la duracion de la sheath/mc/etc
 
@@ -247,9 +254,9 @@ def averages_and_std_ii(nwndw,
 
 def mvs_for_each_event(VAR_adap, nbin, nwndw, Enough):
     nok         = size(VAR_adap, axis=0)
-    mvs         = np.zeros(nok)            # valores medios por cada evento
+    mvs         = zeros(nok)            # valores medios por cada evento
     binsPerTimeUnit = nbin/(1+nwndw[0]+nwndw[1])    # nro de bines por u. de tiempo
-    start       = nwndw[0]*binsPerTimeUnit  # en este bin empieza la MC
+    start       = nwndw[0]*binsPerTimeUnit  # en este bin empieza la estructura (MC o sheath)
     for i in range(nok):
         aux = VAR_adap[i, start:start+binsPerTimeUnit]  # (*)
         cc  = ~isnan(aux)                   # pick good-data only
@@ -258,9 +265,9 @@ def mvs_for_each_event(VAR_adap, nbin, nwndw, Enough):
             print ccl.G
             print "id %d/%d: "%(i+1, nok), aux[cc]
             print ccl.W
-            mvs[i] = np.mean(aux[cc])
+            mvs[i] = mean(aux[cc])
         else:
-            mvs[i] = np.nan
+            mvs[i] = nan
     #(*): esta es la serie temporal (de esta variable) para el evento "i"
     pause(1)
     return mvs
@@ -623,7 +630,7 @@ class events_mgr:
         for varname in VARS.keys():
             print ccl.On + " -------> procesando: %s" % VARS[varname]['label'] #+ "  (%d/%d)"%(j+1,nvars)
             print " nEnough/nok/(nok+nbad): %d/%d/%d " % (nEnough[varname], nok, nok+nbad) + ccl.W
-            VAR_adap = np.zeros((nok, nbin))    # perfiles rebineados (*)
+            VAR_adap = zeros((nok, nbin))    # perfiles rebineados (*)
             # (*): uno de estos por variable
             # recorro los 'nok' eventos q pasaron el filtro de arriba:
             for i in range(nok):
@@ -633,15 +640,15 @@ class events_mgr:
 
             # valores medios de esta variable para c/evento
             avrVAR_adap = mvs_for_each_event(VAR_adap, nbin, nwndw, Enough[varname])
-            #print " ---> (%d/%d) avrVAR_adap[]: \n" % (j+1,nvars), avrVAR_adap
             print " ---> (%s) avrVAR_adap[]: \n" % varname, avrVAR_adap
 
-            VAR_avrg        = np.zeros(nbin)
-            VAR_avrgNorm    = np.zeros(nbin)
-            VAR_medi        = np.zeros(nbin)
-            VAR_std         = np.zeros(nbin)
-            ndata           = np.zeros(nbin)
+            VAR_avrg        = zeros(nbin)
+            VAR_avrgNorm    = zeros(nbin)
+            VAR_medi        = zeros(nbin)
+            VAR_std         = zeros(nbin)
+            ndata           = zeros(nbin)
 
+            # recorremos bin a bin, para calular media, mediana, error, etc...
             for i in range(nbin):
                 cond = ~np.isnan(VAR_adap.T[i,:])  # filtro eventos q no aportan data en este bin
                 ndata[i] = len(find(cond))      # nro de datos != nan
@@ -783,7 +790,7 @@ class events_mgr:
         day         = 86400.
 
         #----------------------------------------------------------
-        self.f_sc   = netcdf_file(self.gral.fnames[self.gral.data_name], 'r')
+        self.f_sc   = netcdf_file(self.gral.fnames[self.data_name], 'r')
         print " leyendo tiempo..."
         t_utc   = utc_from_omni(self.f_sc)
         print " Ready."
@@ -1003,14 +1010,14 @@ class events_mgr:
         #---FLAG_001
         if self.data_name==self.data_name_:
             fout        = netcdf_file(fname_out, 'w')
+            print "\n ----> generando: %s\n" % fname_out
         else:
             fout        = netcdf_file(fname_out, 'a')
             # modo 'a': si uso otra data input, voy anotando el nro
             # de eventos al final del archivo 'fname_out'
+            print "\n ----> anexando en: %s\n" % fname_out
 
-        print "\n ----> generando: %s\n" % fname_out
-        #IDs_avail = self.filter_avail_IDs()
-        #(IDs, tini=self.t_utc[0], tend=self.t_utc[-1])
+
         IDs = self.out['IDs']
         for varname in self.VARS.keys():
             print " ----> " + varname
@@ -1152,12 +1159,15 @@ class events_mgr:
 
         self.SELECC     = SELECC
         self.n_SELECC   = len(find(SELECC))
-        #+++++++++++++++++ end: SELECCION DE EVENTOS +++++++++++++++++++++++++
-        #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        #+++++++++++++++++ end: SELECCION DE EVENTOS ++++++++++++++++++++
+        #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         if self.n_SELECC<=0:
             print ccl.Rn + "\n --------> FATAL ERROR!!!: self.n_SELECC=<0"
             print " exiting....... \n" + ccl.W
             raise SystemExit
 
+#+++++++++++++++++++++++++++++++++
+if __name__=='__main__':
+    print " ---> this is a library!\n"
 
-##
+#EOF
