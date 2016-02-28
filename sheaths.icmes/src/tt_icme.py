@@ -93,6 +93,7 @@ gral.data_name      = 'Auger' #'McMurdo' #'ACE'
 FILTER['vsw_filter']    = False
 emgr    = events_mgr(gral, FILTER, CUTS, bounds, nBin, fgap, tb, z_exp)
 emgr.run_all()
+emgr.lock_IDs()
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 emgr.data_name      = 'ACE' #'Auger' #'McMurdo'

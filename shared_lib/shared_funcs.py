@@ -403,9 +403,15 @@ class events_mgr:
         self.read_o7o6  = False # True: si ya lei los archivos input
         self.read_auger = False # True: si ya lei los archivos input
         self.data_name_ = str(self.data_name) # nombre de la data input inicial (*1)
+
+        self.IDs_locked = False      # (*2)
         """
         (*1):   si despues cambia 'self.data_name', me voy a dar
                 cuenta en la "linea" FLAG_001.
+        (*2):   lock in lock_IDs().
+                True: if the id's of the events have been
+                fixed/locked, so that later analysis is
+                resctricted only with theses locked id's.
         """
 
 
@@ -416,7 +422,6 @@ class events_mgr:
         #----- load data y los shiftimes "omni"
         self.load_data_and_timeshift()
         #----- rebineo y promedios
-        #self.rebine_and_avr()
         self.rebine()
         self.rebine_final()
         #----- hacer ploteos
@@ -540,15 +545,17 @@ class events_mgr:
             nEnough[varname]    = 0     # contador
 
         # recorremos los eventos:
-        nok=0; nbad=0;
+        nok, nbad = 0, 0
         nnn     = 0     # nro de evento q pasan el filtro a-priori
         for i in range(n_icmes):
-            ok=False
+            ok = False
             try: #no todos los elementos de 'tend' son fechas (algunos eventos no tienen fecha definida)
                 dT  =  (bd.tend[i] - bd.tini[i]).total_seconds()/day  # [day]
                 # this 'i' event must be contained in our data
                 ok  =  date_to_utc(bd.tini[i]) >= self.t_utc[0] #True
                 ok  &= date_to_utc(bd.tend[i]) <= self.t_utc[-1]
+                if self.IDs_locked:
+                    ok &= i in self.restricted_IDs
             except:
                 continue    # saltar al sgte evento 'i'
 
@@ -598,6 +605,17 @@ class events_mgr:
         self.out['IDs']     = IDs
         self.out['nEnough'] = nEnough
         self.out['Enough']  = Enough
+
+
+    def lock_IDs(self):
+        """
+        This assumes that 'IDs' has only *one* key.
+        That is, len(IDs)=1 !!
+        """
+        IDs = self.out['IDs']
+        varname = IDs.keys()[0]
+        self.restricted_IDs = IDs[varname]
+        self.IDs_locked = True
 
 
     def rebine_final(self):
@@ -656,9 +674,7 @@ class events_mgr:
                 VAR_avrgNorm[i] = np.mean(VAR_adap.T[i,cond]/avrVAR_adap[cond])
                 VAR_medi[i] = np.median(VAR_adap.T[i,cond])# mediana entre los valores q no tienen flag
                 VAR_std[i] = np.std(VAR_adap.T[i,cond])    # std del mismo conjunto de datos
-                #--- calculo perfil normalizado por c/variable
-                #ii = nwndw[0]*binsPerTimeUnit
-                #AvrInWndw = mean(VAR_avrg[ii:ii+binsPerTimeUnit])
+
             first_varname = ADAP[0].keys()[0]
             tnorm   = ADAP[0][first_varname][0] # tiempo del primer evento (0), usando la 1ra variable
             stuff[varname] = [VAR_avrg, VAR_medi, VAR_std, ndata, avrVAR_adap]
@@ -710,19 +726,18 @@ class events_mgr:
         t_utc   = utc_from_omni(self.f_sc)
         print " Ready."
 
-        #++++++++++++++++++++ CORRECCION DE BORDES +++++++++++++++++++++++++++++
+        #++++++++++++++++++++ CORRECCION DE BORDES +++++++++++++++++++++++++++
         # IMPORTANTE:
         # El shift es necesario, pero ya lo hice en la corrida del
         # primer 'self.data_name'. Si lo hago aqui, estaria hacia
         # doble shift-time.
-        #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         o7o6    = self.f_sc.variables['O7toO6'].data.copy()
         print " -------> variables leidas!"
         #------------------------------------ VARIABLES
         self.t_utc  = t_utc
         self.VARS = VARS = {}
         # variable, nombre archivo, limite vertical, ylabel
-        #VARS += [[o7o6, 'o7o6', [0.0, 1.5], 'O7/O6 [1]']]
         VARS['o7o6'] = {
             'value' : o7o6,
             'lims'  : [0.0, 1.5],
@@ -795,7 +810,7 @@ class events_mgr:
         t_utc   = utc_from_omni(self.f_sc)
         print " Ready."
 
-        #++++++++++++++++++++ CORRECCION DE BORDES +++++++++++++++++++++++++++++
+        #++++++++++++++++++++ CORRECCION DE BORDES +++++++++++++++++++++++++++
         # IMPORTANTE:
         # Solo valido para los "63 eventos" (MCflag='2', y visibles en ACE)
         # NOTA: dan saltos de shock mas marcados con True.
@@ -805,7 +820,7 @@ class events_mgr:
             ShiftCorrection(ShiftDts, tb.tend_icme)
             ShiftCorrection(ShiftDts, tb.tini_mc)
             ShiftCorrection(ShiftDts, tb.tend_mc)
-        #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         B       = self.f_sc.variables['Bmag'].data.copy()
         Vsw     = self.f_sc.variables['Vp'].data.copy()
         Temp    = self.f_sc.variables['Tp'].data.copy()
@@ -879,8 +894,6 @@ class events_mgr:
         fgap        = self.fgap
         MCwant      = self.FILTER['MCwant']
 
-        #dt_mc       = self.aux['dt_mc']
-        #dt_sh       = self.aux['dt_sh']
         ThetaThres  = self.CUTS['ThetaThres']
         if self.FILTER['vsw_filter']:
             v_lo, v_hi = self.CUTS['v_lo'], self.CUTS['v_hi']
@@ -907,7 +920,6 @@ class events_mgr:
 
         #-------------------- prefijos:
         # prefijo para filtro Wang:
-        #WangFlag = wangflag(ThetaThres) #'NaN' #wangflag(ThetaThres)
         if self.FILTER['wang']:
             WangFlag = str(ThetaThres)
         else:
@@ -949,20 +961,17 @@ class events_mgr:
             fnro = open(fname_nro, 'a') # si uso otra data input, voy anotando el nro
                                         # de eventos al final del archivo 'fname_nro'
 
-        #--------------------------------------------------------------------------------
+        #-------------------------------------------------------------------
         nvars = len(self.VARS)
-        #for i in range(nvars):
         for varname in self.VARS.keys():
             fname_fig = '%s_%s.png' % (FNAME_FIGS, varname) #self.VARS[i][1])
             print ccl.Rn+ " ------> %s" % fname_fig
-            #varname = self.VARS[i][1]
             ylims   = self.VARS[varname]['lims'] #self.VARS[i][2]
             ylabel  = self.VARS[varname]['label'] #self.VARS[i][3]
             average = self.out['dVARS'][varname][0]
             mediana = self.out['dVARS'][varname][1] #self.out['dVARS'][i][4]
             std_err = self.out['dVARS'][varname][2]
             nValues = self.out['dVARS'][varname][3] # number of values aporting to each data bin
-            #binsPerTimeUnit = nbin  #nbin/(1+nbefore+nafter)
             N_selec = self.out['nok'] #self.out['dVARS'][varname][0]
             N_final = self.out['nEnough'][varname] #nEnough[i]
 
@@ -1165,6 +1174,7 @@ class events_mgr:
             print ccl.Rn + "\n --------> FATAL ERROR!!!: self.n_SELECC=<0"
             print " exiting....... \n" + ccl.W
             raise SystemExit
+
 
 #+++++++++++++++++++++++++++++++++
 if __name__=='__main__':
