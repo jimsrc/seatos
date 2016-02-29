@@ -1,4 +1,8 @@
 #!/usr/bin/env ipython
+"""
+ runtime:
+ ./mm.py  13.41s user 6.58s system 144% cpu 13.859 total
+ """
 from mix_funcs import *
 import os
 
