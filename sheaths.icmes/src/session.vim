@@ -281,11 +281,10 @@ set tabstop=4
 set title
 set undodir=~/.vim/dirs/undos
 set undofile
-set updatetime=200
 set viminfo='100,<50,s10,h,n~/.vim/dirs/viminfo
 set wildignore=*.pyc
 set wildmode=list:longest
-set window=43
+set window=42
 let s:so_save = &so | let s:siso_save = &siso | set so=0 siso=0
 let v:this_session=expand("<sfile>:p")
 silent only
@@ -294,9 +293,10 @@ if expand('%') == '' && !&modified && line('$') <= 1 && getline(1) == ''
   let s:wipebuf = bufnr('%')
 endif
 set shortmess=aoO
-badd +1 tt_icme.py
-badd +572 ~/ASOC_ICME-FD/icmes_richardson/data/mean_profiles/ace/shared_lib/shared_funcs.py
+badd +99 tt_icme.py
+badd +617 ~/ASOC_ICME-FD/icmes_richardson/data/mean_profiles/ace/shared_lib/shared_funcs.py
 badd +108 extract.py
+badd +0 ~/ASOC_ICME-FD/icmes_richardson/data/mean_profiles/ace/shared_lib/read_NewTable.py
 args tt_icme.py
 edit tt_icme.py
 set splitbelow splitright
@@ -306,9 +306,7 @@ vsplit
 wincmd w
 wincmd t
 set winheight=1 winwidth=1
-exe '1resize ' . ((&lines * 31 + 22) / 44)
 exe 'vert 1resize ' . ((&columns * 80 + 81) / 162)
-exe '2resize ' . ((&lines * 31 + 22) / 44)
 exe 'vert 2resize ' . ((&columns * 81 + 81) / 162)
 argglobal
 vnoremap <buffer> 	 :py isort_visual()
@@ -424,11 +422,11 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 90 - ((26 * winheight(0) + 15) / 31)
+let s:l = 91 - ((33 * winheight(0) + 20) / 40)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-90
+91
 normal! 0
 wincmd w
 argglobal
@@ -546,16 +544,15 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 96 - ((20 * winheight(0) + 15) / 31)
+let s:l = 36 - ((12 * winheight(0) + 20) / 40)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-96
-normal! 0
+36
+normal! 064l
 wincmd w
-exe '1resize ' . ((&lines * 31 + 22) / 44)
+2wincmd w
 exe 'vert 1resize ' . ((&columns * 80 + 81) / 162)
-exe '2resize ' . ((&lines * 31 + 22) / 44)
 exe 'vert 2resize ' . ((&columns * 81 + 81) / 162)
 tabedit ~/ASOC_ICME-FD/icmes_richardson/data/mean_profiles/ace/shared_lib/shared_funcs.py
 set splitbelow splitright
@@ -569,9 +566,9 @@ wincmd w
 wincmd w
 wincmd t
 set winheight=1 winwidth=1
-exe '1resize ' . ((&lines * 12 + 22) / 44)
+exe '1resize ' . ((&lines * 16 + 21) / 43)
 exe 'vert 1resize ' . ((&columns * 75 + 81) / 162)
-exe '2resize ' . ((&lines * 28 + 22) / 44)
+exe '2resize ' . ((&lines * 23 + 21) / 43)
 exe 'vert 2resize ' . ((&columns * 75 + 81) / 162)
 exe 'vert 3resize ' . ((&columns * 86 + 81) / 162)
 argglobal
@@ -688,11 +685,11 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 766 - ((5 * winheight(0) + 6) / 12)
+let s:l = 425 - ((5 * winheight(0) + 8) / 16)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-766
+425
 normal! 08l
 wincmd w
 argglobal
@@ -810,12 +807,12 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 418 - ((12 * winheight(0) + 14) / 28)
+let s:l = 407 - ((6 * winheight(0) + 11) / 23)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-418
-normal! 07l
+407
+normal! 012l
 wincmd w
 argglobal
 edit ~/ASOC_ICME-FD/icmes_richardson/data/mean_profiles/ace/shared_lib/shared_funcs.py
@@ -932,19 +929,144 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 1011 - ((20 * winheight(0) + 20) / 41)
+let s:l = 309 - ((19 * winheight(0) + 20) / 40)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-1011
+309
 normal! 08l
 wincmd w
-3wincmd w
-exe '1resize ' . ((&lines * 12 + 22) / 44)
+2wincmd w
+exe '1resize ' . ((&lines * 16 + 21) / 43)
 exe 'vert 1resize ' . ((&columns * 75 + 81) / 162)
-exe '2resize ' . ((&lines * 28 + 22) / 44)
+exe '2resize ' . ((&lines * 23 + 21) / 43)
 exe 'vert 2resize ' . ((&columns * 75 + 81) / 162)
 exe 'vert 3resize ' . ((&columns * 86 + 81) / 162)
+tabedit ~/ASOC_ICME-FD/icmes_richardson/data/mean_profiles/ace/shared_lib/read_NewTable.py
+set splitbelow splitright
+wincmd t
+set winheight=1 winwidth=1
+argglobal
+vnoremap <buffer> 	 :py isort_visual()
+xnoremap <buffer> <silent> \a} `>a}`<i{
+xnoremap <buffer> <silent> \a{ `>a}`<i{
+xnoremap <buffer> <silent> \a) `>a)`<i(
+xnoremap <buffer> <silent> \a( `>a)`<i(
+xnoremap <buffer> <silent> \a' `>a'`<i'
+xnoremap <buffer> <silent> \a] `>a]`<i[
+xnoremap <buffer> <silent> \a[ `>a]`<i[
+xnoremap <buffer> <silent> \a" `>a"`<i"
+xnoremap <buffer> <silent> \a` `>a``<i`
+setlocal keymap=
+setlocal noarabic
+setlocal autoindent
+setlocal balloonexpr=
+setlocal nobinary
+setlocal bufhidden=
+setlocal buflisted
+setlocal buftype=
+setlocal nocindent
+setlocal cinkeys=0{,0},0),:,!^F,o,O,e
+setlocal cinoptions=
+setlocal cinwords=if,else,while,do,for,switch
+setlocal colorcolumn=
+setlocal comments=s1:/*,mb:*,ex:*/,://,b:#,:XCOMM,n:>,fb:-
+setlocal commentstring=#%s
+setlocal complete=.,w,b,u,t,i
+setlocal concealcursor=
+setlocal conceallevel=0
+setlocal completefunc=
+setlocal nocopyindent
+setlocal cryptmethod=
+setlocal nocursorbind
+setlocal nocursorcolumn
+set cursorline
+setlocal cursorline
+setlocal define=
+setlocal dictionary=
+setlocal nodiff
+setlocal equalprg=
+setlocal errorformat=
+setlocal expandtab
+if &filetype != 'python'
+setlocal filetype=python
+endif
+setlocal foldcolumn=0
+setlocal foldenable
+setlocal foldexpr=0
+setlocal foldignore=#
+setlocal foldlevel=0
+setlocal foldmarker={{{,}}}
+setlocal foldmethod=manual
+setlocal foldminlines=1
+setlocal foldnestmax=20
+setlocal foldtext=foldtext()
+setlocal formatexpr=
+setlocal formatoptions=tcq
+setlocal formatlistpat=^\\s*\\d\\+[\\]:.)}\\t\ ]\\s*
+setlocal grepprg=
+setlocal iminsert=2
+setlocal imsearch=2
+setlocal include=^\\s*\\(from\\|import\\)
+setlocal includeexpr=substitute(v:fname,'\\.','/','g')
+setlocal indentexpr=GetPythonIndent(v:lnum)
+setlocal indentkeys=0{,0},:,!^F,o,O,e,<:>,=elif,=except
+setlocal noinfercase
+setlocal iskeyword=@,48-57,_,192-255
+setlocal keywordprg=pydoc
+setlocal nolinebreak
+setlocal nolisp
+setlocal nolist
+setlocal makeprg=
+setlocal matchpairs=(:),{:},[:]
+setlocal modeline
+setlocal modifiable
+setlocal nrformats=octal,hex
+set number
+setlocal number
+setlocal numberwidth=4
+setlocal omnifunc=pythoncomplete#Complete
+setlocal path=
+setlocal nopreserveindent
+setlocal nopreviewwindow
+setlocal quoteescape=\\
+setlocal noreadonly
+setlocal norelativenumber
+setlocal norightleft
+setlocal rightleftcmd=search
+setlocal noscrollbind
+setlocal shiftwidth=4
+setlocal noshortname
+setlocal nosmartindent
+setlocal softtabstop=4
+setlocal nospell
+setlocal spellcapcheck=[.?!]\\_[\\])'\"\	\ ]\\+
+setlocal spellfile=
+setlocal spelllang=en
+setlocal statusline=%!airline#statusline(1)
+setlocal suffixesadd=.py
+setlocal swapfile
+setlocal synmaxcol=3000
+if &syntax != 'python'
+setlocal syntax=python
+endif
+setlocal tabstop=4
+setlocal tags=
+setlocal textwidth=0
+setlocal thesaurus=
+setlocal undofile
+setlocal nowinfixheight
+setlocal nowinfixwidth
+setlocal wrap
+setlocal wrapmargin=0
+silent! normal! zE
+let s:l = 9 - ((8 * winheight(0) + 20) / 40)
+if s:l < 1 | let s:l = 1 | endif
+exe s:l
+normal! zt
+9
+normal! 0
+2wincmd w
 tabedit extract.py
 set splitbelow splitright
 wincmd _ | wincmd |
@@ -953,9 +1075,9 @@ vsplit
 wincmd w
 wincmd t
 set winheight=1 winwidth=1
-exe '1resize ' . ((&lines * 31 + 22) / 44)
+exe '1resize ' . ((&lines * 31 + 21) / 43)
 exe 'vert 1resize ' . ((&columns * 80 + 81) / 162)
-exe '2resize ' . ((&lines * 31 + 22) / 44)
+exe '2resize ' . ((&lines * 31 + 21) / 43)
 exe 'vert 2resize ' . ((&columns * 81 + 81) / 162)
 argglobal
 vnoremap <buffer> 	 :py isort_visual()
@@ -1200,12 +1322,12 @@ normal! zt
 87
 normal! 01l
 wincmd w
-3wincmd w
-exe '1resize ' . ((&lines * 31 + 22) / 44)
+2wincmd w
+exe '1resize ' . ((&lines * 31 + 21) / 43)
 exe 'vert 1resize ' . ((&columns * 80 + 81) / 162)
-exe '2resize ' . ((&lines * 31 + 22) / 44)
+exe '2resize ' . ((&lines * 31 + 21) / 43)
 exe 'vert 2resize ' . ((&columns * 81 + 81) / 162)
-tabnext 2
+tabnext 1
 if exists('s:wipebuf')
   silent exe 'bwipe ' . s:wipebuf
 endif

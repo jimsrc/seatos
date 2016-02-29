@@ -15,6 +15,7 @@ import sys
 sys.path.append('../../shared_lib')
 from shared_funcs import * #c_funcs import *
 #------------------------------
+#from read_NewTable import tshck, tini_icme, tend_icme, tini_mc, tend_mc, n_icmes, MCsig
 from ShiftTimes import *
 import numpy as np
 from z_expansion_gulisano import z as z_exp
@@ -84,8 +85,8 @@ fgap                    = 0.2
 #--- bordes de estructura
 # Analisis de sheath-from-icme para Auger
 bounds      = boundaries()
-bounds.tini = tb.tini_icme #tb.tshck #tb.tini_mc #tb.tini_mc #tb.tshck 
-bounds.tend = tb.tend_icme #tb.tini_icme #tb.tend_mc #tb.tend_mc #tb.tini_mc
+bounds.tini = tb.tshck #tb.tini_mc #tb.tini_mc #tb.tshck 
+bounds.tend = tb.tini_icme #tb.tend_mc #tb.tend_mc #tb.tini_mc
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 gral.data_name      = 'Auger' #'McMurdo' #'ACE'

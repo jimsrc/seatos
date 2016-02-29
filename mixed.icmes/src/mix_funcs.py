@@ -12,14 +12,15 @@ def run_plot(dir_mc, dir_sh, dir_figs, FNAME, nbins, MCwant, WangFlag, fgap, N_M
     # NOTA: "N-mcs" y "N-sheaths" chekearlos a ojo!
     # varname, range-for-plot, label, N-mcs, N-sheaths
     VARstf = {}
-    VARstf['B']         = [[5., 29.], 'B [nT]']
-    VARstf['V']         = [[350., 750.], 'Vsw [km/s]' ]
-    VARstf['rmsBoB']    = [[0.015, 0.14], 'rms($\hat B$/|B|) [1]']
-    VARstf['beta']      = [[0.03, 10.], '$\\beta$ [1]']
-    VARstf['Pcc']       = [[1., 21.], 'proton density [#/cc]']
-    VARstf['Temp']      = [[1e4, 4e5], 'Temp [K]']    
-    VARstf['AlphaRatio']= [[0.001, 0.09], 'alpha ratio [K]']
-    VARstf['CRs']       = [[-0.6, +0.5], 'GCR deviation [%]']
+    VARstf['B.ACE']         = [[4., 12.], 'B [nT]']
+    VARstf['V.ACE']         = [[350., 500.], 'Vsw [km/s]' ]
+    VARstf['rmsBoB.ACE']    = [[0.01, 0.11], 'rms($\hat B$/|B|) [1]']
+    VARstf['rmsB.ACE']      = [[0.1, 1.0], 'rms($\hat B$) [1]']
+    VARstf['beta.ACE']      = [[0.1, 10.], '$\\beta$ [1]']
+    VARstf['Pcc.ACE']       = [[1., 21.], 'proton density [#/cc]']
+    VARstf['Temp.ACE']      = [[1e4, 2e5], 'Temp [K]']    
+    VARstf['AlphaRatio.ACE']= [[0.001, 0.09], 'alpha ratio [K]']
+    VARstf['CRs.Auger']       = [[-0.6, +0.4], 'GCR deviation [%]']
 
     print ccl.On+" generando figuras en: %s"%dir_figs + ccl.W
     #------------------------------
@@ -104,7 +105,7 @@ def run_plot(dir_mc, dir_sh, dir_figs, FNAME, nbins, MCwant, WangFlag, fgap, N_M
                 MCflag: %s \n\
                 WangFlag: %s' % (Nmc, Nsh, nbins, MCwant, WangFlag)
         #ax.set_title(TITLE)
-        if varname=='beta':
+        if varname in ('beta.ACE', 'rmsB.ACE', 'rmsBoB.ACE'):
             ax.set_yscale('log')
         fname_fig = dir_figs+'/'+fname_var
         savefig('%s.png'%fname_fig, dpi=200, format='png', bbox_inches='tight')
