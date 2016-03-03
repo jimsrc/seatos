@@ -280,6 +280,7 @@ set tabstop=4
 set title
 set undodir=~/.vim/dirs/undos
 set undofile
+set updatetime=200
 set viminfo='100,<50,s10,h,n~/.vim/dirs/viminfo
 set wildignore=*.pyc
 set wildmode=list:longest
@@ -295,7 +296,7 @@ set shortmess=aoO
 badd +1 mm.py
 badd +1 mix_funcs.py
 badd +0 split
-badd +0 splitted.py
+badd +162 splitted.py
 args mm.py
 edit mm.py
 set splitbelow splitright
@@ -415,12 +416,12 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 7 - ((4 * winheight(0) + 20) / 40)
+let s:l = 50 - ((36 * winheight(0) + 20) / 40)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-7
-normal! 0
+50
+normal! 050l
 tabedit mix_funcs.py
 set splitbelow splitright
 wincmd _ | wincmd |
@@ -429,8 +430,8 @@ vsplit
 wincmd w
 wincmd t
 set winheight=1 winwidth=1
-exe 'vert 1resize ' . ((&columns * 80 + 81) / 162)
-exe 'vert 2resize ' . ((&columns * 81 + 81) / 162)
+exe 'vert 1resize ' . ((&columns * 80 + 86) / 172)
+exe 'vert 2resize ' . ((&columns * 91 + 86) / 172)
 argglobal
 vnoremap <buffer> 	 :py isort_visual()
 xnoremap <buffer> <silent> \a} `>a}`<i{
@@ -545,7 +546,7 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 16 - ((15 * winheight(0) + 20) / 40)
+let s:l = 16 - ((10 * winheight(0) + 20) / 41)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
@@ -667,15 +668,15 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 15 - ((14 * winheight(0) + 20) / 40)
+let s:l = 15 - ((14 * winheight(0) + 20) / 41)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
 15
 normal! 0
 wincmd w
-exe 'vert 1resize ' . ((&columns * 80 + 81) / 162)
-exe 'vert 2resize ' . ((&columns * 81 + 81) / 162)
+exe 'vert 1resize ' . ((&columns * 80 + 86) / 172)
+exe 'vert 2resize ' . ((&columns * 91 + 86) / 172)
 tabedit splitted.py
 set splitbelow splitright
 wincmd _ | wincmd |
@@ -684,8 +685,8 @@ vsplit
 wincmd w
 wincmd t
 set winheight=1 winwidth=1
-exe 'vert 1resize ' . ((&columns * 80 + 81) / 162)
-exe 'vert 2resize ' . ((&columns * 81 + 81) / 162)
+exe 'vert 1resize ' . ((&columns * 80 + 86) / 172)
+exe 'vert 2resize ' . ((&columns * 91 + 86) / 172)
 argglobal
 vnoremap <buffer> 	 :py isort_visual()
 xnoremap <buffer> <silent> \a} `>a}`<i{
@@ -800,12 +801,12 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 27 - ((26 * winheight(0) + 20) / 40)
+let s:l = 49 - ((13 * winheight(0) + 15) / 31)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-27
-normal! 036l
+49
+normal! 0
 wincmd w
 argglobal
 edit splitted.py
@@ -922,16 +923,16 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 1 - ((0 * winheight(0) + 20) / 40)
+let s:l = 126 - ((26 * winheight(0) + 15) / 31)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-1
-normal! 0
+126
+normal! 034l
 wincmd w
-exe 'vert 1resize ' . ((&columns * 80 + 81) / 162)
-exe 'vert 2resize ' . ((&columns * 81 + 81) / 162)
-tabnext 1
+exe 'vert 1resize ' . ((&columns * 80 + 86) / 172)
+exe 'vert 2resize ' . ((&columns * 91 + 86) / 172)
+tabnext 3
 if exists('s:wipebuf')
   silent exe 'bwipe ' . s:wipebuf
 endif
