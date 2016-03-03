@@ -1,6 +1,12 @@
 #!/usr/bin/env ipython
+from pylab import *
+from numpy import *
+from scipy.io.netcdf import netcdf_file
+from datetime import datetime, time, timedelta
+#------------ shared libraries:
 """
-Analisis of sheath-from-icme for Auger Low Energy data
+--- antes de modificar cosas, tener en cuenta los bugs en: 
+'../../shared_lib/COMENTARIOS.txt' 
 
 IMPORTANT:
     - Note that 'structure' argument refers to MC, sheath, ICME,
@@ -12,15 +18,6 @@ IMPORTANT:
 
       and 'events_mgr.filter_events()' uses this flag to know which 
       average values it will use to filter events.
-"""
-from pylab import *
-from numpy import *
-from scipy.io.netcdf import netcdf_file
-from datetime import datetime, time, timedelta
-#------------ shared libraries:
-"""
---- antes de modificar cosas, tener en cuenta los bugs en: 
-'../../shared_lib/COMENTARIOS.txt' 
 """
 import sys
 sys.path.append('../../shared_lib')
@@ -43,9 +40,10 @@ gral                = general()
 day                 = 86400.
 #---- cosas input
 gral.fnames = fnames = {}
-#fnames['ACE']       = '%s/data_ace/64sec_mag-swepam/ace.1998-2014.nc' % HOME
 fnames['ACE']       = '%s/data_ace/64sec_mag-swepam/ace.1998-2015.nc' % HOME
 fnames['McMurdo']   = '%s/actividad_solar/neutron_monitors/mcmurdo/mcmurdo_utc_correg.dat' % HOME
+#fnames['table_richardson']  = '../../../../data_317events_iii.nc'
+#fnames['table_richardson']  = '%s/ASOC_ICME-FD/icmes_richardson/data/data_317events_iii.nc' % HOME
 fnames['Auger']     = '%s/data_auger/estudios_AoP/data/unir_con_presion/data_final_2006-2013.h5' % PAO
 fnames['table_richardson']  = '%s/ASOC_ICME-FD/icmes_richardson/data/rich_events_ace.nc' % HOME
 
@@ -53,7 +51,7 @@ fnames['table_richardson']  = '%s/ASOC_ICME-FD/icmes_richardson/data/rich_events
 gral.dirs =  dirs   = {}
 dirs['dir_plots']   = '../plots'
 dirs['dir_ascii']   = '../ascii'
-dirs['suffix']      = '_auger_'    # sufijo para el directorio donde guardare
+dirs['suffix']      = '_auger.test_'    # sufijo para el directorio donde guardare
                                     # estas figuras
 
 #-------------------------------------------------------------
@@ -68,9 +66,9 @@ MCwant  = {'flags':     ('0', '1', '2', '2H'),
 #           'alias':     '2'}            # para "flagear" el nombre/ruta de las figuras
 
 FILTER                  = {}
-FILTER['Mcmultiple']    = False #True para incluir eventos multi-MC
+FILTER['Mcmultiple']    = False # True para incluir eventos multi-MC
 FILTER['CorrShift']     = False #True
-FILTER['wang']          = False #False #True
+FILTER['wang']          = False #True #False #True
 FILTER['vsw_filter']    = False #True
 FILTER['z_filter_on']   = False
 FILTER['MCwant']        = MCwant
@@ -94,25 +92,55 @@ nBin['total']           = (1+nBin['before']+nBin['after'])*nBin['bins_per_utime'
 fgap                    = 0.2
 
 #--- bordes de estructura
-# Analisis de sheath-from-icme para Auger
 bounds      = boundaries()
-bounds.tini = tb.tshck #tb.tini_mc #tb.tini_mc #tb.tshck 
-bounds.tend = tb.tini_icme #tb.tend_mc #tb.tend_mc #tb.tini_mc
+bounds.tini = tb.tshck      #tb.tini_mc #tb.tshck 
+bounds.tend = tb.tini_icme    #tb.tend_mc #tb.tini_mc
 
-#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ Auger
 gral.data_name      = 'Auger' #'McMurdo' #'ACE'
 
 FILTER['vsw_filter']    = False
 emgr = events_mgr(gral, FILTER, CUTS, bounds, nBin, fgap, tb, z_exp, structure='i')
 emgr.run_all()
 emgr.lock_IDs()
-#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-emgr.data_name      = 'ACE' #'Auger' #'McMurdo'
+#++++ limites
+LOW, MID1, MID2, TOP = 100.0, 375.0, 450.0, 3000.0
+emgr.FILTER['vsw_filter']    = True
+emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = LOW, MID1 # 100.0, 450.0
+emgr.run_all()
+emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID1, MID2 # 450.0, 550.0
+emgr.run_all()
+emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID2, TOP # 550.0, 3000.0
 emgr.run_all()
 
-emgr.data_name      = 'McMurdo' #'Auger' #'McMurdo'
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ McMurdo
+emgr.data_name      = 'McMurdo'
+
+emgr.FILTER['vsw_filter']    = False
 emgr.run_all()
 
-#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-##
+#++++ split
+emgr.FILTER['vsw_filter']    = True
+emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = LOW, MID1 # 100.0, 450.0
+emgr.run_all()
+emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID1, MID2 # 450.0, 550.0
+emgr.run_all()
+emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID2, TOP # 550.0, 3000.0
+emgr.run_all()
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ ACE
+emgr.data_name      = 'ACE' #'McMurdo'
+
+emgr.FILTER['vsw_filter']    = False
+emgr.run_all()
+
+#++++ split
+emgr.FILTER['vsw_filter']    = True
+emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = LOW, MID1 # 100.0, 450.0
+emgr.run_all()
+emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID1, MID2 # 450.0, 550.0
+emgr.run_all()
+emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID2, TOP # 550.0, 3000.0
+emgr.run_all()
+#EOF

@@ -1,4 +1,4 @@
-from numpy import *
+#from numpy import *
 from pylab import *
 from datetime import datetime, time, timedelta
 import numpy as np
@@ -379,8 +379,8 @@ class boundaries:
 
 
 class events_mgr:
-    def __init__(self, gral, FILTER, CUTS, bd, nBin, fgap, tb, z_exp):
-        #self.fnames     = fnames
+    def __init__(self, gral, FILTER, CUTS, bd, nBin, fgap, tb, z_exp, structure='mc'):
+        self.structure  = structure
         self.data_name  = gral.data_name
         self.FILTER     = FILTER
         self.CUTS       = CUTS
@@ -617,6 +617,9 @@ class events_mgr:
         self.restricted_IDs = IDs[varname]
         self.IDs_locked = True
 
+        dummy = np.array(self.restricted_IDs)
+        np.savetxt('./__dummy__', dummy)
+
 
     def rebine_final(self):
         """
@@ -842,7 +845,7 @@ class events_mgr:
         }
         VARS['V.'+self.data_name] = {
             'value' : Vsw,
-            'lims'  : [380., 650.],
+            'lims'  : [300., 650.],
             'label' : 'Vsw [km/s]'
         }
         VARS['rmsBoB.'+self.data_name] = {
@@ -1066,6 +1069,7 @@ class events_mgr:
 
 
     def filter_events(self):
+        structure       = self.structure
         tb              = self.tb
         FILTER          = self.FILTER
         dTday           = self.CUTS['dTday']
@@ -1076,12 +1080,9 @@ class events_mgr:
         #MCsig  = array(f_events.variables['MC_sig'].data)# 2,1,0: MC, rotation, irregular
         #Vnsh   = array(f_events.variables['wang_Vsh'].data) # veloc normal del shock
         ThetaSh     = np.array(self.f_events.variables['wang_theta_shock'].data) # orientacion de la normal del shock
-        #i_V         = np.array(self.f_events.variables['i_V'].data) # velocidad de icme
-        i_V         = np.array(self.f_events.variables['mc_V'].data) # velocidad de icme
-        #i_B         = np.array(self.f_events.variables['i_B'].data) # B del icme
-        i_B         = np.array(self.f_events.variables['mc_B'].data) # B del icme
-        #i_dt        = np.array(self.f_events.variables['i_dt'].data) # B del icme
-        i_dt        = np.array(self.f_events.variables['mc_dt'].data) # B del icme
+        i_V         = self.f_events.variables[structure+'_V'].data.copy() # velocidad de icme
+        i_B         = self.f_events.variables[structure+'_B'].data.copy() # B del icme
+        i_dt        = self.f_events.variables[structure+'_dt'].data.copy() # B del icme
         i_dR            = i_dt*(i_V*AU_o_km*sec_o_day)
         self.rate_pre   = self.f_events.variables['rate_pre'].data.copy()
         self.rate_pre_Auger   = self.f_events.variables['rate_pre_Auger'].data.copy()
