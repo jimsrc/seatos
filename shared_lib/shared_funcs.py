@@ -617,8 +617,8 @@ class events_mgr:
         self.restricted_IDs = IDs[varname]
         self.IDs_locked = True
 
-        dummy = np.array(self.restricted_IDs)
-        np.savetxt('./__dummy__', dummy)
+        #dummy = np.array(self.restricted_IDs)
+        #np.savetxt('./__dummy__', dummy)
 
 
     def rebine_final(self):

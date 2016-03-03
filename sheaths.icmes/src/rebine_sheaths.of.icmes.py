@@ -51,7 +51,7 @@ fnames['table_richardson']  = '%s/ASOC_ICME-FD/icmes_richardson/data/rich_events
 gral.dirs =  dirs   = {}
 dirs['dir_plots']   = '../plots'
 dirs['dir_ascii']   = '../ascii'
-dirs['suffix']      = '_auger.test_'    # sufijo para el directorio donde guardare
+dirs['suffix']      = '_auger_'    # sufijo para el directorio donde guardare
                                     # estas figuras
 
 #-------------------------------------------------------------

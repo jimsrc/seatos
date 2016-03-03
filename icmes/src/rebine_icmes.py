@@ -51,7 +51,7 @@ fnames['table_richardson']  = '%s/ASOC_ICME-FD/icmes_richardson/data/rich_events
 gral.dirs =  dirs   = {}
 dirs['dir_plots']   = '../plots'
 dirs['dir_ascii']   = '../ascii'
-dirs['suffix']      = '_auger.test_'    # sufijo para el directorio donde guardare
+dirs['suffix']      = '_auger_'    # sufijo para el directorio donde guardare
                                     # estas figuras
 
 #-------------------------------------------------------------
@@ -93,8 +93,8 @@ fgap                    = 0.2
 
 #--- bordes de estructura
 bounds      = boundaries()
-bounds.tini = tb.tshck      #tb.tini_mc #tb.tshck 
-bounds.tend = tb.tini_icme    #tb.tend_mc #tb.tini_mc
+bounds.tini = tb.tini_icme      #tb.tini_mc #tb.tshck 
+bounds.tend = tb.tend_icme    #tb.tend_mc #tb.tini_mc
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ Auger
 gral.data_name      = 'Auger' #'McMurdo' #'ACE'
