@@ -95,7 +95,7 @@ stf['rmsBoB']    = {
                 }
 stf['rmsB']    = {
                 'label': 'rmsB [nT]',
-                'ylims': [0.2, 2.0],
+                'ylims': [0.1, 2.0],
                 'text_loc': {'mc':[4.5, 0.8], 'sh':[-1.95, 1.0]},
                 }
 stf['beta']    = {
@@ -128,6 +128,7 @@ stf['CRs']    = {
 dir_figs        = '../figs'
 dir_inp_mc      = '../../../../mcs/ascii/MCflag2/wShiftCorr/_test_Vmc_'
 dir_inp_sh      = '../../../../sheaths/ascii/MCflag2/wShiftCorr/_test_Vmc_'
+fname_fig       = '%s/figs_all.global.png' % dir_figs
 #vlo     = [100.0, 450.0, 550.0]
 #vhi     = [450.0, 550.0, 3000.0]
 #nvars   = len(stf.keys())
@@ -197,8 +198,6 @@ for i, varname in zip(range(nvars), VARNAMEs):
 
 
 #fig.tight_layout()
-#fname_fig   = dir_figs + '/fig_vlo.%3.1f_vhi.%3.1f_%s.png'%(vlo, vhi, varname)
-fname_fig = '%s/figs_all.global.png' % dir_figs
 savefig(fname_fig, dpi=150, bbox_inches='tight')
 close()
 

@@ -96,7 +96,7 @@ stf['V']    = {
                 }
 stf['rmsBoB']    = {
                 'label': 'rmsBoB [1]',
-                'ylims': [0.015, 0.21],
+                'ylims': [0.01, 0.21],
                 'text_loc_1': {'mc':[4.5, 0.020], 'sh':[-1.95, 0.02]},
                 'text_loc_2': {'mc':[4.5, 0.095], 'sh':[-1.95, 0.02]},
                 'text_loc_3': {'mc':[4.5, 0.099], 'sh':[-1.95, 0.02]},
@@ -152,9 +152,10 @@ TEXT = {}
 
 
 
-dir_figs        = '../figs'
-dir_inp_mc      = '../../../../mcs/ascii/MCflag2/wShiftCorr/_test_Vmc_'
-dir_inp_sh      = '../../../../sheaths/ascii/MCflag2/wShiftCorr/_test_Vmc_'
+dir_figs    = '../figs'
+dir_inp_mc  = '../../../../mcs/ascii/MCflag2/wShiftCorr/_test_Vmc_'
+dir_inp_sh  = '../../../../sheaths/ascii/MCflag2/wShiftCorr/_test_Vmc_'
+fname_fig   = '%s/figs_splitted_1.png' % dir_figs
 vlo     = [100.0, 450.0, 550.0]
 vhi     = [450.0, 550.0, 3000.0]
 nvars   = len(stf.keys())
@@ -243,8 +244,6 @@ for i in range(3):
     fnro_sh.close()
 
 #fig.tight_layout()
-#fname_fig   = dir_figs + '/fig_vlo.%3.1f_vhi.%3.1f_%s.png'%(vlo, vhi, varname)
-fname_fig = '%s/figs_splitted_1.png' % dir_figs
 savefig(fname_fig, dpi=150, bbox_inches='tight')
 close()
 
