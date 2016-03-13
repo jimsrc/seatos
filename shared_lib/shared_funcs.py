@@ -397,11 +397,12 @@ class events_mgr:
         #self.f_sc       = netcdf_file(gral.fnames[gral.data_name], 'r')
         self.f_events   = netcdf_file(gral.fnames['table_richardson'], 'r')
         print " -------> archivos input leidos!"
+        # put False to all passible data-flags
+        self.names_ok   = ('Auger', 'McMurdo', 'ACE', 'ACE_o7o6')
+        for name in self.names_ok:
+            read_flag   = 'read_'+self.data_name
+            setattr(self, read_flag, False) # True: if files are already read
 
-        self.read_ace   = False # True: si ya lei los archivos input
-        self.read_murdo = False # True: si ya lei los archivos input
-        self.read_o7o6  = False # True: si ya lei los archivos input
-        self.read_auger = False # True: si ya lei los archivos input
         self.data_name_ = str(self.data_name) # nombre de la data input inicial (*1)
 
         self.IDs_locked = False      # (*2)
@@ -420,7 +421,7 @@ class events_mgr:
         self.filter_events()
         print "\n ---> filtrado de eventos (n:%d): OK\n" % (self.n_SELECC)
         #----- load data y los shiftimes "omni"
-        self.load_data_and_timeshift()
+        self.load_files_and_timeshift_ii()
         #----- rebineo y promedios
         self.rebine()
         self.rebine_final()
@@ -688,37 +689,36 @@ class events_mgr:
         self.out['tnorm']    = tnorm #OUT['dVARS'][first_varname][2] # deberia ser =tnorm
 
 
-    def load_data_and_timeshift(self):
-        if self.data_name=='ACE':
-            if not(self.read_ace):
-                self.load_data_ACE()
-                self.read_ace = True # True: ya lei los archivos input
+    def __getattr__(self, attname):
+        if attname[:10]=='load_data_':
+            return self.attname
 
-        elif self.data_name=='Auger':
-            if not(self.read_auger):
-                self.load_data_Auger()
-                self.read_auger = True # True: ya lei los archivos input
 
-        elif self.data_name=='McMurdo':
-            if not(self.read_murdo):
-                self.load_data_McMurdo()
-                self.read_murdo = True # True: ya lei los archivos input
+    def load_files_and_timeshift_ii(self):
+        read_flag = 'read_'+self.data_name # e.g. self.read_Auger
+        """
+        if not(read_flag in self.__dict__.keys()): # do i know u?
+             setattr(self, read_flag, False) #True: if files are already read
+        """
+        #--- read data and mark flag as read!
+        if not( getattr(self, read_flag) ):
+            attname = 'load_data_'+self.data_name
+            getattr(self, attname)()    # call method 'load_data_...()'
+            self.read_flag = True       # True: ya lei los archivos input
+            #setattr(self, read_flag, True) # True: if files are already read
 
-        elif self.data_name=='ACE_o7o6':
-            if not(self.read_o7o6):
-                self.load_data_o7o6()
-                self.read_o7o6 = True # True: ya lei los archivos input
-
-        else:
+        #--- check weird case
+        if not(self.data_name in self.names_ok):
             print " --------> BAD 'self.data_name'!!!"
-            print " ---> self.read_ace: ", self.read_ace
-            print " ---> self.read_murdo: ", self.read_murdo
-            print " ---> self.read_auger: ", self.read_auger
+            for name in self.names_ok:
+                read_flag = getattr(self, 'read_'+self.data_name)
+                print " ---> self.read_%s: " % name, read_flag
+
             print " exiting.... "
             raise SystemExit
 
 
-    def load_data_o7o6(self):
+    def load_data_ACE_o7o6(self):
         tb          = self.tb
         nBin        = self.nBin
         bd          = self.bd
@@ -772,7 +772,6 @@ class events_mgr:
         }
         self.nvars  = len(VARS.keys())
         #---------
-
         self.aux = aux = {}
         aux['SELECC']    = self.SELECC
 
