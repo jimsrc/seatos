@@ -1,4 +1,4 @@
-from pylab import *
+#from pylab import *
 from numpy import copy
 #from numpy import *
 from datetime import datetime, time, timedelta
@@ -81,3 +81,4 @@ ShiftDts = {
     '300': timedelta(hours=-1, minutes=-15),
     '304': timedelta(hours=+0, minutes=-25)
     }
+#EOF

@@ -1,17 +1,18 @@
-#from numpy import *
-from pylab import *
+#!/usr/bin/env ipython
+# -*- coding: utf-8 -*- 
+from pylab import find, pause, figure, savefig, close
 from datetime import datetime, time, timedelta
 import numpy as np
 import console_colors as ccl
 from scipy.io.netcdf import netcdf_file
-from ShiftTimes import *
+from ShiftTimes import ShiftCorrection, ShiftDts
 import os
 import matplotlib.patches as patches
 import matplotlib.transforms as transforms
 import h5py
 from numpy import (
     mean, median, nanmean, nanmedian, std, nan, 
-    isnan, min, max, zeros, ones
+    isnan, min, max, zeros, ones, size
 )
 
 #from read_NewTable import tshck, tini_icme, tend_icme, tini_mc, tend_mc, n_icmes, MCsig
@@ -375,7 +376,11 @@ class general:
 
 class boundaries:
     def __init__(self):
-        name = 'name'
+        print self.__dict__
+        print dict(self)
+    def ff(self):
+        self.fg = 0.2
+
 
 
 class events_mgr:
@@ -397,14 +402,29 @@ class events_mgr:
         #self.f_sc       = netcdf_file(gral.fnames[gral.data_name], 'r')
         self.f_events   = netcdf_file(gral.fnames['table_richardson'], 'r')
         print " -------> archivos input leidos!"
-        # put False to all passible data-flags
-        self.names_ok   = ('Auger', 'McMurdo', 'ACE', 'ACE_o7o6')
+
+        #--- put False to all possible data-flags (all CR detector-names must be included in 'self.CR_observs')
+        self.names_ok   = ('Auger_scals', 'McMurdo', 'ACE', 'ACE_o7o6')
         for name in self.names_ok:
             read_flag   = 'read_'+self.data_name
             setattr(self, read_flag, False) # True: if files are already read
 
-        self.data_name_ = str(self.data_name) # nombre de la data input inicial (*1)
+        #--- names of CR observatories
+        self.CR_observs = ( #debe *incluir* a los metodos 'load_data_..()'
+            'Auger_scals', 'Auger_BandMuons', 'Auger_BandScals',\
+            'McMurdo')
 
+        #--- just a check for load_data_.. methods
+        #print " --> MYDIR... ", type(dir), dir
+        #print " --> METHODS... ", dir(events_mgr) #self.__dict__.keys()
+        #print "\n --> METHODS AGAIN... ", dir(self.__dir__)
+        for att_name in dir(events_mgr): # iterate on all methods
+            if att_name.startswith('load_data_'):
+                att_suffix = att_name.replace('load_data_', '')
+                assert att_suffix in self.names_ok,\
+                    " ---> uno de los metodos '%s' no esta tomando en cuenta en 'self.CR_observs' (%s) " % (att_name, att_suffix)
+
+        self.data_name_ = str(self.data_name) # nombre de la data input inicial (*1)
         self.IDs_locked = False      # (*2)
         """
         (*1):   si despues cambia 'self.data_name', me voy a dar
@@ -491,12 +511,17 @@ class events_mgr:
                     evdata['t_days'] = t
                     evdata[varname] = var
 
+                    if self.data_name in self.CR_observs:   # is it CR data?
+                        rate_pre = getattr(self, 'rate_pre_'+self.data_name)
+                        var = 100.*(var - rate_pre[i]) / rate_pre[i]
+                    """
                     if self.data_name=='McMurdo':
                         var = 100.*(var - self.rate_pre[i]) / self.rate_pre[i]
 
                     elif self.data_name=='Auger':
                         #print " ---> var.size: ", var.size
                         var = 100.*(var - self.rate_pre_Auger[i]) / self.rate_pre_Auger[i]
+                    """
 
                     # rebinea usando 'dt' como el ancho de nuevo bineo
                     out       = adaptar_ii(nwndw, dT, nbin, dt, t, var, self.fgap)
@@ -509,7 +534,8 @@ class events_mgr:
                         nEnough[varname] += 1
 
             else:
-                print ccl.Rn + " id:%d ---> dT/day:%g" % (i, dT), " -->SELECC: ", self.SELECC[i], ccl.W
+                print ccl.Rn + " id:%d ---> dT/day:%g" % (i, dT),\
+                      " (SELECC: ", self.SELECC[i], ')' + ccl.W
                 nbad +=1
 
         print " ----> len.ADAP: %d" % len(ADAP)
@@ -577,13 +603,12 @@ class events_mgr:
                                 bd.tend[i]
                               )
 
-                    if self.data_name=='McMurdo':
-                        var = 100.*(var - self.rate_pre[i]) / self.rate_pre[i]
+                    #--- read average CR rates before shock/disturbance
+                    if self.data_name in self.CR_observs:   # is it CR data?
+                        rate_pre = getattr(self, 'rate_pre_'+self.data_name)
+                        var = 100.*(var - rate_pre[i]) / rate_pre[i]
 
-                    elif self.data_name=='Auger':
-                        var = 100.*(var - self.rate_pre_Auger[i]) / self.rate_pre_Auger[i]
-
-                    # rebinea usando 'dt' como el ancho de nuevo bineo
+                    #--- rebinea usando 'dt' como el ancho de nuevo bineo
                     out       = adaptar_ii(nwndw, dT, nbin, dt, t, var, self.fgap)
                     enough    = out[0]       # True: data con menos de 100*'fgap'% de gap
                     Enough[varname]         += [ enough ]
@@ -594,7 +619,7 @@ class events_mgr:
                         nEnough[varname] += 1
 
             else:
-                print ccl.Rn + " id:%d ---> dT/day:%g" % (i, dT), " -->SELECC: ", self.SELECC[i], ccl.W
+                print ccl.Rn + " id:%d ---> dT/day:%g" % (i, dT), " (SELECC: ", self.SELECC[i], ')' + ccl.W
                 nbad +=1
 
         print " ----> len.ADAP: %d" % len(ADAP)
@@ -753,7 +778,7 @@ class events_mgr:
         aux['SELECC']    = self.SELECC
 
 
-    def load_data_Auger(self):
+    def load_data_Auger_scals(self):
         tb          = self.tb
         nBin        = self.nBin
         bd          = self.bd
@@ -1038,9 +1063,9 @@ class events_mgr:
             print " n_events: ", n_events
             prom     = self.out['dVARS'][varname][4]
             cc       = np.isnan(prom)
-            print " nprom: ", prom.size
+            print " nprom (all)    : ", prom.size
             prom     = prom[~cc]
-            print " nprom: ", prom.size
+            print " nprom (w/o nan): ", prom.size
             dims     = (dimname,)
             write_variable(fout, varname, dims, prom, 'd', 
                 'average_values per event')
@@ -1083,8 +1108,19 @@ class events_mgr:
         i_B         = self.f_events.variables[structure+'_B'].data.copy() # B del icme
         i_dt        = self.f_events.variables[structure+'_dt'].data.copy() # B del icme
         i_dR            = i_dt*(i_V*AU_o_km*sec_o_day)
-        self.rate_pre   = self.f_events.variables['rate_pre'].data.copy()
-        self.rate_pre_Auger   = self.f_events.variables['rate_pre_Auger'].data.copy()
+
+        #RatePre_Names = []
+        #--- seteamos miembros de 'self' q se llamen 'rate_pre_...'
+        for vname in self.f_events.variables.keys():
+            if vname.startswith('rate_pre_'):
+                #RatePre_Names += [ vname ] # save them to make checks later
+                var = self.f_events.variables[vname].data.copy()
+                setattr(self, vname, var)  # asignamos 'rate_pre_...' a 'self'
+
+        """
+        self.rate_pre   = self.f_events.variables['rate_pre_McMurdo'].data.copy()
+        self.rate_pre_Auger=self.f_events.variables['rate_pre_Auger'].data.copy()
+        """
         self.Afd        = self.f_events.variables['A_FD'].data.copy()
         #------------------------------------
 
