@@ -255,6 +255,7 @@ imap <silent> OD <Left>
 imap <silent> OC <Right>
 imap <silent> OB <Down>
 imap <silent> OA <Up>
+cabbr dbg Dbg
 cabbr w!! w !sudo tee "%"
 let &cpo=s:cpo_save
 unlet s:cpo_save
@@ -285,7 +286,7 @@ set undofile
 set viminfo='100,<50,s10,h,n~/.vim/dirs/viminfo
 set wildignore=*.pyc
 set wildmode=list:longest
-set window=42
+set window=47
 let s:so_save = &so | let s:siso_save = &siso | set so=0 siso=0
 let v:this_session=expand("<sfile>:p")
 silent only
@@ -294,8 +295,8 @@ if expand('%') == '' && !&modified && line('$') <= 1 && getline(1) == ''
   let s:wipebuf = bufnr('%')
 endif
 set shortmess=aoO
-badd +34 tt_icme.py
-badd +16 ~/ASOC_ICME-FD/icmes_richardson/data/mean_profiles/ace/shared_lib/shared_funcs.py
+badd +126 tt_icme.py
+badd +387 ~/ASOC_ICME-FD/icmes_richardson/data/mean_profiles/ace/shared_lib/shared_funcs.py
 badd +108 extract.py
 badd +1 ~/ASOC_ICME-FD/icmes_richardson/data/mean_profiles/ace/shared_lib/read_NewTable.py
 badd +146 rebine_sheaths.of.icmes.py
@@ -308,18 +309,18 @@ set splitbelow splitright
 wincmd _ | wincmd |
 vsplit
 1wincmd h
+wincmd w
 wincmd _ | wincmd |
 split
 1wincmd k
 wincmd w
-wincmd w
 wincmd t
 set winheight=1 winwidth=1
-exe '1resize ' . ((&lines * 20 + 21) / 43)
-exe 'vert 1resize ' . ((&columns * 82 + 78) / 157)
-exe '2resize ' . ((&lines * 19 + 21) / 43)
-exe 'vert 2resize ' . ((&columns * 82 + 78) / 157)
-exe 'vert 3resize ' . ((&columns * 74 + 78) / 157)
+exe 'vert 1resize ' . ((&columns * 82 + 81) / 162)
+exe '2resize ' . ((&lines * 22 + 24) / 48)
+exe 'vert 2resize ' . ((&columns * 79 + 81) / 162)
+exe '3resize ' . ((&lines * 22 + 24) / 48)
+exe 'vert 3resize ' . ((&columns * 79 + 81) / 162)
 argglobal
 vnoremap <buffer> 	 :py isort_visual()
 xnoremap <buffer> <silent> \a} `>a}`<i{
@@ -434,12 +435,12 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 53 - ((11 * winheight(0) + 10) / 20)
+let s:l = 56 - ((25 * winheight(0) + 22) / 45)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-53
-normal! 041l
+56
+normal! 0
 wincmd w
 argglobal
 edit tt_icme.py
@@ -556,11 +557,11 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 129 - ((15 * winheight(0) + 9) / 19)
+let s:l = 53 - ((8 * winheight(0) + 11) / 22)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-129
+53
 normal! 0
 wincmd w
 argglobal
@@ -678,36 +679,28 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 119 - ((28 * winheight(0) + 20) / 40)
+let s:l = 112 - ((10 * winheight(0) + 11) / 22)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-119
-normal! 037l
+112
+normal! 0
 wincmd w
-3wincmd w
-exe '1resize ' . ((&lines * 20 + 21) / 43)
-exe 'vert 1resize ' . ((&columns * 82 + 78) / 157)
-exe '2resize ' . ((&lines * 19 + 21) / 43)
-exe 'vert 2resize ' . ((&columns * 82 + 78) / 157)
-exe 'vert 3resize ' . ((&columns * 74 + 78) / 157)
+exe 'vert 1resize ' . ((&columns * 82 + 81) / 162)
+exe '2resize ' . ((&lines * 22 + 24) / 48)
+exe 'vert 2resize ' . ((&columns * 79 + 81) / 162)
+exe '3resize ' . ((&lines * 22 + 24) / 48)
+exe 'vert 3resize ' . ((&columns * 79 + 81) / 162)
 tabedit ~/ASOC_ICME-FD/icmes_richardson/data/mean_profiles/ace/shared_lib/shared_funcs.py
 set splitbelow splitright
 wincmd _ | wincmd |
 vsplit
 1wincmd h
-wincmd _ | wincmd |
-split
-1wincmd k
-wincmd w
 wincmd w
 wincmd t
 set winheight=1 winwidth=1
-exe '1resize ' . ((&lines * 22 + 21) / 43)
-exe 'vert 1resize ' . ((&columns * 72 + 78) / 157)
-exe '2resize ' . ((&lines * 17 + 21) / 43)
-exe 'vert 2resize ' . ((&columns * 72 + 78) / 157)
-exe 'vert 3resize ' . ((&columns * 84 + 78) / 157)
+exe 'vert 1resize ' . ((&columns * 72 + 81) / 162)
+exe 'vert 2resize ' . ((&columns * 89 + 81) / 162)
 argglobal
 vnoremap <buffer> 	 :py isort_visual()
 xnoremap <buffer> <silent> \a} `>a}`<i{
@@ -822,7 +815,7 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 476 - ((4 * winheight(0) + 11) / 22)
+let s:l = 476 - ((6 * winheight(0) + 22) / 45)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
@@ -944,141 +937,16 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 387 - ((4 * winheight(0) + 8) / 17)
+let s:l = 912 - ((16 * winheight(0) + 22) / 45)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-387
-normal! 0
+912
+normal! 028l
 wincmd w
-argglobal
-edit ~/ASOC_ICME-FD/icmes_richardson/data/mean_profiles/ace/shared_lib/shared_funcs.py
-vnoremap <buffer> 	 :py isort_visual()
-xnoremap <buffer> <silent> \a} `>a}`<i{
-xnoremap <buffer> <silent> \a{ `>a}`<i{
-xnoremap <buffer> <silent> \a) `>a)`<i(
-xnoremap <buffer> <silent> \a( `>a)`<i(
-xnoremap <buffer> <silent> \a' `>a'`<i'
-xnoremap <buffer> <silent> \a] `>a]`<i[
-xnoremap <buffer> <silent> \a[ `>a]`<i[
-xnoremap <buffer> <silent> \a" `>a"`<i"
-xnoremap <buffer> <silent> \a` `>a``<i`
-setlocal keymap=
-setlocal noarabic
-setlocal autoindent
-setlocal balloonexpr=
-setlocal nobinary
-setlocal bufhidden=
-setlocal buflisted
-setlocal buftype=
-setlocal nocindent
-setlocal cinkeys=0{,0},0),:,!^F,o,O,e
-setlocal cinoptions=
-setlocal cinwords=if,else,while,do,for,switch
-setlocal colorcolumn=
-setlocal comments=s1:/*,mb:*,ex:*/,://,b:#,:XCOMM,n:>,fb:-
-setlocal commentstring=#%s
-setlocal complete=.,w,b,u,t,i
-setlocal concealcursor=
-setlocal conceallevel=0
-setlocal completefunc=
-setlocal nocopyindent
-setlocal cryptmethod=
-setlocal nocursorbind
-setlocal nocursorcolumn
-set cursorline
-setlocal cursorline
-setlocal define=
-setlocal dictionary=
-setlocal nodiff
-setlocal equalprg=
-setlocal errorformat=
-setlocal expandtab
-if &filetype != 'python'
-setlocal filetype=python
-endif
-setlocal foldcolumn=0
-setlocal foldenable
-setlocal foldexpr=0
-setlocal foldignore=#
-setlocal foldlevel=0
-setlocal foldmarker={{{,}}}
-setlocal foldmethod=manual
-setlocal foldminlines=1
-setlocal foldnestmax=20
-setlocal foldtext=foldtext()
-setlocal formatexpr=
-setlocal formatoptions=tcq
-setlocal formatlistpat=^\\s*\\d\\+[\\]:.)}\\t\ ]\\s*
-setlocal grepprg=
-setlocal iminsert=2
-setlocal imsearch=2
-setlocal include=
-setlocal includeexpr=substitute(v:fname,'\\.','/','g')
-setlocal indentexpr=GetPythonIndent(v:lnum)
-setlocal indentkeys=0{,0},:,!^F,o,O,e,<:>,=elif,=except
-setlocal noinfercase
-setlocal iskeyword=@,48-57,_,192-255
-setlocal keywordprg=pydoc
-setlocal nolinebreak
-setlocal nolisp
-setlocal nolist
-setlocal makeprg=
-setlocal matchpairs=(:),{:},[:]
-setlocal modeline
-setlocal modifiable
-setlocal nrformats=octal,hex
-set number
-setlocal number
-setlocal numberwidth=4
-setlocal omnifunc=pythoncomplete#Complete
-setlocal path=
-setlocal nopreserveindent
-setlocal nopreviewwindow
-setlocal quoteescape=\\
-setlocal noreadonly
-setlocal norelativenumber
-setlocal norightleft
-setlocal rightleftcmd=search
-setlocal noscrollbind
-setlocal shiftwidth=4
-setlocal noshortname
-setlocal nosmartindent
-setlocal softtabstop=4
-setlocal nospell
-setlocal spellcapcheck=[.?!]\\_[\\])'\"\	\ ]\\+
-setlocal spellfile=
-setlocal spelllang=en
-setlocal statusline=%!airline#statusline(3)
-setlocal suffixesadd=.py
-setlocal swapfile
-setlocal synmaxcol=3000
-if &syntax != 'python'
-setlocal syntax=python
-endif
-setlocal tabstop=4
-setlocal tags=
-setlocal textwidth=0
-setlocal thesaurus=
-setlocal undofile
-setlocal nowinfixheight
-setlocal nowinfixwidth
-setlocal wrap
-setlocal wrapmargin=0
-silent! normal! zE
-let s:l = 894 - ((25 * winheight(0) + 20) / 40)
-if s:l < 1 | let s:l = 1 | endif
-exe s:l
-normal! zt
-894
-normal! 034l
-wincmd w
-3wincmd w
-exe '1resize ' . ((&lines * 22 + 21) / 43)
-exe 'vert 1resize ' . ((&columns * 72 + 78) / 157)
-exe '2resize ' . ((&lines * 17 + 21) / 43)
-exe 'vert 2resize ' . ((&columns * 72 + 78) / 157)
-exe 'vert 3resize ' . ((&columns * 84 + 78) / 157)
+2wincmd w
+exe 'vert 1resize ' . ((&columns * 72 + 81) / 162)
+exe 'vert 2resize ' . ((&columns * 89 + 81) / 162)
 tabedit ~/ccin2p3/in2p3_data/data_auger/procesamiento/long_trends/code_profiles/cts_temp.corrected/integrated.Eds/src/ch_Eds_smoo2.py
 set splitbelow splitright
 wincmd t
@@ -1203,7 +1071,7 @@ exe s:l
 normal! zt
 18
 normal! 0
-3wincmd w
+2wincmd w
 tabedit ~/ASOC_ICME-FD/icmes_richardson/data/mean_profiles/ace/shared_lib/read_NewTable.py
 set splitbelow splitright
 wincmd t
@@ -1328,7 +1196,7 @@ exe s:l
 normal! zt
 9
 normal! 0
-3wincmd w
+2wincmd w
 tabedit extract.py
 set splitbelow splitright
 wincmd _ | wincmd |
@@ -1337,8 +1205,8 @@ vsplit
 wincmd w
 wincmd t
 set winheight=1 winwidth=1
-exe 'vert 1resize ' . ((&columns * 74 + 78) / 157)
-exe 'vert 2resize ' . ((&columns * 92 + 78) / 157)
+exe 'vert 1resize ' . ((&columns * 74 + 81) / 162)
+exe 'vert 2resize ' . ((&columns * 92 + 81) / 162)
 argglobal
 vnoremap <buffer> 	 :py isort_visual()
 xnoremap <buffer> <silent> \a} `>a}`<i{
@@ -1582,9 +1450,9 @@ normal! zt
 87
 normal! 01l
 wincmd w
-3wincmd w
-exe 'vert 1resize ' . ((&columns * 74 + 78) / 157)
-exe 'vert 2resize ' . ((&columns * 92 + 78) / 157)
+2wincmd w
+exe 'vert 1resize ' . ((&columns * 74 + 81) / 162)
+exe 'vert 2resize ' . ((&columns * 92 + 81) / 162)
 tabedit rebine_sheaths.of.icmes.py
 set splitbelow splitright
 wincmd _ | wincmd |
@@ -1593,8 +1461,10 @@ vsplit
 wincmd w
 wincmd t
 set winheight=1 winwidth=1
-exe 'vert 1resize ' . ((&columns * 82 + 78) / 157)
-exe 'vert 2resize ' . ((&columns * 74 + 78) / 157)
+exe '1resize ' . ((&lines * 40 + 24) / 48)
+exe 'vert 1resize ' . ((&columns * 82 + 81) / 162)
+exe '2resize ' . ((&lines * 40 + 24) / 48)
+exe 'vert 2resize ' . ((&columns * 74 + 81) / 162)
 argglobal
 vnoremap <buffer> 	 :py isort_visual()
 xnoremap <buffer> <silent> \a} `>a}`<i{
@@ -1709,12 +1579,12 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 146 - ((50 * winheight(0) + 26) / 53)
+let s:l = 39 - ((6 * winheight(0) + 20) / 40)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-146
-normal! 0
+39
+normal! 044l
 wincmd w
 argglobal
 edit rebine_sheaths.of.icmes.py
@@ -1831,17 +1701,19 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 78 - ((37 * winheight(0) + 26) / 53)
+let s:l = 90 - ((3 * winheight(0) + 20) / 40)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-78
-normal! 0
+90
+normal! 08l
 wincmd w
-3wincmd w
-exe 'vert 1resize ' . ((&columns * 82 + 78) / 157)
-exe 'vert 2resize ' . ((&columns * 74 + 78) / 157)
-tabnext 1
+2wincmd w
+exe '1resize ' . ((&lines * 40 + 24) / 48)
+exe 'vert 1resize ' . ((&columns * 82 + 81) / 162)
+exe '2resize ' . ((&lines * 40 + 24) / 48)
+exe 'vert 2resize ' . ((&columns * 74 + 81) / 162)
+tabnext 2
 if exists('s:wipebuf')
   silent exe 'bwipe ' . s:wipebuf
 endif

@@ -473,7 +473,7 @@ class events_mgr:
         print " -------> archivos input leidos!"
 
         #--- put False to all possible data-flags (all CR detector-names must be included in 'self.CR_observs')
-        self.names_ok   = ('Auger_BandMuons', 'Auger_scals', 'McMurdo', 'ACE', 'ACE_o7o6')
+        self.names_ok   = ('Auger_BandMuons', 'Auger_BandScals',  'Auger_scals', 'McMurdo', 'ACE', 'ACE_o7o6')
         for name in self.names_ok:
             read_flag   = 'read_'+self.data_name
             setattr(self, read_flag, False) # True: if files are already read
@@ -884,6 +884,36 @@ class events_mgr:
         fname_inp   = self.gral.fnames[self.data_name]
         f5          = h5py.File(fname_inp, 'r')
         ch_Eds      = (10, 11, 12, 13)
+
+        fname_avr   = self.gral.fnames[self.data_name+'_avrs']#average histos
+        prom        = loadtxt(fname_avr)
+        typic       = nanmean(prom[:,1:], axis=0)#agarro el promedio del array de los 8 anios!
+        self.t_utc, CRs = read_hsts_data(fname_inp,  typic, ch_Eds)
+        print " -------> variables leidas!"
+
+        self.VARS   = VARS = {} #[]
+        VARS['CRs.'+self.data_name] = {
+            'value' : CRs,
+            'lims'  : [-1.0, 1.0],
+            'label' : 'Auger (muon band) [%]'
+        }
+        self.nvars  = len(VARS.keys())
+        #---------
+        self.aux = aux = {}
+        aux['SELECC']    = self.SELECC
+
+
+    def load_data_Auger_BandScals(self):
+        """
+        para leer la data de histogramas Auger, banda scalers
+        """
+        tb          = self.tb
+        nBin        = self.nBin
+        bd          = self.bd
+        day         = 86400.
+        fname_inp   = self.gral.fnames[self.data_name]
+        f5          = h5py.File(fname_inp, 'r')
+        ch_Eds      = (3, 4, 5)
 
         fname_avr   = self.gral.fnames[self.data_name+'_avrs']#average histos
         prom        = loadtxt(fname_avr)

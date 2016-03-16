@@ -46,6 +46,8 @@ fnames['McMurdo']   = '%s/actividad_solar/neutron_monitors/mcmurdo/mcmurdo_utc_c
 fnames['Auger_scals']     = '%s/data_auger/estudios_AoP/data/unir_con_presion/data_final_2006-2013.h5' % PAO
 fnames['Auger_BandMuons'] = '%s/data_auger/data_histogramas/all.array.avrs/temp.corrected/shape.ok_and_3pmt.ok/15min/test_temp.corrected.nc' % PAO
 fnames['Auger_BandMuons_avrs'] = '%s/long_trends/code_figs/avr_histos_press_shape.ok_and_3pmt.ok.txt' % PAO_PROCESS  # average histogram
+fnames['Auger_BandScals'] = fnames['Auger_BandMuons']
+fnames['Auger_BandScals_avrs'] = fnames['Auger_BandMuons_avrs']
 
 fnames['table_richardson']  = '%s/ASOC_ICME-FD/icmes_richardson/data/rich_events_ace.nc' % HOME
 for name in fnames.keys():
@@ -112,6 +114,21 @@ emgr.lock_IDs()
 #++++ limites
 LOW, MID1, MID2, TOP = 100.0, 375.0, 450.0, 3000.0
 emgr.FILTER['vsw_filter']    = True
+emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = LOW, MID1 # 100.0, 450.0
+emgr.run_all()
+emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID1, MID2 # 450.0, 550.0
+emgr.run_all()
+emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID2, TOP # 550.0, 3000.0
+emgr.run_all()
+
+#++++++++++++++++++++++++++++++++++++++++++++++++ Auger Band-Scals
+emgr.data_name      = 'Auger_BandScals'
+
+emgr.FILTER['vsw_filter'] = False
+emgr.run_all()
+
+#++++ split
+emgr.FILTER['vsw_filter'] = True
 emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = LOW, MID1 # 100.0, 450.0
 emgr.run_all()
 emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID1, MID2 # 450.0, 550.0

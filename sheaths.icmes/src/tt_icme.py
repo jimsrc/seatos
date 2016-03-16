@@ -51,6 +51,8 @@ fnames['McMurdo']   = '%s/actividad_solar/neutron_monitors/mcmurdo/mcmurdo_utc_c
 fnames['Auger_scals'] = '%s/data_auger/estudios_AoP/data/unir_con_presion/data_final_2006-2013.h5' % PAO
 fnames['Auger_BandMuons'] = '%s/data_auger/data_histogramas/all.array.avrs/temp.corrected/shape.ok_and_3pmt.ok/15min/test_temp.corrected.nc' % PAO
 fnames['Auger_BandMuons_avrs'] = '%s/long_trends/code_figs/avr_histos_press_shape.ok_and_3pmt.ok.txt' % PAO_PROCESS  # average histogram
+fnames['Auger_BandScals'] = fnames['Auger_BandMuons']
+fnames['Auger_BandScals_avrs'] = fnames['Auger_BandMuons_avrs']
 
 fnames['table_richardson']  = '%s/ASOC_ICME-FD/icmes_richardson/data/rich_events_ace.nc' % HOME
 for name in fnames.keys():
@@ -117,6 +119,9 @@ emgr.run_all()
 emgr.lock_IDs()
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 gral.data_name      = 'Auger_BandMuons' #'McMurdo' #'ACE'
+emgr.run_all()
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+gral.data_name      = 'Auger_BandScals' #'McMurdo' #'ACE'
 emgr.run_all()
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 emgr.data_name      = 'ACE' #'Auger' #'McMurdo'
