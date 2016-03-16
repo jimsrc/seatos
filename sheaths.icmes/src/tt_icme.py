@@ -46,7 +46,7 @@ gral.fnames = fnames = {}
 #fnames['ACE']       = '%s/data_ace/64sec_mag-swepam/ace.1998-2014.nc' % HOME
 fnames['ACE']       = '%s/data_ace/64sec_mag-swepam/ace.1998-2015.nc' % HOME
 fnames['McMurdo']   = '%s/actividad_solar/neutron_monitors/mcmurdo/mcmurdo_utc_correg.dat' % HOME
-fnames['Auger']     = '%s/data_auger/estudios_AoP/data/unir_con_presion/data_final_2006-2013.h5' % PAO
+fnames['Auger_scals']     = '%s/data_auger/estudios_AoP/data/unir_con_presion/data_final_2006-2013.h5' % PAO
 fnames['table_richardson']  = '%s/ASOC_ICME-FD/icmes_richardson/data/rich_events_ace.nc' % HOME
 
 #---- directorios de salida
@@ -100,7 +100,7 @@ bounds.tini = tb.tshck #tb.tini_mc #tb.tini_mc #tb.tshck
 bounds.tend = tb.tini_icme #tb.tend_mc #tb.tend_mc #tb.tini_mc
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-gral.data_name      = 'Auger' #'McMurdo' #'ACE'
+gral.data_name      = 'Auger_scals' #'McMurdo' #'ACE'
 
 FILTER['vsw_filter']    = False
 emgr = events_mgr(gral, FILTER, CUTS, bounds, nBin, fgap, tb, z_exp, structure='i')

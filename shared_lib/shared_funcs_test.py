@@ -361,6 +361,15 @@ def check_redundancy(fname, name):
         return False
 
 
+class test:
+    def __init__(self):
+	print dir(self)
+    def func(self):
+        self.jju = 99.4
+    def yell(self):
+	print dir(self)
+
+
 class general:
     def __init__(self):
         self.name = 'name'
