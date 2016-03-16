@@ -32,6 +32,7 @@ import numpy as np
 from z_expansion_gulisano import z as z_exp
 import console_colors as ccl
 import read_NewTable as tb
+from os.path import isfile, isdir
 
 class boundaries:
     def __init__(self):
@@ -39,6 +40,7 @@ class boundaries:
 
 HOME                = os.environ['HOME']
 PAO                 = os.environ['PAO']
+PAO_PROCESS         = os.environ['PAO_PROCESS']
 gral                = general()
 day                 = 86400.
 #---- cosas input
@@ -47,9 +49,13 @@ gral.fnames = fnames = {}
 fnames['ACE']       = '%s/data_ace/64sec_mag-swepam/ace.1998-2015.nc' % HOME
 fnames['McMurdo']   = '%s/actividad_solar/neutron_monitors/mcmurdo/mcmurdo_utc_correg.dat' % HOME
 fnames['Auger_scals'] = '%s/data_auger/estudios_AoP/data/unir_con_presion/data_final_2006-2013.h5' % PAO
-
+fnames['Auger_BandMuons'] = '%s/data_auger/data_histogramas/all.array.avrs/temp.corrected/shape.ok_and_3pmt.ok/15min/test_temp.corrected.nc' % PAO
+fnames['Auger_BandMuons_avrs'] = '%s/long_trends/code_figs/avr_histos_press_shape.ok_and_3pmt.ok.txt' % PAO_PROCESS  # average histogram
 
 fnames['table_richardson']  = '%s/ASOC_ICME-FD/icmes_richardson/data/rich_events_ace.nc' % HOME
+for name in fnames.keys():
+    assert isfile(fnames[name]),\
+        " --> NO EXISTE: " + fnames[name]
 
 #---- directorios de salida
 gral.dirs =  dirs   = {}
@@ -101,13 +107,18 @@ bounds      = boundaries()
 bounds.tini = tb.tshck #tb.tini_mc #tb.tini_mc #tb.tshck 
 bounds.tend = tb.tini_icme #tb.tend_mc #tb.tend_mc #tb.tini_mc
 
-#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-gral.data_name      = 'Auger_scals' #'McMurdo' #'ACE'
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+gral.data_name      = 'Auger_scals'#scals' #'McMurdo' #'ACE'
 
 FILTER['vsw_filter']    = False
 emgr = events_mgr(gral, FILTER, CUTS, bounds, nBin, fgap, tb, z_exp, structure='i')
 emgr.run_all()
 emgr.lock_IDs()
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+gral.data_name      = 'Auger_BandMuons' #'McMurdo' #'ACE'
+emgr.run_all()
+#emgr.lock_IDs()
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 emgr.data_name      = 'ACE' #'Auger' #'McMurdo'

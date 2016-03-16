@@ -13,8 +13,9 @@ import h5py
 from h5py import File as h5
 from numpy import (
     mean, median, nanmean, nanmedian, std, nan, 
-    isnan, min, max, zeros, ones, size
+    isnan, min, max, zeros, ones, size, loadtxt
 )
+from os.path import isfile, isdir
 
 #from read_NewTable import tshck, tini_icme, tend_icme, tini_mc, tend_mc, n_icmes, MCsig
 #from z_expansion_gulisano import z as z_exp
@@ -472,7 +473,7 @@ class events_mgr:
         print " -------> archivos input leidos!"
 
         #--- put False to all possible data-flags (all CR detector-names must be included in 'self.CR_observs')
-        self.names_ok   = ('Auger_scals', 'McMurdo', 'ACE', 'ACE_o7o6')
+        self.names_ok   = ('Auger_BandMuons', 'Auger_scals', 'McMurdo', 'ACE', 'ACE_o7o6')
         for name in self.names_ok:
             read_flag   = 'read_'+self.data_name
             setattr(self, read_flag, False) # True: if files are already read
@@ -847,6 +848,9 @@ class events_mgr:
 
 
     def load_data_Auger_scals(self):
+        """
+        solo cargamos Auger Scalers
+        """
         tb          = self.tb
         nBin        = self.nBin
         bd          = self.bd
@@ -861,7 +865,7 @@ class events_mgr:
         VARS['CRs.'+self.data_name] = {
             'value' : CRs,
             'lims'  : [-1.0, 1.0],
-            'label' : 'Auger rate [%]'
+            'label' : 'Auger Scaler rate [%]'
         }
         self.nvars  = len(VARS.keys())
         #---------
@@ -879,15 +883,19 @@ class events_mgr:
         day         = 86400.
         fname_inp   = self.gral.fnames[self.data_name]
         f5          = h5py.File(fname_inp, 'r')
-        self.t_utc  = t_utc = f5['auger/time_seg_utc'][...].copy() #data_murdo[:,0]
-        CRs         = f5['auger/sc_wAoP_wPres'][...].copy() #data_murdo[:,1]
+        ch_Eds      = (10, 11, 12, 13)
+
+        fname_avr   = self.gral.fnames[self.data_name+'_avrs']#average histos
+        prom        = loadtxt(fname_avr)
+        typic       = nanmean(prom[:,1:], axis=0)#agarro el promedio del array de los 8 anios!
+        self.t_utc, CRs = read_hsts_data(fname_inp,  typic, ch_Eds)
         print " -------> variables leidas!"
 
         self.VARS   = VARS = {} #[]
         VARS['CRs.'+self.data_name] = {
             'value' : CRs,
             'lims'  : [-1.0, 1.0],
-            'label' : 'Auger rate [%]'
+            'label' : 'Auger (muon band) [%]'
         }
         self.nvars  = len(VARS.keys())
         #---------
