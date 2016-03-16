@@ -36,16 +36,21 @@ class boundaries:
 
 HOME                = os.environ['HOME']
 PAO                 = os.environ['PAO']
+PAO_PROCESS         = os.environ['PAO_PROCESS']
 gral                = general()
 day                 = 86400.
 #---- cosas input
 gral.fnames = fnames = {}
 fnames['ACE']       = '%s/data_ace/64sec_mag-swepam/ace.1998-2015.nc' % HOME
 fnames['McMurdo']   = '%s/actividad_solar/neutron_monitors/mcmurdo/mcmurdo_utc_correg.dat' % HOME
-#fnames['table_richardson']  = '../../../../data_317events_iii.nc'
-#fnames['table_richardson']  = '%s/ASOC_ICME-FD/icmes_richardson/data/data_317events_iii.nc' % HOME
 fnames['Auger_scals']     = '%s/data_auger/estudios_AoP/data/unir_con_presion/data_final_2006-2013.h5' % PAO
+fnames['Auger_BandMuons'] = '%s/data_auger/data_histogramas/all.array.avrs/temp.corrected/shape.ok_and_3pmt.ok/15min/test_temp.corrected.nc' % PAO
+fnames['Auger_BandMuons_avrs'] = '%s/long_trends/code_figs/avr_histos_press_shape.ok_and_3pmt.ok.txt' % PAO_PROCESS  # average histogram
+
 fnames['table_richardson']  = '%s/ASOC_ICME-FD/icmes_richardson/data/rich_events_ace.nc' % HOME
+for name in fnames.keys():
+    assert isfile(fnames[name]),\
+        " --> NO EXISTE: " + fnames[name]
 
 #---- directorios de salida
 gral.dirs =  dirs   = {}
@@ -96,7 +101,7 @@ bounds      = boundaries()
 bounds.tini = tb.tshck      #tb.tini_mc #tb.tshck 
 bounds.tend = tb.tini_icme    #tb.tend_mc #tb.tini_mc
 
-#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ Auger
+#++++++++++++++++++++++++++++++++++++++++++++++++ Auger Scalers
 gral.data_name      = 'Auger_scals' #'McMurdo' #'ACE'
 
 FILTER['vsw_filter']    = False
@@ -114,7 +119,22 @@ emgr.run_all()
 emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID2, TOP # 550.0, 3000.0
 emgr.run_all()
 
-#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ McMurdo
+#++++++++++++++++++++++++++++++++++++++++++++++++ Auger Band-Muons
+emgr.data_name      = 'Auger_BandMuons'
+
+emgr.FILTER['vsw_filter'] = False
+emgr.run_all()
+
+#++++ split
+emgr.FILTER['vsw_filter'] = True
+emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = LOW, MID1 # 100.0, 450.0
+emgr.run_all()
+emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID1, MID2 # 450.0, 550.0
+emgr.run_all()
+emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID2, TOP # 550.0, 3000.0
+emgr.run_all()
+
+#++++++++++++++++++++++++++++++++++++++++++++++++ McMurdo
 emgr.data_name      = 'McMurdo'
 
 emgr.FILTER['vsw_filter']    = False
@@ -129,7 +149,7 @@ emgr.run_all()
 emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID2, TOP # 550.0, 3000.0
 emgr.run_all()
 
-#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ ACE
+#++++++++++++++++++++++++++++++++++++++++++++++++ ACE
 emgr.data_name      = 'ACE' #'McMurdo'
 
 emgr.FILTER['vsw_filter']    = False
