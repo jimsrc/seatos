@@ -43,18 +43,20 @@ gral                = general()
 day                 = 86400.
 #---- cosas input
 gral.fnames = fnames = {}
-#fnames['ACE']       = '%s/data_ace/64sec_mag-swepam/ace.1998-2014.nc' % HOME
+# DATASETS
 fnames['ACE']       = '%s/data_ace/64sec_mag-swepam/ace.1998-2015.nc' % HOME
 fnames['McMurdo']   = '%s/actividad_solar/neutron_monitors/mcmurdo/mcmurdo_utc_correg.dat' % HOME
-fnames['Auger_scals']     = '%s/data_auger/estudios_AoP/data/unir_con_presion/data_final_2006-2013.h5' % PAO
+fnames['Auger_scals'] = '%s/data_auger/estudios_AoP/data/unir_con_presion/data_final_2006-2013.h5' % PAO
+
+
 fnames['table_richardson']  = '%s/ASOC_ICME-FD/icmes_richardson/data/rich_events_ace.nc' % HOME
 
 #---- directorios de salida
 gral.dirs =  dirs   = {}
 dirs['dir_plots']   = '../plots'
 dirs['dir_ascii']   = '../ascii'
-dirs['suffix']      = '_auger_'    # sufijo para el directorio donde guardare
-                                    # estas figuras
+dirs['suffix']      = '_auger_'  # sufijo para el directorio donde guardare
+                                 # estas figuras
 
 #-------------------------------------------------------------
 #------- seleccionamos MCs con label-de-catalogo (lepping=2, etc)

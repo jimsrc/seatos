@@ -10,6 +10,7 @@ import os
 import matplotlib.patches as patches
 import matplotlib.transforms as transforms
 import h5py
+from h5py import File as h5
 from numpy import (
     mean, median, nanmean, nanmedian, std, nan, 
     isnan, min, max, zeros, ones, size
@@ -380,6 +381,73 @@ class boundaries:
         print dict(self)
     def ff(self):
         self.fg = 0.2
+
+
+def read_hsts_data(fname, typic, ch_Eds):
+    """
+    code adapted from ...ch_Eds_smoo2.py
+    """
+    f   = h5(fname, 'r')
+
+    # initial date
+    datestr = f['date_ini'].value
+    yyyy, mm, dd = map(int, datestr.split('-'))
+    INI_DATE = datetime(yyyy, mm, dd)
+
+    # final date
+    datestr = f['date_end'].value
+    yyyy, mm, dd = map(int, datestr.split('-'))
+    END_DATE = datetime(yyyy, mm, dd)
+
+    date = INI_DATE
+    tt, rr = [], []
+    ntot, nt = 0, 0
+    while date < END_DATE:
+        yyyy, mm, dd = date.year, date.month, date.day
+        path    = '%04d/%02d/%02d' % (yyyy, mm, dd)
+        try:
+            dummy = f[path] # test if this exists!
+        except:
+            date    += timedelta(days=1)    # next day...
+            continue
+
+        ntanks  = f['%s/tanks'%path][...]
+        cc  = ntanks>150.
+        ncc = len(find(cc))
+
+        if ncc>1: #mas de un dato tiene >150 tanques
+            time    = f['%s/t_utc'%path][...] # utc secs
+            cts, typ = np.zeros(96, dtype=np.float64), 0.0
+            for i in ch_Eds:
+                Ed  =  i*20.+10.
+                cts += f['%s/cts_temp-corr_%04dMeV'%(path,Ed)][...]
+                typ += typic[i] # escalar
+
+            cts_norm = cts/typ
+            #aux  = np.nanmean(cts_norm[cc])
+            tt += [ time[cc] ]
+            rr += [ cts_norm[cc] ]
+            ntot += 1 # files read ok
+            nt += ncc # total nmbr ok elements
+
+        date    += timedelta(days=1)        # next day...
+
+    #--- converting tt, rr to 1D-numpy.arrays
+    t, r = nans(nt), nans(nt)
+    ini, end = 0, 0
+    for i in range(ntot):
+        ni = len(tt[i])
+        t[ini:ini+ni] = tt[i]
+        r[ini:ini+ni] = rr[i]
+        ini += ni
+
+    f.close()
+    return t, r
+
+
+
+def nans(sh):
+    return np.nan*np.ones(sh)
 
 
 
@@ -779,6 +847,32 @@ class events_mgr:
 
 
     def load_data_Auger_scals(self):
+        tb          = self.tb
+        nBin        = self.nBin
+        bd          = self.bd
+        day         = 86400.
+        fname_inp   = self.gral.fnames[self.data_name]
+        f5          = h5py.File(fname_inp, 'r')
+        self.t_utc  = t_utc = f5['auger/time_seg_utc'][...].copy() #data_murdo[:,0]
+        CRs         = f5['auger/sc_wAoP_wPres'][...].copy() #data_murdo[:,1]
+        print " -------> variables leidas!"
+
+        self.VARS   = VARS = {} #[]
+        VARS['CRs.'+self.data_name] = {
+            'value' : CRs,
+            'lims'  : [-1.0, 1.0],
+            'label' : 'Auger rate [%]'
+        }
+        self.nvars  = len(VARS.keys())
+        #---------
+        self.aux = aux = {}
+        aux['SELECC']    = self.SELECC
+
+
+    def load_data_Auger_BandMuons(self):
+        """
+        para leer la data de histogramas Auger
+        """
         tb          = self.tb
         nBin        = self.nBin
         bd          = self.bd
