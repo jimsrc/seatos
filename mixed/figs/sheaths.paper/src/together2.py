@@ -149,6 +149,11 @@ stf['CRs']    = {
                 }
 
 TEXT = {}
+GROUP_NAME = {
+    '1': 'SLOW',
+    '2': 'MID',
+    '3': 'FAST'
+}
 
 
 
@@ -191,10 +196,12 @@ for i in range(3):
             continue
 
         n       = stf[varname]['nrow']
-        #nax     = 3*(n-1) + i+1 #(i+1)*n   # axis index
-
         ax      = plt.subplot(gs[(n-1)*nr:n*nr, (2*i):(2*(i+1))])
-        #ax      = fig.add_subplot(nvars, 3, nax)
+
+        # title for each column
+        if varname=='B':  # first panel row
+            ax.set_title(GROUP_NAME['%d'%(i+1)], fontsize=18)
+
         Nfinal_mc, Nfinal_sh  = int(l_mc[1]), int(l_sh[1])
         print " %s"%varname, '  Nfinal_mc:%d' % Nfinal_mc, 'Nfinal_sh:%d' % Nfinal_sh
         #print " nax: %d" % nax
