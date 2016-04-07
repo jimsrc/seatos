@@ -666,11 +666,11 @@ class events_mgr:
                 for varname in VARS.keys():
                     dt      = dT*(1+nwndw[0]+nwndw[1])/nbin
                     t, var  = selecc_window_ii(
-                                nwndw, #rango ploteo
-                                [self.t_utc, VARS[varname]['value']],
-                                bd.tini[i],
-                                bd.tend[i]
-                              )
+                        nwndw=nwndw, #rango ploteo
+                        data=[self.t_utc, VARS[varname]['value']],
+                        tini=bd.tini[i],
+                        tend=bd.tend[i]
+                    )
 
                     #--- read average CR rates before shock/disturbance
                     if self.data_name in self.CR_observs:   # is it CR data?
@@ -678,7 +678,15 @@ class events_mgr:
                         var = 100.*(var - rate_pre[i]) / rate_pre[i]
 
                     #--- rebinea usando 'dt' como el ancho de nuevo bineo
-                    out       = adaptar_ii(nwndw, dT, nbin, dt, t, var, self.fgap)
+                    out       = adaptar_ii(
+                        nwndw = nwndw, 
+                        dT = dT, 
+                        n = nbin, 
+                        dt = dt, 
+                        t = t, 
+                        r = var, 
+                        fgap = self.fgap
+                    )
                     enough    = out[0]       # True: data con menos de 100*'fgap'% de gap
                     Enough[varname]         += [ enough ]
                     ADAP[nok-1][varname]    = out[1]  # donde: out[1] = [tiempo, variable]
