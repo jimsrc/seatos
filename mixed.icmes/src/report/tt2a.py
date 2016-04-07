@@ -146,28 +146,28 @@ stf['AlphaRatio.ACE']    = {
                 'nrow': -1,
                 }
 stf['CRs.Auger_scals']    = {
-                'label': 'GCR rate [%]\n(Auger scalers)',
+                'label': 'GCR rate [%]\n(scalers)',
                 'ylims': [-1.0, 0.3],
                 'text_loc_1': {'mc':[4.5, -0.4], 'sh':[-1.95, -0.4]},
                 'text_loc_2': {'mc':[4.5, -0.9], 'sh':[-1.95, -0.4]},
                 'text_loc_3': {'mc':[4.5, -0.9], 'sh':[-1.95, -0.4]},
-                'nrow': 4
+                'nrow': 1
                 }
 stf['CRs.Auger_BandScals']    = {
-                'label': 'GCR rate [%]\n(Auger scalers)',
+                'label': 'GCR rate [%]\n(scaler band)',
                 'ylims': [-1.0, 0.3],
                 'text_loc_1': {'mc':[4.5, -0.4], 'sh':[-1.95, -0.4]},
                 'text_loc_2': {'mc':[4.5, -0.9], 'sh':[-1.95, -0.4]},
                 'text_loc_3': {'mc':[4.5, -0.9], 'sh':[-1.95, -0.4]},
-                'nrow': 4
+                'nrow': 2
                 }
 stf['CRs.Auger_BandMuons']    = {
-                'label': 'GCR rate [%]\n(Auger scalers)',
+                'label': 'GCR rate [%]\n(muon band)',
                 'ylims': [-1.0, 0.3],
                 'text_loc_1': {'mc':[4.5, -0.4], 'sh':[-1.95, -0.4]},
                 'text_loc_2': {'mc':[4.5, -0.9], 'sh':[-1.95, -0.4]},
                 'text_loc_3': {'mc':[4.5, -0.9], 'sh':[-1.95, -0.4]},
-                'nrow': 4
+                'nrow': 3
                 }
 stf['CRs.McMurdo']    = {
                 'label': 'GCR rate @McMurdo [%]',
@@ -190,15 +190,14 @@ dir_figs    = '../../plots/woShiftCorr/MCflag0.1.2.2H/_auger_'
 dir_inp_mc  = '../../../icmes/ascii/MCflag0.1.2.2H/woShiftCorr/_auger_'
 dir_inp_sh  = '../../../sheaths.icmes/ascii/MCflag0.1.2.2H/woShiftCorr/_auger_'
 
-fname_fig   = '%s/figs_splitted_hangout.png' % dir_figs
+fname_fig   = '%s/figs_splitted_hangout_ii.png' % dir_figs
 vlo     = [100.0, 375.0, 450.0]
 vhi     = [375.0, 450.0, 3000.0]
 nvars   = len(stf.keys())
 EXCEPTS = (
             'AlphaRatio.ACE', 'CRs.McMurdo',
             'rmsBoB.ACE', 'beta.ACE', 'Pcc.ACE',
-            'Temp.ACE', 
-            'CRs.Auger_BandScals', 'CRs.Auger_BandMuons'
+            'Temp.ACE', 'rmsB.ACE', 'V.ACE', 'B.ACE'
           )
 
 print " input: "
