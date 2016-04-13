@@ -1,7 +1,7 @@
 #!/usr/bin/env ipython
 from pylab import *
 #from load_data import sh, mc, cr
-import _func_data as fd
+import func_data as fd
 import share.funcs as ff
 import matplotlib.patches as patches
 import matplotlib.transforms as transforms
@@ -9,12 +9,18 @@ from os import environ as env
 from os.path import isfile, isdir
 #++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-dir_inp_sh      = '{dir}/sheaths/ascii/MCflag2/wShiftCorr/_test_Vmc_' .format(dir=env['MEAN_PROFILES_ACE'])
-dir_inp_mc      = '{dir}/mcs/ascii/MCflag2/wShiftCorr/_test_Vmc_' .format(dir=env['MEAN_PROFILES_ACE'])
-fname_inp_part  = 'MCflag2_2before.4after_fgap0.2_Wang90.0'
+dir_inp_sh      = '{dir}/sheaths.icmes/ascii/MCflag0.1.2.2H/woShiftCorr/_auger_/' .format(dir=env['MEAN_PROFILES_ACE'])
+dir_inp_mc      = '{dir}/icmes/ascii/MCflag0.1.2.2H/woShiftCorr/_auger_/' .format(dir=env['MEAN_PROFILES_ACE'])
+#dir_inp_sh      = '{dir}/sheaths/ascii/MCflag2/wShiftCorr/_test_Vmc_' .format(dir=env['MEAN_PROFILES_ACE'])
+#dir_inp_mc      = '{dir}/mcs/ascii/MCflag2/wShiftCorr/_test_Vmc_' .format(dir=env['MEAN_PROFILES_ACE'])
+fname_inp_part  = 'MCflag0.1.2.2H_2before.4after_fgap0.2_WangNaN' # '_vlo.100.0.vhi.375.0_CRs.Auger_BandScals.txt'
+#fname_inp_part  = 'MCflag2_2before.4after_fgap0.2_Wang90.0'
 
+CRstr           = 'CRs.Auger_BandScals'
 mgr             = fd.mgr_data(dir_inp_sh, dir_inp_mc, fname_inp_part)
-sh, mc, cr      = mgr.run(vlo=100.0, vhi=450.0)
+#sh, mc, cr      = mgr.run(vlo=100.0, vhi=375.0, CRstr=CRstr)
+#sh, mc, cr      = mgr.run(vlo=375.0, vhi=450.0, CRstr=CRstr)
+sh, mc, cr      = mgr.run(vlo=450.0, vhi=3000.0, CRstr=CRstr)
 fname_fig       = '../figs/indiv/nCR_vlo.{lo:4.1f}.vhi.{hi:4.1f}.png' .format(lo=mgr.vlo, hi=mgr.vhi)
 #++++++++++++++++++++++++++++++++++++++++++++++++++++
 #-- mc:
@@ -96,7 +102,7 @@ ax.plot(t, crs, '-o', c='k', ms=3)
 ax.grid()
 ax.set_xlabel('time normalized to sheath/MC passage [1]', fontsize=14)
 ax.set_ylabel('$n_{CR}$ [%]', fontsize=21)
-ax.set_ylim(-8., 2.)
+ax.set_ylim(-1., 0.5)
 """
 #+++++ bordes
 ax.axvline(x=0, ls='--', c='gray', lw=3)
