@@ -17,8 +17,8 @@ fname_inp_part  = 'MCflag0.1.2.2H_2before.4after_fgap0.2_WangNaN' # '_vlo.100.0.
 #fname_inp_part  = 'MCflag2_2before.4after_fgap0.2_Wang90.0'
 
 #CRstr           = 'CRs.Auger_BandScals'
-CRstr           = 'CRs.Auger_BandMuons'
-#CRstr           = 'CRs.Auger_scals'
+#CRstr           = 'CRs.Auger_BandMuons'
+CRstr           = 'CRs.Auger_scals'
 mgr             = fd.mgr_data(dir_inp_sh, dir_inp_mc, fname_inp_part)
 #sh, mc, cr      = mgr.run(vlo=100.0, vhi=375.0, CRstr=CRstr)
 #sh, mc, cr      = mgr.run(vlo=375.0, vhi=450.0, CRstr=CRstr)

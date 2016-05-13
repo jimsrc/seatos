@@ -178,26 +178,31 @@ class fit_forbush():
         SEM_bp    = sems[3]
         SEM_bo    = sems[4]
 
+        # recuperacion dsps del MC leading edge
         params['tau'].value = SEM_tau
         params['tau'].vary  = True
-        params['tau'].min   = 1.0
+        params['tau'].min   = 0.2 #1.0
         params['tau'].max   = 20.0
 
+        # termino rmsB
         params['q'].value   = SEM_q
         params['q'].vary    = True #False #True
         params['q'].min     = -20.0 #-800.0 #-1.0e3
         params['q'].max     = -0.1 #-200.0 #-1.0e1
 
+        # salto / discontinuidad
         params['off'].value = SEM_off
         params['off'].vary  = True #False #True
         params['off'].min   = 0.0
-        params['off'].max   = 2.0
+        params['off'].max   = 1.0 #2.0
 
+        # termino del campo magnetico (i)
         params['bp'].value  = SEM_bp
         params['bp'].vary   = True
         params['bp'].min    = -1.0
         params['bp'].max    = 0.0
 
+        # termino del campo magnetico (ii)
         params['bo'].value  = SEM_bo
         params['bo'].vary   = True #False #True
         params['bo'].min    = 0.0
