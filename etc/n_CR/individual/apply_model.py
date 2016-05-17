@@ -20,9 +20,9 @@ fname_inp_part  = 'MCflag0.1.2.2H_2before.4after_fgap0.2_WangNaN' # '_vlo.100.0.
 #CRstr           = 'CRs.Auger_BandMuons'
 CRstr           = 'CRs.Auger_scals'
 mgr             = fd.mgr_data(dir_inp_sh, dir_inp_mc, fname_inp_part)
-#sh, mc, cr      = mgr.run(vlo=100.0, vhi=375.0, CRstr=CRstr)
+sh, mc, cr      = mgr.run(vlo=100.0, vhi=375.0, CRstr=CRstr)
 #sh, mc, cr      = mgr.run(vlo=375.0, vhi=450.0, CRstr=CRstr)
-sh, mc, cr      = mgr.run(vlo=450.0, vhi=3000.0, CRstr=CRstr)
+#sh, mc, cr      = mgr.run(vlo=450.0, vhi=3000.0, CRstr=CRstr)
 fname_fig       = '../figs/indiv/nCR_vlo.{lo:4.1f}.vhi.{hi:4.1f}_{name}.png' .format(lo=mgr.vlo, hi=mgr.vhi, name=CRstr)
 #++++++++++++++++++++++++++++++++++++++++++++++++++++
 #-- mc:
@@ -61,24 +61,19 @@ b       = B
 #++++++++++++++++++++++++++++++++++++++++++++++++ figura
 fig     = figure(1, figsize=(6,3.))
 ax     = fig.add_subplot(111)
-#ax1     = ax.twinx()
-#--- plot der
-#ax1.plot(t[1:-1], fc[1:-1], c='gray')      # rmsB
-#ax1.plot(t[1:-1], b[1:-1], c='gray')       # B field
-
 
 tau_o, q, off   = 5., -6., 0.1 #2.0, -400.0
 bp, bo          = -0.1, 10.0
 
 fit     = ff.fit_forbush([t, fc, crs, b], [tau_o, q, off, bp, bo])
 fit.make_fit()
+
 print fit.par
 #raise SystemExit
 """
 tau, bp     = 2.36, 0.0
 q, off, bo  = -9.373, 0.89, 16.15
 """
-#ncr     = ff.nCR2([t, fc, b], tau, q, off, bp, bo)
 ncr     = ff.nCR2([t, fc, b], **fit.par)
 sqr     = np.nanmean(np.power(crs - ncr, 2.0))
 

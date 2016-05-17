@@ -215,9 +215,8 @@ class fit_forbush():
         print " --------> METODO_FITEO: %s" % METHOD
         #print " --------> funcion: %s" % func_name
         #report_errors(params)
+        self.par = {}
+        for name in result.params.keys():
+            self.par[name] = result.params[name].value
 
-        #par = np.zeros(2)
-        #par[0]  = result.values['tau']
-        #par[1]  = result.values['q']
-        self.par = result.values #par
-
+#EOF
