@@ -2,8 +2,8 @@
 from pylab import *
 #from load_data import sh, mc, cr
 import func_data as fd
-#import share.funcs as ff
-import CythonSrc.funcs as ff
+import share.funcs as ff
+#import CythonSrc.funcs as ff
 import matplotlib.patches as patches
 import matplotlib.transforms as transforms
 from os import environ as env
