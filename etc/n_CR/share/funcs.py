@@ -1,8 +1,11 @@
+#!/usr/bin/env ipython
+# -*- coding: utf-8 -*-
 from pylab import find
 import numpy as np
 from lmfit import minimize, Parameters, Parameter, report_errors
 from numpy import array, ones, zeros, sum, power, min, max
 import sys
+from scipy.optimize import brute, fmin
 
 def get_histogram(var, nbins):
     # quitamos nans
@@ -144,20 +147,48 @@ class fit_forbush():
 
 
     def residuals(self, params):
-        tau   = params['tau'].value
-        q     = params['q'].value
-        off   = params['off'].value
-        bp    = params['bp'].value
-        bo    = params['bo'].value
+        if hasattr(params, 'keys'):
+            tau   = params['tau'].value
+            q     = params['q'].value
+            off   = params['off'].value
+            bp    = params['bp'].value
+            bo    = params['bo'].value
+        elif hasattr(params, '__len__'):
+            tau, q, off, bp, bo = params
+        else:
+            print " ---> params is WEIRD!"
+            raise SystemExit
+
         t     = self.t
         crs   = self.crs
         model = nCR2([t, self.rms, self.b], tau, q, off, bp, bo)
-        sqr   = np.power(crs - model, 2.0)
+        sqr   = np.square(crs - model)
         diff  = np.nanmean(sqr)
         #print " diff---> %f, tau:%g, q:%g, bp:%g" % (diff, tau, q, bp)
-        LINE = "%g   %g  %g  %g %g  %g\n" % (tau, q, bp, off, bo, diff)
-        sys.stderr.write(LINE)
+        #LINE = "%g   %g  %g  %g %g  %g\n" % (tau, q, bp, off, bo, diff)
+        #sys.stderr.write(LINE)
         return diff
+
+
+    def make_fit_brute(self, rranges):
+        """
+        rranges = ( 
+            slice(0., pi, pi/20),
+            slice(-2.*pi, +2.*pi, 4.*pi/20),
+            slice(1., 2.*pi, 2.*pi/20),
+        )
+        """
+        rb = brute(self.residuals, rranges, full_output=False, finish=None)
+        # este orden va acorde con residuals()
+        self.par = { 
+            'tau':  rb[0],
+            'q':    rb[1],
+            'off':  rb[2],
+            'bp':   rb[3],
+            'bo':   rb[4],
+        }
+
+        
 
 
     def make_fit(self):
