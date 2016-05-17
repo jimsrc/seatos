@@ -308,7 +308,7 @@ badd +0 funcs.py
 badd +0 makefile
 badd +0 setup.py
 badd +0 funcs.pyx
-badd +532 ~/simulacion/pla_stochastic/composite_turbulence/single_orbits/src/cython_wrapper.pyx
+badd +31 ~/simulacion/pla_stochastic/composite_turbulence/single_orbits/src/cython_wrapper.pyx
 badd +0 ~/simulacion/pla_stochastic/composite_turbulence/single_orbits/src/cython_wrapper.pxd
 badd +7 funcs.pxd
 args funcs.py
@@ -325,10 +325,10 @@ wincmd w
 wincmd t
 set winheight=1 winwidth=1
 exe '1resize ' . ((&lines * 22 + 23) / 47)
-exe 'vert 1resize ' . ((&columns * 80 + 81) / 162)
+exe 'vert 1resize ' . ((&columns * 80 + 86) / 172)
 exe '2resize ' . ((&lines * 21 + 23) / 47)
-exe 'vert 2resize ' . ((&columns * 80 + 81) / 162)
-exe 'vert 3resize ' . ((&columns * 81 + 81) / 162)
+exe 'vert 2resize ' . ((&columns * 80 + 86) / 172)
+exe 'vert 3resize ' . ((&columns * 91 + 86) / 172)
 argglobal
 vnoremap <buffer> 	 :py isort_visual()
 xnoremap <buffer> <silent> \a} `>a}`<i{
@@ -695,10 +695,10 @@ normal! zt
 normal! 0
 wincmd w
 exe '1resize ' . ((&lines * 22 + 23) / 47)
-exe 'vert 1resize ' . ((&columns * 80 + 81) / 162)
+exe 'vert 1resize ' . ((&columns * 80 + 86) / 172)
 exe '2resize ' . ((&lines * 21 + 23) / 47)
-exe 'vert 2resize ' . ((&columns * 80 + 81) / 162)
-exe 'vert 3resize ' . ((&columns * 81 + 81) / 162)
+exe 'vert 2resize ' . ((&columns * 80 + 86) / 172)
+exe 'vert 3resize ' . ((&columns * 91 + 86) / 172)
 tabedit makefile
 set splitbelow splitright
 wincmd _ | wincmd |
@@ -707,8 +707,8 @@ vsplit
 wincmd w
 wincmd t
 set winheight=1 winwidth=1
-exe 'vert 1resize ' . ((&columns * 80 + 81) / 162)
-exe 'vert 2resize ' . ((&columns * 81 + 81) / 162)
+exe 'vert 1resize ' . ((&columns * 80 + 86) / 172)
+exe 'vert 2resize ' . ((&columns * 91 + 86) / 172)
 argglobal
 xnoremap <buffer> <silent> \a} `>a}`<i{
 xnoremap <buffer> <silent> \a{ `>a}`<i{
@@ -951,8 +951,8 @@ normal! zt
 5
 normal! 04l
 wincmd w
-exe 'vert 1resize ' . ((&columns * 80 + 81) / 162)
-exe 'vert 2resize ' . ((&columns * 81 + 81) / 162)
+exe 'vert 1resize ' . ((&columns * 80 + 86) / 172)
+exe 'vert 2resize ' . ((&columns * 91 + 86) / 172)
 tabedit funcs.pyx
 set splitbelow splitright
 wincmd _ | wincmd |
@@ -966,10 +966,10 @@ wincmd w
 wincmd t
 set winheight=1 winwidth=1
 exe '1resize ' . ((&lines * 37 + 23) / 47)
-exe 'vert 1resize ' . ((&columns * 80 + 81) / 162)
+exe 'vert 1resize ' . ((&columns * 80 + 86) / 172)
 exe '2resize ' . ((&lines * 6 + 23) / 47)
-exe 'vert 2resize ' . ((&columns * 80 + 81) / 162)
-exe 'vert 3resize ' . ((&columns * 81 + 81) / 162)
+exe 'vert 2resize ' . ((&columns * 80 + 86) / 172)
+exe 'vert 3resize ' . ((&columns * 91 + 86) / 172)
 argglobal
 vnoremap <buffer> 	 :py isort_visual()
 xnoremap <buffer> <silent> \a} `>a}`<i{
@@ -1084,11 +1084,11 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 6 - ((4 * winheight(0) + 18) / 37)
+let s:l = 64 - ((6 * winheight(0) + 18) / 37)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-6
+64
 normal! 0
 wincmd w
 argglobal
@@ -1206,7 +1206,7 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 4 - ((2 * winheight(0) + 3) / 6)
+let s:l = 4 - ((3 * winheight(0) + 3) / 6)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
@@ -1328,28 +1328,33 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 4 - ((3 * winheight(0) + 22) / 44)
+let s:l = 38 - ((18 * winheight(0) + 22) / 44)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-4
-normal! 0
+38
+normal! 016l
 wincmd w
+3wincmd w
 exe '1resize ' . ((&lines * 37 + 23) / 47)
-exe 'vert 1resize ' . ((&columns * 80 + 81) / 162)
+exe 'vert 1resize ' . ((&columns * 80 + 86) / 172)
 exe '2resize ' . ((&lines * 6 + 23) / 47)
-exe 'vert 2resize ' . ((&columns * 80 + 81) / 162)
-exe 'vert 3resize ' . ((&columns * 81 + 81) / 162)
+exe 'vert 2resize ' . ((&columns * 80 + 86) / 172)
+exe 'vert 3resize ' . ((&columns * 91 + 86) / 172)
 tabedit ~/simulacion/pla_stochastic/composite_turbulence/single_orbits/src/cython_wrapper.pyx
 set splitbelow splitright
 wincmd _ | wincmd |
 vsplit
-1wincmd h
+wincmd _ | wincmd |
+vsplit
+2wincmd h
+wincmd w
 wincmd w
 wincmd t
 set winheight=1 winwidth=1
-exe 'vert 1resize ' . ((&columns * 80 + 81) / 162)
-exe 'vert 2resize ' . ((&columns * 81 + 81) / 162)
+exe 'vert 1resize ' . ((&columns * 57 + 86) / 172)
+exe 'vert 2resize ' . ((&columns * 57 + 86) / 172)
+exe 'vert 3resize ' . ((&columns * 56 + 86) / 172)
 argglobal
 vnoremap <buffer> 	 :py isort_visual()
 xnoremap <buffer> <silent> \a} `>a}`<i{
@@ -1472,6 +1477,128 @@ normal! zt
 normal! 04l
 wincmd w
 argglobal
+edit ~/simulacion/pla_stochastic/composite_turbulence/single_orbits/src/cython_wrapper.pyx
+vnoremap <buffer> 	 :py isort_visual()
+xnoremap <buffer> <silent> \a} `>a}`<i{
+xnoremap <buffer> <silent> \a{ `>a}`<i{
+xnoremap <buffer> <silent> \a) `>a)`<i(
+xnoremap <buffer> <silent> \a( `>a)`<i(
+xnoremap <buffer> <silent> \a' `>a'`<i'
+xnoremap <buffer> <silent> \a] `>a]`<i[
+xnoremap <buffer> <silent> \a[ `>a]`<i[
+xnoremap <buffer> <silent> \a" `>a"`<i"
+xnoremap <buffer> <silent> \a` `>a``<i`
+setlocal keymap=
+setlocal noarabic
+setlocal autoindent
+setlocal balloonexpr=
+setlocal nobinary
+setlocal bufhidden=
+setlocal buflisted
+setlocal buftype=
+setlocal nocindent
+setlocal cinkeys=0{,0},0),:,!^F,o,O,e
+setlocal cinoptions=
+setlocal cinwords=if,else,while,do,for,switch
+setlocal colorcolumn=
+setlocal comments=s1:/*,mb:*,ex:*/,://,b:#,:XCOMM,n:>,fb:-
+setlocal commentstring=#%s
+setlocal complete=.,w,b,u,t,i
+setlocal concealcursor=
+setlocal conceallevel=0
+setlocal completefunc=
+setlocal nocopyindent
+setlocal cryptmethod=
+setlocal nocursorbind
+setlocal nocursorcolumn
+set cursorline
+setlocal cursorline
+setlocal define=
+setlocal dictionary=
+setlocal nodiff
+setlocal equalprg=
+setlocal errorformat=
+setlocal expandtab
+if &filetype != 'pyrex'
+setlocal filetype=pyrex
+endif
+setlocal foldcolumn=0
+setlocal foldenable
+setlocal foldexpr=0
+setlocal foldignore=#
+setlocal foldlevel=0
+setlocal foldmarker={{{,}}}
+setlocal foldmethod=manual
+setlocal foldminlines=1
+setlocal foldnestmax=20
+setlocal foldtext=foldtext()
+setlocal formatexpr=
+setlocal formatoptions=tcq
+setlocal formatlistpat=^\\s*\\d\\+[\\]:.)}\\t\ ]\\s*
+setlocal grepprg=
+setlocal iminsert=2
+setlocal imsearch=2
+setlocal include=^\\s*\\(from\\|import\\)
+setlocal includeexpr=substitute(v:fname,'\\.','/','g')
+setlocal indentexpr=GetPythonIndent(v:lnum)
+setlocal indentkeys=0{,0},:,!^F,o,O,e,<:>,=elif,=except
+setlocal noinfercase
+setlocal iskeyword=@,48-57,_,192-255
+setlocal keywordprg=pydoc
+setlocal nolinebreak
+setlocal nolisp
+setlocal nolist
+setlocal makeprg=
+setlocal matchpairs=(:),{:},[:]
+setlocal modeline
+setlocal nomodifiable
+setlocal nrformats=octal,hex
+set number
+setlocal number
+setlocal numberwidth=4
+setlocal omnifunc=pythoncomplete#Complete
+setlocal path=
+setlocal nopreserveindent
+setlocal nopreviewwindow
+setlocal quoteescape=\\
+setlocal noreadonly
+setlocal norelativenumber
+setlocal norightleft
+setlocal rightleftcmd=search
+setlocal noscrollbind
+setlocal shiftwidth=4
+setlocal noshortname
+setlocal nosmartindent
+setlocal softtabstop=4
+setlocal nospell
+setlocal spellcapcheck=[.?!]\\_[\\])'\"\	\ ]\\+
+setlocal spellfile=
+setlocal spelllang=en
+setlocal statusline=%!airline#statusline(2)
+setlocal suffixesadd=.py
+setlocal swapfile
+setlocal synmaxcol=3000
+if &syntax != 'pyrex'
+setlocal syntax=pyrex
+endif
+setlocal tabstop=4
+setlocal tags=
+setlocal textwidth=0
+setlocal thesaurus=
+setlocal undofile
+setlocal nowinfixheight
+setlocal nowinfixwidth
+setlocal wrap
+setlocal wrapmargin=0
+silent! normal! zE
+let s:l = 554 - ((41 * winheight(0) + 22) / 44)
+if s:l < 1 | let s:l = 1 | endif
+exe s:l
+normal! zt
+554
+normal! 0
+wincmd w
+argglobal
 edit ~/simulacion/pla_stochastic/composite_turbulence/single_orbits/src/cython_wrapper.pxd
 vnoremap <buffer> 	 :py isort_visual()
 xnoremap <buffer> <silent> \a} `>a}`<i{
@@ -1569,7 +1696,7 @@ setlocal nospell
 setlocal spellcapcheck=[.?!]\\_[\\])'\"\	\ ]\\+
 setlocal spellfile=
 setlocal spelllang=en
-setlocal statusline=%!airline#statusline(2)
+setlocal statusline=%!airline#statusline(3)
 setlocal suffixesadd=.py
 setlocal swapfile
 setlocal synmaxcol=3000
@@ -1593,8 +1720,10 @@ normal! zt
 167
 normal! 0
 wincmd w
-exe 'vert 1resize ' . ((&columns * 80 + 81) / 162)
-exe 'vert 2resize ' . ((&columns * 81 + 81) / 162)
+3wincmd w
+exe 'vert 1resize ' . ((&columns * 57 + 86) / 172)
+exe 'vert 2resize ' . ((&columns * 57 + 86) / 172)
+exe 'vert 3resize ' . ((&columns * 56 + 86) / 172)
 tabnext 3
 if exists('s:wipebuf')
   silent exe 'bwipe ' . s:wipebuf

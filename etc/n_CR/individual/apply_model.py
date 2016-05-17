@@ -75,7 +75,7 @@ tau, bp     = 2.36, 0.0
 q, off, bo  = -9.373, 0.89, 16.15
 """
 ncr     = ff.nCR2([t, fc, b], **fit.par)
-sqr     = np.nanmean(np.power(crs - ncr, 2.0))
+sqr     = np.nanmean(np.square(crs - ncr))
 
 #--- plot izq
 ax.plot(org_t, org_crs, '-o', c='gray', ms=3)

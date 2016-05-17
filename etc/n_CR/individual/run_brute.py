@@ -10,6 +10,15 @@ from os import environ as env
 from os.path import isfile, isdir
 #++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+class Lim:
+    def __init__(self, min_, max_, n):
+        self.min = min_
+        self.max = max_
+        self.n   = n
+    def delta(self):
+        return (self.max-self.min) / (1.0*self.n)
+
+
 dir_inp_sh      = '{dir}/sheaths.icmes/ascii/MCflag0.1.2.2H/woShiftCorr/_auger_/' .format(dir=env['MEAN_PROFILES_ACE'])
 dir_inp_mc      = '{dir}/icmes/ascii/MCflag0.1.2.2H/woShiftCorr/_auger_/' .format(dir=env['MEAN_PROFILES_ACE'])
 #dir_inp_sh      = '{dir}/sheaths/ascii/MCflag2/wShiftCorr/_test_Vmc_' .format(dir=env['MEAN_PROFILES_ACE'])
@@ -21,10 +30,10 @@ fname_inp_part  = 'MCflag0.1.2.2H_2before.4after_fgap0.2_WangNaN' # '_vlo.100.0.
 #CRstr           = 'CRs.Auger_BandMuons'
 CRstr           = 'CRs.Auger_scals'
 mgr             = fd.mgr_data(dir_inp_sh, dir_inp_mc, fname_inp_part)
-sh, mc, cr      = mgr.run(vlo=100.0, vhi=375.0, CRstr=CRstr)
+#sh, mc, cr      = mgr.run(vlo=100.0, vhi=375.0, CRstr=CRstr)
 #sh, mc, cr      = mgr.run(vlo=375.0, vhi=450.0, CRstr=CRstr)
-#sh, mc, cr      = mgr.run(vlo=450.0, vhi=3000.0, CRstr=CRstr)
-fname_fig       = '../figs/indiv/nCR_vlo.{lo:4.1f}.vhi.{hi:4.1f}_{name}.png' .format(lo=mgr.vlo, hi=mgr.vhi, name=CRstr)
+sh, mc, cr      = mgr.run(vlo=450.0, vhi=3000.0, CRstr=CRstr)
+fname_fig       = './nCR_vlo.{lo:4.1f}.vhi.{hi:4.1f}_{name}.png' .format(lo=mgr.vlo, hi=mgr.vhi, name=CRstr)
 #++++++++++++++++++++++++++++++++++++++++++++++++++++
 #-- mc:
 mc.cc   = (mc.t>0.0) & (mc.t<=2.0)
@@ -66,14 +75,7 @@ b       = B
 tau_, q_, off_   = 5., -6., 0.1 #2.0, -400.0
 bp_, bo_         = -0.1, 10.0
 
-class Lim:
-    def __init__(self, min_, max_, n):
-        self.min = min_
-        self.max = max_
-        self.n   = n
-    def delta(self):
-        return (self.max-self.min) / (1.0*self.n)
-
+# parameter boundaries && number of evaluations
 tau = Lim(0.2, 10., n=20)
 q   = Lim(-20., -0.1, n=20)
 off = Lim(0., 1., n=20)
@@ -90,3 +92,41 @@ rranges = (
 
 fit     = ff.fit_forbush([t, fc, crs, b], [tau_, q_, off_, bp_, bo_])
 fit.make_fit_brute(rranges)
+
+
+#++++++++++++++++++++++++++++++++++++++++++++++++ figura
+fig     = figure(1, figsize=(6,3.))
+ax     = fig.add_subplot(111)
+
+ncr     = ff.nCR2([t, fc, b], **fit.par)
+sqr     = np.nanmean(np.square(crs - ncr))
+
+#--- plot izq
+ax.plot(org_t, org_crs, '-o', c='gray', ms=3)
+ax.plot(t, ncr, '-', c='red', lw=5, alpha=0.8, label='$\\{tau:3.3g}$'.format(**fit.par))
+
+#++++ region sheath (naranja)
+trans   = transforms.blended_transform_factory(ax.transData, ax.transAxes)
+rect1   = patches.Rectangle((0., 0.), width=1, height=1, 
+            transform=trans, color='orange',
+            alpha=0.3)
+ax.add_patch(rect1)
+#++++ region mc (blue)
+trans   = transforms.blended_transform_factory(ax.transData, ax.transAxes)
+rect1   = patches.Rectangle((1., 0.), width=3, height=1, 
+            transform=trans, color='blue',
+            alpha=0.3)
+ax.add_patch(rect1)
+
+ax.plot(t, crs, '-o', c='k', ms=3)
+#ax.axhline(y=0.0, c='g')
+ax.grid()
+ax.set_xlabel('time normalized to sheath/MC passage [1]', fontsize=14)
+ax.set_ylabel('$n_{CR}$ [%]', fontsize=21)
+ax.set_ylim(-1., 0.5)
+
+savefig(fname_fig, dpi=135, bbox_inches='tight')
+print " ---> generamos: " + fname_fig
+close()
+
+#EOF
