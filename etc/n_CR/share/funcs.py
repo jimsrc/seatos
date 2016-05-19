@@ -187,7 +187,7 @@ class fit_forbush():
         #model = nCR2([t, self.rms, self.b], tau, q, off, bp, bo)
         model = self.nCR2(tau, q, off, bp, bo)
         #sqr   = np.square(crs - model)
-        sqr   = np.abs(crs - model) # mas rapido q el np.square()
+        sqr   = np.square(crs - model) # mas rapido q el np.square()
         diff  = np.nanmean(sqr)
         return diff
 
