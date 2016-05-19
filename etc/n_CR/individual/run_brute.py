@@ -60,7 +60,6 @@ org_crs = crs.copy()
 t, rms, crs, B  = t[t>=0.0], rms[t>=0.0], crs[t>=0.0], B[t>=0.0]
 dt      = t[1:-1] - t[0:-2]
 cte     = 0.0
-#q       = -390.0 #-350.0 #-385.01000158 #-440.0 #-170.0
 
 #--- 'fc' es la version trozos de 'rms'
 cc      = ((rms-rms_o)>=0.0) & (t<5.0)
@@ -92,6 +91,7 @@ rranges = (
 data = np.array([t, fc, crs, b])
 fit  = ff.fit_forbush(data, [tau_, q_, off_, bp_, bo_])
 fit.make_fit_brute(rranges)
+print fit.par
 
 
 #++++++++++++++++++++++++++++++++++++++++++++++++ figura
