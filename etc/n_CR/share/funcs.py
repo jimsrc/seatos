@@ -137,13 +137,36 @@ def nCR2(data, tau, q, off, bp, bo):
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 class fit_forbush():
-    def __init__(self, data, sems):
-        self.sems = sems
-        self.data = data
-        self.t      = data[0] # time
-        self.rms    = data[1] # rms(B)
-        self.crs    = data[2] # GCRs
-        self.b      = data[3] # campo B
+    def __init__(s, data, sems):
+        s.sems = sems
+        s.data = data
+        nt     = data.shape[1]
+        s.t      = data[0,:] # time
+        s.rms    = data[1,:] # rms(B)   ['fc'--->'rms']
+        s.crs    = data[2,:] # GCRs
+        s.b      = data[3,:] # campo B
+
+        #--- process input fot self.nCR2()
+        s.to  = 1.0           # to=1.0 : sheath trailing edge
+        s.cc  = s.t[1:-1]<=s.to # la recuperacion ocurre despues de 'to'
+        s.cx  = s.cc.nonzero()[0] # should be equivalent to 'cx=find(cc)'!
+        s.cy  = (~s.cc).nonzero()[0] # antes 'find(~cc)'
+        s.dt  = s.t[1:-1] - s.t[0:-2] # permite resolucion des-uniforme
+        s.fcc = s.rms[1:-1]
+        s.no  = s.cx[-1]
+        #--- auxiliary sumatory terms
+        s.ncx   = len(s.cx)
+        s.ncy   = len(s.cy)
+        s.sum0  = np.zeros(shape=s.ncx, dtype=np.float32)
+        s.sum1  = np.zeros(shape=s.ncy, dtype=np.float32)
+        s.nCR   = np.zeros(shape=nt, dtype=np.float32)
+        #--- 1st summatory
+        for i, j in zip(s.cx, range(s.ncx)):
+            s.sum0[j] = np.sum(s.fcc[:(i+1)]*s.dt[:(i+1)])
+        #--- 2nd summatory
+        for i, j in zip(s.cy, range(s.ncy)):
+            # termino rms
+            s.sum1[j] = np.sum(s.fcc[:(i+1)]*s.dt[:(i+1)])
 
 
     def residuals(self, params):
@@ -161,22 +184,64 @@ class fit_forbush():
 
         t     = self.t
         crs   = self.crs
-        model = nCR2([t, self.rms, self.b], tau, q, off, bp, bo)
-        sqr   = np.square(crs - model)
+        #model = nCR2([t, self.rms, self.b], tau, q, off, bp, bo)
+        model = self.nCR2(tau, q, off, bp, bo)
+        #sqr   = np.square(crs - model)
+        sqr   = np.abs(crs - model) # mas rapido q el np.square()
         diff  = np.nanmean(sqr)
-        #print " diff---> %f, tau:%g, q:%g, bp:%g" % (diff, tau, q, bp)
-        #LINE = "%g   %g  %g  %g %g  %g\n" % (tau, q, bp, off, bo, diff)
-        #sys.stderr.write(LINE)
         return diff
+
+
+    def nCR2(s, tau, q, off, bp, bo):
+        s.bc = s.b[1:-1] - bo
+        s.bc[s.bc<=0.0] = 0.0
+        #---- zona sheath
+        for i, j in zip(s.cx, range(s.ncx)):
+            #s.ind      = s.cx[:(i+1)]
+            s.nCR[i+1] = q*s.sum0[j]
+
+        #---- despues de sheath
+        for i, j in zip(s.cy, range(s.ncy)):
+            # termino rms
+            s.nCR[i+1] = q*s.sum1[j]
+            # termino recovery-after-sheath
+            s.nCR[i+1] += (-1.0/tau)*np.sum(s.nCR[1:-1][s.no:i]*s.dt[s.no:i])
+            s.nCR[i+1] += 1.0*off    # offset
+            s.nCR[i+1] += bp*np.sum(s.bc[s.no:i]*s.dt[s.no:i])
+        return s.nCR
+        #END
+        #********************
+        """
+        t, fc, b = data
+        to  = 1.0           # to=1.0 : sheath trailing edge
+        cc  = t[1:-1]<=to   # la recuperacion ocurre despues de 'to'
+        cx  = find(cc)
+        dt  = t[1:-1] - t[0:-2]
+        nCR = np.nan*np.ones(t.size)
+        fcc = fc[1:-1]
+        bc          = b[1:-1] - bo
+        bc[bc<=0.0] = 0.0
+        #---- zona sheath
+        for i in cx:
+            ind      = cx[:(i+1)]
+            nCR[i+1] = q*np.sum(fcc[:(i+1)]*dt[:(i+1)])
+
+        cy  = find(~cc)
+        no  = cx[-1]
+        #---- despues de sheath
+        for i in cy:
+            # termino rms
+            nCR[i+1] = q*sum(fcc[:(i+1)]*dt[:(i+1)])
+            # termino recovery-after-sheath
+            nCR[i+1] += (-1.0/tau)*sum( nCR[1:-1][no:i]*dt[no:i] )
+            nCR[i+1] += 1.0*off    # offset
+            nCR[i+1] += bp*sum(bc[no:i]*dt[no:i])
+        """
 
 
     def make_fit_brute(self, rranges):
         """
-        rranges = ( 
-            slice(0., pi, pi/20),
-            slice(-2.*pi, +2.*pi, 4.*pi/20),
-            slice(1., 2.*pi, 2.*pi/20),
-        )
+        rranges: slices that define the boundaries && step-size
         """
         rb = brute(self.residuals, rranges, full_output=False, finish=None)
         # este orden va acorde con residuals()

@@ -33,7 +33,7 @@ mgr             = fd.mgr_data(dir_inp_sh, dir_inp_mc, fname_inp_part)
 #sh, mc, cr      = mgr.run(vlo=100.0, vhi=375.0, CRstr=CRstr)
 #sh, mc, cr      = mgr.run(vlo=375.0, vhi=450.0, CRstr=CRstr)
 sh, mc, cr      = mgr.run(vlo=450.0, vhi=3000.0, CRstr=CRstr)
-fname_fig       = './nCR_vlo.{lo:4.1f}.vhi.{hi:4.1f}_{name}.png' .format(lo=mgr.vlo, hi=mgr.vhi, name=CRstr)
+fname_fig       = './_nCR_vlo.{lo:4.1f}.vhi.{hi:4.1f}_{name}.png' .format(lo=mgr.vlo, hi=mgr.vhi, name=CRstr)
 #++++++++++++++++++++++++++++++++++++++++++++++++++++
 #-- mc:
 mc.cc   = (mc.t>0.0) & (mc.t<=2.0)
@@ -68,20 +68,19 @@ fc      = np.zeros(rms.size)
 fc[cc]  = (rms-rms_o)[cc]
 b       = B
 
-##++++++++++++++++++++++++++++++++++++++++++++++++ figura
-#fig     = figure(1, figsize=(6,3.))
-#ax     = fig.add_subplot(111)
-
+#++++++++++++++++++++++++++++++++++++++++++++++++ ajuste
+#--- semillas
 tau_, q_, off_   = 5., -6., 0.1 #2.0, -400.0
 bp_, bo_         = -0.1, 10.0
 
-# parameter boundaries && number of evaluations
-tau = Lim(0.2, 10., n=20)
-q   = Lim(-20., -0.1, n=20)
-off = Lim(0., 1., n=20)
-bp  = Lim(-1., 0., n=20)
-bo  = Lim(0., 20., n=20)
-
+#--- parameter boundaries && number of evaluations
+nbin = 5
+tau = Lim(0.2, 10., n=nbin)
+q   = Lim(-20., -0.1, n=nbin)
+off = Lim(0., 1., n=nbin)
+bp  = Lim(-1., 0., n=nbin)
+bo  = Lim(0., 20., n=nbin)
+#--- slice object
 rranges = ( 
     slice(tau.min, tau.max, tau.delta()),
     slice(q.min, q.max, q.delta()),
@@ -89,8 +88,9 @@ rranges = (
     slice(bp.min, bp.max, bp.delta()),
     slice(bo.min, bo.max, bo.delta()),
 )
-
-fit     = ff.fit_forbush([t, fc, crs, b], [tau_, q_, off_, bp_, bo_])
+#--- start && run the fitter
+data = np.array([t, fc, crs, b])
+fit  = ff.fit_forbush(data, [tau_, q_, off_, bp_, bo_])
 fit.make_fit_brute(rranges)
 
 
