@@ -88,22 +88,23 @@ rranges = (
     slice(bo.min, bo.max, bo.delta()),
 )
 #--- start && run the fitter
-data = np.array([t, fc, crs, b])
-fit  = ff.fit_forbush(data, [tau_, q_, off_, bp_, bo_])
-fit.make_fit_brute(rranges)
-print fit.par
+data = np.array([t, fc, crs, b], dtype=np.float32)
+sems = np.array([tau_, q_, off_, bp_, bo_], dtype=np.int)
+fit  = cf.fit_forbush(data, sems)
+par = fit.make_fit_brute(rranges)
+print par # resultado
 
 
 #++++++++++++++++++++++++++++++++++++++++++++++++ figura
 fig     = figure(1, figsize=(6,3.))
 ax     = fig.add_subplot(111)
 
-ncr     = ff.nCR2([t, fc, b], **fit.par)
+ncr     = ff.nCR2([t, fc, b], **par)
 sqr     = np.nanmean(np.square(crs - ncr))
 
 #--- plot izq
 ax.plot(org_t, org_crs, '-o', c='gray', ms=3)
-ax.plot(t, ncr, '-', c='red', lw=5, alpha=0.8, label='$\\{tau:3.3g}$'.format(**fit.par))
+ax.plot(t, ncr, '-', c='red', lw=5, alpha=0.8, label='$\\{tau:3.3g}$'.format(**par))
 
 #++++ region sheath (naranja)
 trans   = transforms.blended_transform_factory(ax.transData, ax.transAxes)

@@ -2,3 +2,7 @@
 *.log
 *.prof
 *.lprof
+
+*.so
+*.cpp
+*.o
