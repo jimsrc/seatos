@@ -32,8 +32,8 @@ fname_inp_part  = 'MCflag0.1.2.2H_2before.4after_fgap0.2_WangNaN' # '_vlo.100.0.
 CRstr       = 'CRs.Auger_scals'
 mgr         = fd.mgr_data(dir_inp_sh, dir_inp_mc, fname_inp_part)
 #sh, mc, cr  = mgr.run(vlo=100.0, vhi=375.0, CRstr=CRstr)
-sh, mc, cr      = mgr.run(vlo=375.0, vhi=450.0, CRstr=CRstr)
-#sh, mc, cr      = mgr.run(vlo=450.0, vhi=3000.0, CRstr=CRstr)
+#sh, mc, cr      = mgr.run(vlo=375.0, vhi=450.0, CRstr=CRstr)
+sh, mc, cr      = mgr.run(vlo=450.0, vhi=3000.0, CRstr=CRstr)
 fname_fig   = './_nCR_vlo.{lo:4.1f}.vhi.{hi:4.1f}_{name}.png' .format(lo=mgr.vlo, hi=mgr.vhi, name=CRstr)
 fname_out   = './_nCR_vlo.{lo:5.1f}.vhi.{hi:4.1f}_{name}.h5' .format(lo=mgr.vlo, hi=mgr.vhi, name=CRstr)
 #++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -92,19 +92,26 @@ rranges = (
 #--- start && run the fitter
 data = np.array([t, fc, crs, b])
 fit  = ff.fit_forbush(data, [tau_, q_, off_, bp_, bo_])
-fit.make_fit_brute(rranges)
+#fit.make_fit_brute(rranges)
+#print fit.par
+
+fit.par = {}
+#--- output en hdf5
+fo = h5(fname_out, 'r')
+for pname in fo.keys():
+    if pname=='grids':
+        continue
+
+    fit.par[pname] = fo[pname].value
+    #fo[pname] = fit.par[pname]
 print fit.par
 
-#--- output en hdf5
-fo = h5(fname_out, 'w')
-for pname in fit.par.keys():
-    fo[pname] = fit.par[pname]
 #--- guardamos la grilla de exploracion
-fo['grids/tau'] = [tau.min, tau.max, tau.delta(), tau.n]
-fo['grids/q']   = [q.min, q.max, q.delta(), q.n]
-fo['grids/off'] = [off.min, off.max, off.delta(), off.n]
-fo['grids/bp']  = [bp.min, bp.max, bp.delta(), bp.n]
-fo['grids/bo']  = [bo.min, bo.max, bo.delta(), bo.n]
+#fo['grids/tau'] = [tau.min, tau.max, tau.delta(), tau.n]
+#fo['grids/q']   = [q.min, q.max, q.delta(), q.n]
+#fo['grids/off'] = [off.min, off.max, off.delta(), off.n]
+#fo['grids/bp']  = [bp.min, bp.max, bp.delta(), bp.n]
+#fo['grids/bo']  = [bo.min, bo.max, bo.delta(), bo.n]
 #------------------
 
 

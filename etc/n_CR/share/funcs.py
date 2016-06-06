@@ -210,33 +210,6 @@ class fit_forbush():
             s.nCR[i+1] += bp*np.sum(s.bc[s.no:i]*s.dt[s.no:i])
         return s.nCR
         #END
-        #********************
-        """
-        t, fc, b = data
-        to  = 1.0           # to=1.0 : sheath trailing edge
-        cc  = t[1:-1]<=to   # la recuperacion ocurre despues de 'to'
-        cx  = find(cc)
-        dt  = t[1:-1] - t[0:-2]
-        nCR = np.nan*np.ones(t.size)
-        fcc = fc[1:-1]
-        bc          = b[1:-1] - bo
-        bc[bc<=0.0] = 0.0
-        #---- zona sheath
-        for i in cx:
-            ind      = cx[:(i+1)]
-            nCR[i+1] = q*np.sum(fcc[:(i+1)]*dt[:(i+1)])
-
-        cy  = find(~cc)
-        no  = cx[-1]
-        #---- despues de sheath
-        for i in cy:
-            # termino rms
-            nCR[i+1] = q*sum(fcc[:(i+1)]*dt[:(i+1)])
-            # termino recovery-after-sheath
-            nCR[i+1] += (-1.0/tau)*sum( nCR[1:-1][no:i]*dt[no:i] )
-            nCR[i+1] += 1.0*off    # offset
-            nCR[i+1] += bp*sum(bc[no:i]*dt[no:i])
-        """
 
 
     def make_fit_brute(self, rranges):
