@@ -34,8 +34,9 @@ mgr         = fd.mgr_data(dir_inp_sh, dir_inp_mc, fname_inp_part)
 #sh, mc, cr  = mgr.run(vlo=100.0, vhi=375.0, CRstr=CRstr)
 sh, mc, cr      = mgr.run(vlo=375.0, vhi=450.0, CRstr=CRstr)
 #sh, mc, cr      = mgr.run(vlo=450.0, vhi=3000.0, CRstr=CRstr)
-fname_fig   = './_nCR_vlo.{lo:4.1f}.vhi.{hi:4.1f}_{name}.png' .format(lo=mgr.vlo, hi=mgr.vhi, name=CRstr)
-fname_out   = './_nCR_vlo.{lo:5.1f}.vhi.{hi:4.1f}_{name}.h5' .format(lo=mgr.vlo, hi=mgr.vhi, name=CRstr)
+dir_dst = '../out/individual'
+fname_fig   = '{dir}/_nCR_vlo.{lo:4.1f}.vhi.{hi:4.1f}_{name}.png' .format(dir=dir_dst, lo=mgr.vlo, hi=mgr.vhi, name=CRstr)
+fname_out   = '{dir}/_nCR_vlo.{lo:5.1f}.vhi.{hi:4.1f}_{name}.h5' .format(dir=dir_dst, lo=mgr.vlo, hi=mgr.vhi, name=CRstr)
 #++++++++++++++++++++++++++++++++++++++++++++++++++++
 #-- mc:
 mc.cc   = (mc.t>0.0) & (mc.t<=2.0)
@@ -76,7 +77,7 @@ bp_, bo_         = -0.1, 10.0
 
 #--- parameter boundaries && number of evaluations
 nbin = 20 #5
-tau = Lim(0.2, 10., n=nbin)
+tau = Lim(0.1, 5., n=nbin)
 q   = Lim(-20., -0.1, n=nbin)
 off = Lim(0., 1., n=nbin)
 bp  = Lim(-1., 0., n=nbin)
