@@ -1,14 +1,21 @@
-from numpy import *
-from pylab import *
+#!/usr/bin/env ipython
+# -*- coding: utf-8 -*- 
+from pylab import find, pause, figure, savefig, close
 from datetime import datetime, time, timedelta
 import numpy as np
 import console_colors as ccl
 from scipy.io.netcdf import netcdf_file
-from ShiftTimes import *
+from ShiftTimes import ShiftCorrection, ShiftDts
 import os
 import matplotlib.patches as patches
 import matplotlib.transforms as transforms
 import h5py
+from h5py import File as h5
+from numpy import (
+    mean, median, nanmean, nanmedian, std, nan, 
+    isnan, min, max, zeros, ones, size, loadtxt
+)
+from os.path import isfile, isdir
 
 #from read_NewTable import tshck, tini_icme, tend_icme, tini_mc, tend_mc, n_icmes, MCsig
 #from z_expansion_gulisano import z as z_exp
@@ -22,8 +29,8 @@ def flags2nan(VAR, FLAG):
 
 def date_to_utc(fecha):
     utc = datetime(1970, 1, 1, 0, 0, 0, 0)
-    time = (fecha - utc).total_seconds()
-    return time
+    sec_utc = (fecha - utc).total_seconds()
+    return sec_utc
 
 
 def dates_from_omni(t):
@@ -161,47 +168,50 @@ def adaptar(nwndw, dT, n, dt, t, r):
 
 
 def adaptar_ii(nwndw, dT, n, dt, t, r, fgap):
-    #n  = int(5./dt)            # nro de puntos en todo el intervalo de ploteo
-    tt  = zeros(n)
-    rr  = zeros(n)
+    tt      = zeros(n)
+    rr      = zeros(n)
     _nbin_  = n/(1+nwndw[0]+nwndw[1])   # nro de bins en la sheath/mc
-    cc  = (t>0.) & (t<dT)       # intervalo de la sheath/mc
+    cc      = (t>0.) & (t<dT)           # intervalo de la sheath/mc
     #print " r[cc]: ", r[cc]
     if len(r[cc])==0:           # no hay data en esta ventana
         rr      = nan*ones(n)
         enough  = False
     else:
         enough  = enoughdata(r[cc], fgap)   # [bool] True si hay mas del 80% de data buena.
-    if not(enough): rr  = nan*ones(n)   # si no hay suficiente data, este evento no aporta
+
+    if not(enough): 
+        rr  = nan*ones(n)   # si no hay suficiente data, este evento no aporta
+
     for i in range(n):
         tmin    = (i-nwndw[0]*_nbin_)*dt
         tmax    = tmin + dt
-        cond    = (t>tmin) & (t<tmax)
+        cond    = (t>=tmin) & (t<=tmax)
         #tt[i]   = mean(t[cond])#; print "tt:", t[i]; pause(1) # bug
-        tt[i]   = tmin + .5*dt     # bug corregido
+        tt[i]   = tmin + .5*dt          # bug corregido
         if enough:
-            cc    = ~isnan(r[cond])     # no olvidemos filtrar los gaps
-            rr[i] = mean(r[cond][cc])
+            #cc    = ~isnan(r[cond])    # no olvidemos filtrar los gaps
+            #rr[i] = mean(r[cond][cc])
+            rr[i] = nanmean(r[cond])
 
     return enough, [tt/dT, rr]          # tiempo normalizado x la duracion de la sheath/mc/etc
 
 
 def selecc_window_ii(nwndw, data, tini, tend):
-    time    = data[0]       #[s] utc sec
-    y   = data[1]
+    time = data[0]       #[s] utc sec
+    y    = data[1]
 
     day     = 86400.                # [seg]
     utc     = datetime(1970, 1, 1, 0, 0, 0, 0)
-    tini_utc    = (tini - utc).total_seconds()      # [s] utc sec
-    tend_utc    = (tend - utc).total_seconds()      # [s] utc sec
+    tini_utc = (tini - utc).total_seconds()  # [s] utc sec
+    tend_utc = (tend - utc).total_seconds()  # [s] utc sec
 
-    dt  = tend_utc - tini_utc
-    ti  = tini_utc - nwndw[0]*dt            # [seg] utc
-    tf  = tend_utc + nwndw[1]*dt
-    cond    = (time > ti) & (time < tf)
+    dt   = tend_utc - tini_utc
+    ti   = tini_utc - nwndw[0]*dt            # [seg] utc
+    tf   = tend_utc + nwndw[1]*dt
+    cond = (time > ti) & (time < tf)
 
-    time    = (time[cond] - tini_utc) / day     # [days] since 'ti'
-    y   = y[cond]
+    time = (time[cond] - tini_utc) / day     # [days] since 'ti'
+    y    = y[cond]
     return (time, y)
 
 
@@ -247,15 +257,9 @@ def averages_and_std_ii(nwndw,
 
 def mvs_for_each_event(VAR_adap, nbin, nwndw, Enough):
     nok         = size(VAR_adap, axis=0)
-    mvs         = np.zeros(nok)            # valores medios por cada evento
+    mvs         = zeros(nok)            # valores medios por cada evento
     binsPerTimeUnit = nbin/(1+nwndw[0]+nwndw[1])    # nro de bines por u. de tiempo
-    start       = nwndw[0]*binsPerTimeUnit  # en este bin empieza la MC
-    #print " ----> binsPerTimeUnit: ", binsPerTimeUnit
-    #print " ----> nok:  ", nok
-    #print " ----> VAR_adap.shape: ", VAR_adap.shape
-    #print " ----> VAR_adap: \n", VAR_adap
-    #raw_input()
-
+    start       = nwndw[0]*binsPerTimeUnit  # en este bin empieza la estructura (MC o sheath)
     for i in range(nok):
         aux = VAR_adap[i, start:start+binsPerTimeUnit]  # (*)
         cc  = ~isnan(aux)                   # pick good-data only
@@ -264,9 +268,9 @@ def mvs_for_each_event(VAR_adap, nbin, nwndw, Enough):
             print ccl.G
             print "id %d/%d: "%(i+1, nok), aux[cc]
             print ccl.W
-            mvs[i] = np.mean(aux[cc])
+            mvs[i] = mean(aux[cc])
         else:
-            mvs[i] = np.nan
+            mvs[i] = nan
     #(*): esta es la serie temporal (de esta variable) para el evento "i"
     pause(1)
     return mvs
@@ -372,9 +376,85 @@ class general:
         self.name = 'name'
 
 
+class boundaries:
+    def __init__(self):
+        print self.__dict__
+        print dict(self)
+    def ff(self):
+        self.fg = 0.2
+
+
+def read_hsts_data(fname, typic, ch_Eds):
+    """
+    code adapted from ...ch_Eds_smoo2.py
+    """
+    f   = h5(fname, 'r')
+
+    # initial date
+    datestr = f['date_ini'].value
+    yyyy, mm, dd = map(int, datestr.split('-'))
+    INI_DATE = datetime(yyyy, mm, dd)
+
+    # final date
+    datestr = f['date_end'].value
+    yyyy, mm, dd = map(int, datestr.split('-'))
+    END_DATE = datetime(yyyy, mm, dd)
+
+    date = INI_DATE
+    tt, rr = [], []
+    ntot, nt = 0, 0
+    while date < END_DATE:
+        yyyy, mm, dd = date.year, date.month, date.day
+        path    = '%04d/%02d/%02d' % (yyyy, mm, dd)
+        try:
+            dummy = f[path] # test if this exists!
+        except:
+            date    += timedelta(days=1)    # next day...
+            continue
+
+        ntanks  = f['%s/tanks'%path][...]
+        cc  = ntanks>150.
+        ncc = len(find(cc))
+
+        if ncc>1: #mas de un dato tiene >150 tanques
+            time    = f['%s/t_utc'%path][...] # utc secs
+            cts, typ = np.zeros(96, dtype=np.float64), 0.0
+            for i in ch_Eds:
+                Ed  =  i*20.+10.
+                cts += f['%s/cts_temp-corr_%04dMeV'%(path,Ed)][...]
+                typ += typic[i] # escalar
+
+            cts_norm = cts/typ
+            #aux  = np.nanmean(cts_norm[cc])
+            tt += [ time[cc] ]
+            rr += [ cts_norm[cc] ]
+            ntot += 1 # files read ok
+            nt += ncc # total nmbr ok elements
+
+        date    += timedelta(days=1)        # next day...
+
+    #--- converting tt, rr to 1D-numpy.arrays
+    t, r = nans(nt), nans(nt)
+    ini, end = 0, 0
+    for i in range(ntot):
+        ni = len(tt[i])
+        t[ini:ini+ni] = tt[i]
+        r[ini:ini+ni] = rr[i]
+        ini += ni
+
+    f.close()
+    return t, r
+
+
+
+def nans(sh):
+    return np.nan*np.ones(sh)
+
+
+
 class events_mgr:
-    def __init__(self, gral, FILTER, CUTS, bd, nBin, fgap, tb, z_exp):
-        #self.fnames     = fnames
+    def __init__(self, gral, FILTER, CUTS, bd, nBin, fgap, tb, z_exp, structure='mc'):
+        self.structure  = structure
         self.data_name  = gral.data_name
         self.FILTER     = FILTER
         self.CUTS       = CUTS
@@ -392,14 +472,36 @@ class events_mgr:
         self.f_events   = netcdf_file(gral.fnames['table_richardson'], 'r')
         print " -------> archivos input leidos!"
 
-        self.read_ace   = False # True: si ya lei los archivos input
-        self.read_murdo = False # True: si ya lei los archivos input
-        self.read_o7o6  = False # True: si ya lei los archivos input
-        self.read_auger = False # True: si ya lei los archivos input
+        #--- put False to all possible data-flags (all CR detector-names must be included in 'self.CR_observs')
+        self.names_ok   = ('Auger_BandMuons', 'Auger_BandScals',  'Auger_scals', 'McMurdo', 'ACE', 'ACE_o7o6')
+        for name in self.names_ok:
+            read_flag   = 'read_'+self.data_name
+            setattr(self, read_flag, False) # True: if files are already read
+
+        #--- names of CR observatories
+        self.CR_observs = ( #debe *incluir* a los metodos 'load_data_..()'
+            'Auger_scals', 'Auger_BandMuons', 'Auger_BandScals',\
+            'McMurdo')
+
+        #--- just a check for load_data_.. methods
+        #print " --> MYDIR... ", type(dir), dir
+        #print " --> METHODS... ", dir(events_mgr) #self.__dict__.keys()
+        #print "\n --> METHODS AGAIN... ", dir(self.__dir__)
+        for att_name in dir(events_mgr): # iterate on all methods
+            if att_name.startswith('load_data_'):
+                att_suffix = att_name.replace('load_data_', '')
+                assert att_suffix in self.names_ok,\
+                    " ---> uno de los metodos '%s' no esta tomando en cuenta en 'self.CR_observs' (%s) " % (att_name, att_suffix)
+
         self.data_name_ = str(self.data_name) # nombre de la data input inicial (*1)
+        self.IDs_locked = False      # (*2)
         """
         (*1):   si despues cambia 'self.data_name', me voy a dar
                 cuenta en la "linea" FLAG_001.
+        (*2):   lock in lock_IDs().
+                True: if the id's of the events have been
+                fixed/locked, so that later analysis is
+                resctricted only with theses locked id's.
         """
 
 
@@ -408,15 +510,112 @@ class events_mgr:
         self.filter_events()
         print "\n ---> filtrado de eventos (n:%d): OK\n" % (self.n_SELECC)
         #----- load data y los shiftimes "omni"
-        self.load_data_and_timeshift()
+        self.load_files_and_timeshift_ii()
         #----- rebineo y promedios
-        #self.rebine_and_avr()
         self.rebine()
         self.rebine_final()
         #----- hacer ploteos
         self.make_plots()
         #----- archivos "stuff"
-        #self.build_params_file()
+        self.build_params_file()
+
+
+    """
+    collects data from filtered events
+    """
+    def collect_data(self):
+        """
+        rebineo de c/evento
+        """
+        nvars   = self.nvars #len(VARS)
+        n_icmes = self.tb.n_icmes
+        bd      = self.bd
+        VARS    = self.VARS
+        nbin    = self.nBin['total']
+        nwndw   = [self.nBin['before'], self.nBin['after']]
+        day     = 86400.
+
+        #---- quiero una lista de los eventos-id q van a incluirse en c/promedio :-)
+        IDs     = {}
+        Enough  = {}
+        nEnough = {}
+        self.__ADAP__       = ADAP    = []   # conjunto de varios 'adap' (uno x c/variable)
+        for varname in VARS.keys():
+            IDs[varname]        = []
+            Enough[varname]     = []
+            nEnough[varname]    = 0     # contador
+
+        # recorremos los eventos:
+        nok=0; nbad=0;
+        nnn     = 0     # nro de evento q pasan el filtro a-priori
+        self.out = {}
+        self.out['events_data'] = {} # bag to save data from events
+        for i in range(n_icmes):
+            ok=False
+            try: #no todos los elementos de 'tend' son fechas (algunos eventos no tienen fecha definida)
+                dT  = (bd.tend[i] - bd.tini[i]).total_seconds()/day  # [day]
+                # this 'i' event must be contained in our data
+                ok  =  date_to_utc(bd.tini[i]) >= self.t_utc[0] #True
+                ok  &= date_to_utc(bd.tend[i]) <= self.t_utc[-1]
+            except:
+                continue    # saltar al sgte evento 'i'
+
+            ADAP += [ {} ] # agrego un diccionario a la lista
+            #np.set_printoptions(4)         # nro de digitos a imprimir cuando use numpy.arrays
+            if (ok & self.SELECC[i]):# (MCsig[i]>=MCwant)):  ---FILTRO--- (*1)
+                nnn += 1
+                print ccl.Gn + " id:%d ---> dT/day:%g" % (i, dT) + ccl.W
+                print self.tb.tshck[i]
+                nok +=1
+                evdata = self.out['events_data']['id_%03d'%i] = {} # evdata is just a pointer
+                # recorremos las variables:
+                for varname in VARS.keys():
+                    dt      = dT*(1+nwndw[0]+nwndw[1])/nbin
+                    t, var  = selecc_window_ii(
+                                nwndw, #rango ploteo
+                                [self.t_utc, VARS[varname]['value']],
+                                bd.tini[i],
+                                bd.tend[i]
+                              )
+                    evdata['t_days'] = t
+                    evdata[varname] = var
+
+                    if self.data_name in self.CR_observs:   # is it CR data?
+                        rate_pre = getattr(self, 'rate_pre_'+self.data_name)
+                        var = 100.*(var - rate_pre[i]) / rate_pre[i]
+                    """
+                    if self.data_name=='McMurdo':
+                        var = 100.*(var - self.rate_pre[i]) / self.rate_pre[i]
+
+                    elif self.data_name=='Auger':
+                        #print " ---> var.size: ", var.size
+                        var = 100.*(var - self.rate_pre_Auger[i]) / self.rate_pre_Auger[i]
+                    """
+
+                    # rebinea usando 'dt' como el ancho de nuevo bineo
+                    out       = adaptar_ii(nwndw, dT, nbin, dt, t, var, self.fgap)
+                    enough    = out[0]       # True: data con menos de 100*'fgap'% de gap
+                    Enough[varname]         += [ enough ]
+                    ADAP[nok-1][varname]    = out[1]  # donde: out[1] = [tiempo, variable]
+
+                    if enough:
+                        IDs[varname]     += [i]
+                        nEnough[varname] += 1
+
+            else:
+                print ccl.Rn + " id:%d ---> dT/day:%g" % (i, dT),\
+                      " (SELECC: ", self.SELECC[i], ')' + ccl.W
+                nbad +=1
+
+        print " ----> len.ADAP: %d" % len(ADAP)
+        self.__nok__    = nok
+        self.__nbad__   = nbad
+        #self.out = {}
+        self.out['nok']     = nok
+        self.out['nbad']    = nbad
+        self.out['IDs']     = IDs
+        self.out['nEnough'] = nEnough
+        self.out['Enough']  = Enough
 
 
     def rebine(self):
@@ -442,14 +641,17 @@ class events_mgr:
             nEnough[varname]    = 0     # contador
 
         # recorremos los eventos:
-        nok=0; nbad=0;
+        nok, nbad = 0, 0
         nnn     = 0     # nro de evento q pasan el filtro a-priori
         for i in range(n_icmes):
-            #nok=0; nbad=0;
-            ok=False
+            ok = False
             try: #no todos los elementos de 'tend' son fechas (algunos eventos no tienen fecha definida)
-                dT      = (bd.tend[i] - bd.tini[i]).total_seconds()/day  # [day]
-                ok = True
+                dT  =  (bd.tend[i] - bd.tini[i]).total_seconds()/day  # [day]
+                # this 'i' event must be contained in our data
+                ok  =  date_to_utc(bd.tini[i]) >= self.t_utc[0] #True
+                ok  &= date_to_utc(bd.tend[i]) <= self.t_utc[-1]
+                if self.IDs_locked:
+                    ok &= i in self.restricted_IDs
             except:
                 continue    # saltar al sgte evento 'i'
 
@@ -464,21 +666,27 @@ class events_mgr:
                 for varname in VARS.keys():
                     dt      = dT*(1+nwndw[0]+nwndw[1])/nbin
                     t, var  = selecc_window_ii(
-                                nwndw, #rango ploteo
-                                [self.t_utc, VARS[varname]['value']],
-                                bd.tini[i],
-                                bd.tend[i]
-                              )
+                        nwndw=nwndw, #rango ploteo
+                        data=[self.t_utc, VARS[varname]['value']],
+                        tini=bd.tini[i],
+                        tend=bd.tend[i]
+                    )
 
-                    if self.data_name=='McMurdo':
-                        var = 100.*(var - self.rate_pre[i]) / self.rate_pre[i]
+                    #--- read average CR rates before shock/disturbance
+                    if self.data_name in self.CR_observs:   # is it CR data?
+                        rate_pre = getattr(self, 'rate_pre_'+self.data_name)
+                        var = 100.*(var - rate_pre[i]) / rate_pre[i]
 
-                    elif self.data_name=='Auger':
-                        #print " ---> var.size: ", var.size
-                        var = 100.*(var - self.rate_pre_Auger[i]) / self.rate_pre_Auger[i]
-
-                    # rebinea usando 'dt' como el ancho de nuevo bineo
-                    out       = adaptar_ii(nwndw, dT, nbin, dt, t, var, self.fgap)
+                    #--- rebinea usando 'dt' como el ancho de nuevo bineo
+                    out       = adaptar_ii(
+                        nwndw = nwndw, 
+                        dT = dT, 
+                        n = nbin, 
+                        dt = dt, 
+                        t = t, 
+                        r = var, 
+                        fgap = self.fgap
+                    )
                     enough    = out[0]       # True: data con menos de 100*'fgap'% de gap
                     Enough[varname]         += [ enough ]
                     ADAP[nok-1][varname]    = out[1]  # donde: out[1] = [tiempo, variable]
@@ -488,7 +696,7 @@ class events_mgr:
                         nEnough[varname] += 1
 
             else:
-                print ccl.Rn + " id:%d ---> dT/day:%g" % (i, dT), " -->SELECC: ", self.SELECC[i], ccl.W
+                print ccl.Rn + " id:%d ---> dT/day:%g" % (i, dT), " (SELECC: ", self.SELECC[i], ')' + ccl.W
                 nbad +=1
 
         print " ----> len.ADAP: %d" % len(ADAP)
@@ -500,6 +708,20 @@ class events_mgr:
         self.out['IDs']     = IDs
         self.out['nEnough'] = nEnough
         self.out['Enough']  = Enough
+
+
+    def lock_IDs(self):
+        """
+        This assumes that 'IDs' has only *one* key.
+        That is, len(IDs)=1 !!
+        """
+        IDs = self.out['IDs']
+        varname = IDs.keys()[0]
+        self.restricted_IDs = IDs[varname]
+        self.IDs_locked = True
+
+        #dummy = np.array(self.restricted_IDs)
+        #np.savetxt('./__dummy__', dummy)
 
 
     def rebine_final(self):
@@ -532,7 +754,7 @@ class events_mgr:
         for varname in VARS.keys():
             print ccl.On + " -------> procesando: %s" % VARS[varname]['label'] #+ "  (%d/%d)"%(j+1,nvars)
             print " nEnough/nok/(nok+nbad): %d/%d/%d " % (nEnough[varname], nok, nok+nbad) + ccl.W
-            VAR_adap = np.zeros((nok, nbin))    # perfiles rebineados (*)
+            VAR_adap = zeros((nok, nbin))    # perfiles rebineados (*)
             # (*): uno de estos por variable
             # recorro los 'nok' eventos q pasaron el filtro de arriba:
             for i in range(nok):
@@ -542,15 +764,15 @@ class events_mgr:
 
             # valores medios de esta variable para c/evento
             avrVAR_adap = mvs_for_each_event(VAR_adap, nbin, nwndw, Enough[varname])
-            #print " ---> (%d/%d) avrVAR_adap[]: \n" % (j+1,nvars), avrVAR_adap
             print " ---> (%s) avrVAR_adap[]: \n" % varname, avrVAR_adap
 
-            VAR_avrg        = np.zeros(nbin)
-            VAR_avrgNorm    = np.zeros(nbin)
-            VAR_medi        = np.zeros(nbin)
-            VAR_std         = np.zeros(nbin)
-            ndata           = np.zeros(nbin)
+            VAR_avrg        = zeros(nbin)
+            VAR_avrgNorm    = zeros(nbin)
+            VAR_medi        = zeros(nbin)
+            VAR_std         = zeros(nbin)
+            ndata           = zeros(nbin)
 
+            # recorremos bin a bin, para calular media, mediana, error, etc...
             for i in range(nbin):
                 cond = ~np.isnan(VAR_adap.T[i,:])  # filtro eventos q no aportan data en este bin
                 ndata[i] = len(find(cond))      # nro de datos != nan
@@ -558,9 +780,7 @@ class events_mgr:
                 VAR_avrgNorm[i] = np.mean(VAR_adap.T[i,cond]/avrVAR_adap[cond])
                 VAR_medi[i] = np.median(VAR_adap.T[i,cond])# mediana entre los valores q no tienen flag
                 VAR_std[i] = np.std(VAR_adap.T[i,cond])    # std del mismo conjunto de datos
-                #--- calculo perfil normalizado por c/variable
-                #ii = nwndw[0]*binsPerTimeUnit
-                #AvrInWndw = mean(VAR_avrg[ii:ii+binsPerTimeUnit])
+
             first_varname = ADAP[0].keys()[0]
             tnorm   = ADAP[0][first_varname][0] # tiempo del primer evento (0), usando la 1ra variable
             stuff[varname] = [VAR_avrg, VAR_medi, VAR_std, ndata, avrVAR_adap]
@@ -571,37 +791,36 @@ class events_mgr:
         self.out['tnorm']    = tnorm #OUT['dVARS'][first_varname][2] # deberia ser =tnorm
 
 
-    def load_data_and_timeshift(self):
-        if self.data_name=='ACE':
-            if not(self.read_ace):
-                self.load_data_ACE()
-                self.read_ace = True # True: ya lei los archivos input
+    def __getattr__(self, attname):
+        if attname[:10]=='load_data_':
+            return self.attname
 
-        elif self.data_name=='Auger':
-            if not(self.read_auger):
-                self.load_data_Auger()
-                self.read_auger = True # True: ya lei los archivos input
 
-        elif self.data_name=='McMurdo':
-            if not(self.read_murdo):
-                self.load_data_McMurdo()
-                self.read_murdo = True # True: ya lei los archivos input
+    def load_files_and_timeshift_ii(self):
+        read_flag = 'read_'+self.data_name # e.g. self.read_Auger
+        """
+        if not(read_flag in self.__dict__.keys()): # do i know u?
+             setattr(self, read_flag, False) #True: if files are already read
+        """
+        #--- read data and mark flag as read!
+        if not( getattr(self, read_flag) ):
+            attname = 'load_data_'+self.data_name
+            getattr(self, attname)()    # call method 'load_data_...()'
+            self.read_flag = True       # True: ya lei los archivos input
+            #setattr(self, read_flag, True) # True: if files are already read
 
-        elif self.data_name=='ACE_o7o6':
-            if not(self.read_o7o6):
-                self.load_data_o7o6()
-                self.read_o7o6 = True # True: ya lei los archivos input
-
-        else:
+        #--- check weird case
+        if not(self.data_name in self.names_ok):
             print " --------> BAD 'self.data_name'!!!"
-            print " ---> self.read_ace: ", self.read_ace
-            print " ---> self.read_murdo: ", self.read_murdo
-            print " ---> self.read_auger: ", self.read_auger
+            for name in self.names_ok:
+                read_flag = getattr(self, 'read_'+self.data_name)
+                print " ---> self.read_%s: " % name, read_flag
+
             print " exiting.... "
             raise SystemExit
 
 
-    def load_data_o7o6(self):
+    def load_data_ACE_o7o6(self):
         tb          = self.tb
         nBin        = self.nBin
         bd          = self.bd
@@ -612,19 +831,18 @@ class events_mgr:
         t_utc   = utc_from_omni(self.f_sc)
         print " Ready."
 
-        #++++++++++++++++++++ CORRECCION DE BORDES +++++++++++++++++++++++++++++
+        #++++++++++++++++++++ CORRECCION DE BORDES +++++++++++++++++++++++++++
         # IMPORTANTE:
         # El shift es necesario, pero ya lo hice en la corrida del
         # primer 'self.data_name'. Si lo hago aqui, estaria hacia
         # doble shift-time.
-        #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         o7o6    = self.f_sc.variables['O7toO6'].data.copy()
         print " -------> variables leidas!"
         #------------------------------------ VARIABLES
         self.t_utc  = t_utc
         self.VARS = VARS = {}
         # variable, nombre archivo, limite vertical, ylabel
-        #VARS += [[o7o6, 'o7o6', [0.0, 1.5], 'O7/O6 [1]']]
         VARS['o7o6'] = {
             'value' : o7o6,
             'lims'  : [0.0, 1.5],
@@ -637,27 +855,88 @@ class events_mgr:
         aux['SELECC']    = self.SELECC
 
 
-    def load_data_Auger(self):
+    def load_data_Auger_scals(self):
+        """
+        solo cargamos Auger Scalers
+        """
         tb          = self.tb
         nBin        = self.nBin
         bd          = self.bd
         day         = 86400.
         fname_inp   = self.gral.fnames[self.data_name]
-        #data_murdo  = np.loadtxt(fname_inp)
         f5          = h5py.File(fname_inp, 'r')
         self.t_utc  = t_utc = f5['auger/time_seg_utc'][...].copy() #data_murdo[:,0]
         CRs         = f5['auger/sc_wAoP_wPres'][...].copy() #data_murdo[:,1]
         print " -------> variables leidas!"
 
         self.VARS   = VARS = {} #[]
-        VARS['CRs'] = {
+        VARS['CRs.'+self.data_name] = {
             'value' : CRs,
             'lims'  : [-1.0, 1.0],
-            'label' : 'Auger rate [%]'
+            'label' : 'Auger Scaler rate [%]'
         }
         self.nvars  = len(VARS.keys())
         #---------
+        self.aux = aux = {}
+        aux['SELECC']    = self.SELECC
 
+
+    def load_data_Auger_BandMuons(self):
+        """
+        para leer la data de histogramas Auger
+        """
+        tb          = self.tb
+        nBin        = self.nBin
+        bd          = self.bd
+        day         = 86400.
+        fname_inp   = self.gral.fnames[self.data_name]
+        f5          = h5py.File(fname_inp, 'r')
+        ch_Eds      = (10, 11, 12, 13)
+
+        fname_avr   = self.gral.fnames[self.data_name+'_avrs']#average histos
+        prom        = loadtxt(fname_avr)
+        typic       = nanmean(prom[:,1:], axis=0)#agarro el promedio del array de los 8 anios!
+        self.t_utc, CRs = read_hsts_data(fname_inp,  typic, ch_Eds)
+        print " -------> variables leidas!"
+
+        self.VARS   = VARS = {} #[]
+        VARS['CRs.'+self.data_name] = {
+            'value' : CRs,
+            'lims'  : [-1.0, 1.0],
+            'label' : 'Auger (muon band) [%]'
+        }
+        self.nvars  = len(VARS.keys())
+        #---------
+        self.aux = aux = {}
+        aux['SELECC']    = self.SELECC
+
+
+    def load_data_Auger_BandScals(self):
+        """
+        para leer la data de histogramas Auger, banda scalers
+        """
+        tb          = self.tb
+        nBin        = self.nBin
+        bd          = self.bd
+        day         = 86400.
+        fname_inp   = self.gral.fnames[self.data_name]
+        f5          = h5py.File(fname_inp, 'r')
+        ch_Eds      = (3, 4, 5)
+
+        fname_avr   = self.gral.fnames[self.data_name+'_avrs']#average histos
+        prom        = loadtxt(fname_avr)
+        typic       = nanmean(prom[:,1:], axis=0)#agarro el promedio del array de los 8 anios!
+        self.t_utc, CRs = read_hsts_data(fname_inp,  typic, ch_Eds)
+        print " -------> variables leidas!"
+
+        self.VARS   = VARS = {} #[]
+        VARS['CRs.'+self.data_name] = {
+            'value' : CRs,
+            'lims'  : [-1.0, 1.0],
+            'label' : 'Auger (muon band) [%]'
+        }
+        self.nvars  = len(VARS.keys())
+        #---------
         self.aux = aux = {}
         aux['SELECC']    = self.SELECC
 
@@ -667,17 +946,14 @@ class events_mgr:
         nBin        = self.nBin
         bd          = self.bd
         day         = 86400.
-        #HOME        = os.environ['HOME']
-        #fname_inp_murdo = '%s/actividad_solar/neutron_monitors/mcmurdo/mcmurdo_utc_correg.dat' % HOME
         fname_inp   = self.gral.fnames[self.data_name]
         data_murdo  = np.loadtxt(fname_inp)
         self.t_utc  = t_utc = data_murdo[:,0]
         CRs         = data_murdo[:,1]
         print " -------> variables leidas!"
 
-        self.VARS   = VARS = {} #[]
-        #VARS        += [[CRs, 'CRs', [-8.0, 1.0], 'mcmurdo rate [%]']]
-        VARS['CRs'] = {
+        self.VARS   = VARS = {} 
+        VARS['CRs.'+self.data_name] = {
             'value' : CRs,
             'lims'  : [-8.0, 1.0],
             'label' : 'mcmurdo rate [%]'
@@ -696,12 +972,12 @@ class events_mgr:
         day         = 86400.
 
         #----------------------------------------------------------
-        self.f_sc       = netcdf_file(self.gral.fnames[self.gral.data_name], 'r')
+        self.f_sc   = netcdf_file(self.gral.fnames[self.data_name], 'r')
         print " leyendo tiempo..."
         t_utc   = utc_from_omni(self.f_sc)
         print " Ready."
 
-        #++++++++++++++++++++ CORRECCION DE BORDES +++++++++++++++++++++++++++++
+        #++++++++++++++++++++ CORRECCION DE BORDES +++++++++++++++++++++++++++
         # IMPORTANTE:
         # Solo valido para los "63 eventos" (MCflag='2', y visibles en ACE)
         # NOTA: dan saltos de shock mas marcados con True.
@@ -711,7 +987,7 @@ class events_mgr:
             ShiftCorrection(ShiftDts, tb.tend_icme)
             ShiftCorrection(ShiftDts, tb.tini_mc)
             ShiftCorrection(ShiftDts, tb.tend_mc)
-        #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         B       = self.f_sc.variables['Bmag'].data.copy()
         Vsw     = self.f_sc.variables['Vp'].data.copy()
         Temp    = self.f_sc.variables['Tp'].data.copy()
@@ -726,42 +1002,42 @@ class events_mgr:
         #self.VARS = VARS = []
         self.VARS = VARS = {}
         # variable, nombre archivo, limite vertical, ylabel
-        VARS['B'] = {
+        VARS['B.'+self.data_name] = {
             'value' : B,
             'lims'  : [5., 18.],
             'label' : 'B [nT]'
         }
-        VARS['V'] = {
+        VARS['V.'+self.data_name] = {
             'value' : Vsw,
-            'lims'  : [380., 650.],
+            'lims'  : [300., 650.],
             'label' : 'Vsw [km/s]'
         }
-        VARS['rmsBoB'] = {
+        VARS['rmsBoB.'+self.data_name] = {
             'value' : rmsBoB,
             'lims'  : [0.01, 0.2],
             'label' : 'rms($\hat B$/|B|) [1]'
         }
-        VARS['rmsB'] = {
+        VARS['rmsB.'+self.data_name] = {
             'value' : rmsB,
             'lims'  : [0.05, 2.0],
             'label' : 'rms($\hat B$) [nT]'
         }
-        VARS['beta'] = {
+        VARS['beta.'+self.data_name] = {
             'value' : beta,
             'lims'  : [0.001, 5.],
             'label' : '$\\beta$ [1]'
         }
-        VARS['Pcc'] = {
+        VARS['Pcc.'+self.data_name] = {
             'value' : Pcc,
             'lims'  : [2, 17.],
             'label' : 'proton density [#/cc]'
         }
-        VARS['Temp'] = {
+        VARS['Temp.'+self.data_name] = {
             'value' : Temp,
             'lims'  : [1e4, 4e5],
             'label' : 'Temp [K]'
         }
-        VARS['AlphaRatio'] = {
+        VARS['AlphaRatio.'+self.data_name] = {
             'value' : alphar,
             'lims'  : [1e-3, 0.1],
             'label' : 'alpha ratio [1]'
@@ -785,8 +1061,6 @@ class events_mgr:
         fgap        = self.fgap
         MCwant      = self.FILTER['MCwant']
 
-        #dt_mc       = self.aux['dt_mc']
-        #dt_sh       = self.aux['dt_sh']
         ThetaThres  = self.CUTS['ThetaThres']
         if self.FILTER['vsw_filter']:
             v_lo, v_hi = self.CUTS['v_lo'], self.CUTS['v_hi']
@@ -813,7 +1087,6 @@ class events_mgr:
 
         #-------------------- prefijos:
         # prefijo para filtro Wang:
-        #WangFlag = wangflag(ThetaThres) #'NaN' #wangflag(ThetaThres)
         if self.FILTER['wang']:
             WangFlag = str(ThetaThres)
         else:
@@ -855,20 +1128,17 @@ class events_mgr:
             fnro = open(fname_nro, 'a') # si uso otra data input, voy anotando el nro
                                         # de eventos al final del archivo 'fname_nro'
 
-        #--------------------------------------------------------------------------------
+        #-------------------------------------------------------------------
         nvars = len(self.VARS)
-        #for i in range(nvars):
         for varname in self.VARS.keys():
             fname_fig = '%s_%s.png' % (FNAME_FIGS, varname) #self.VARS[i][1])
             print ccl.Rn+ " ------> %s" % fname_fig
-            #varname = self.VARS[i][1]
             ylims   = self.VARS[varname]['lims'] #self.VARS[i][2]
             ylabel  = self.VARS[varname]['label'] #self.VARS[i][3]
             average = self.out['dVARS'][varname][0]
             mediana = self.out['dVARS'][varname][1] #self.out['dVARS'][i][4]
             std_err = self.out['dVARS'][varname][2]
             nValues = self.out['dVARS'][varname][3] # number of values aporting to each data bin
-            #binsPerTimeUnit = nbin  #nbin/(1+nbefore+nafter)
             N_selec = self.out['nok'] #self.out['dVARS'][varname][0]
             N_final = self.out['nEnough'][varname] #nEnough[i]
 
@@ -900,33 +1170,32 @@ class events_mgr:
 
     def build_params_file(self):
         """
-        #---- construye archivo q contiene cosas de los eventos seleccionados:
-        # - valores medios de los observables (B, Vsw, Temp, beta, etc)
-        # - los IDs de los eventos
-        # - duracion de los MCs y las sheaths
+        Construye archivo q tiene cosas de los eventos seleccionados:
+        - valores medios de los observables (B, Vsw, Temp, beta, etc)
+        - los IDs de los eventos
+        - duracion de los MCs y las sheaths
         """
         DIR_ASCII   = self.DIR_ASCII
         FNAMEs      = self.FNAMEs
-        #---------------------------------------------- begin: NC_FILE
-        print "\n**************************************** begin: NC_FILE"
+        #-------------------------------------------- begin: NC_FILE
+        print "\n*********************************** begin: NC_FILE"
         #------- generamos registro de id's de los
         #        eventos q entraron en los promedios.
         #        Nota: un registro por variable.
-        fname_out   = DIR_ASCII+'/'+'_stuff_'+FNAMEs+'.nc' #'./test.nc'
+        fname_out = DIR_ASCII+'/'+'_stuff_'+FNAMEs+'.nc' #'./test.nc'
         #---FLAG_001
         if self.data_name==self.data_name_:
             fout        = netcdf_file(fname_out, 'w')
+            print "\n ----> generando: %s\n" % fname_out
         else:
             fout        = netcdf_file(fname_out, 'a')
             # modo 'a': si uso otra data input, voy anotando el nro
             # de eventos al final del archivo 'fname_out'
+            print "\n ----> anexando en: %s\n" % fname_out
 
-        print "\n ----> generando: %s\n" % fname_out
 
         IDs = self.out['IDs']
-        #for i in range(len(self.VARS)):
         for varname in self.VARS.keys():
-            #varname  = self.VARS[i][1]
             print " ----> " + varname
             n_events = len(IDs[varname])
             dimname  = 'nevents_'+varname
@@ -934,17 +1203,17 @@ class events_mgr:
             print " n_events: ", n_events
             prom     = self.out['dVARS'][varname][4]
             cc       = np.isnan(prom)
-            print " nprom: ", prom.size
+            print " nprom (all)    : ", prom.size
             prom     = prom[~cc]
-            print " nprom: ", prom.size
+            print " nprom (w/o nan): ", prom.size
             dims     = (dimname,)
-            write_variable(fout, varname, dims,
-                    prom, 'd', 'average_values per event')
+            write_variable(fout, varname, dims, prom, 'd', 
+                'average_values per event')
             #---------- IDs de esta variable
             ids      = map(int, IDs[varname])
             vname    = 'IDs_'+varname
             write_variable(fout, vname, dims, ids, 'i',
-                    'event IDs that enter in this parameter average')
+                'event IDs that enter in this parameter average')
             #---------- duracion de la estructura
             dtsh     = np.zeros(len(ids))
             dtmc     = np.zeros(len(ids))
@@ -964,9 +1233,9 @@ class events_mgr:
 
 
     def filter_events(self):
+        structure       = self.structure
         tb              = self.tb
         FILTER          = self.FILTER
-        ThetaThres      = self.CUTS['ThetaThres']
         dTday           = self.CUTS['dTday']
         day             = 86400.
         AU_o_km         = 1./(150.0e6)
@@ -975,15 +1244,23 @@ class events_mgr:
         #MCsig  = array(f_events.variables['MC_sig'].data)# 2,1,0: MC, rotation, irregular
         #Vnsh   = array(f_events.variables['wang_Vsh'].data) # veloc normal del shock
         ThetaSh     = np.array(self.f_events.variables['wang_theta_shock'].data) # orientacion de la normal del shock
-        #i_V         = np.array(self.f_events.variables['i_V'].data) # velocidad de icme
-        i_V         = np.array(self.f_events.variables['mc_V'].data) # velocidad de icme
-        #i_B         = np.array(self.f_events.variables['i_B'].data) # B del icme
-        i_B         = np.array(self.f_events.variables['mc_B'].data) # B del icme
-        #i_dt        = np.array(self.f_events.variables['i_dt'].data) # B del icme
-        i_dt        = np.array(self.f_events.variables['mc_dt'].data) # B del icme
+        i_V         = self.f_events.variables[structure+'_V'].data.copy() # velocidad de icme
+        i_B         = self.f_events.variables[structure+'_B'].data.copy() # B del icme
+        i_dt        = self.f_events.variables[structure+'_dt'].data.copy() # B del icme
         i_dR            = i_dt*(i_V*AU_o_km*sec_o_day)
-        self.rate_pre   = self.f_events.variables['rate_pre'].data.copy()
-        self.rate_pre_Auger   = self.f_events.variables['rate_pre_Auger'].data.copy()
+
+        #RatePre_Names = []
+        #--- seteamos miembros de 'self' q se llamen 'rate_pre_...'
+        for vname in self.f_events.variables.keys():
+            if vname.startswith('rate_pre_'):
+                #RatePre_Names += [ vname ] # save them to make checks later
+                var = self.f_events.variables[vname].data.copy()
+                setattr(self, vname, var)  # asignamos 'rate_pre_...' a 'self'
+
+        """
+        self.rate_pre   = self.f_events.variables['rate_pre_McMurdo'].data.copy()
+        self.rate_pre_Auger=self.f_events.variables['rate_pre_Auger'].data.copy()
+        """
         self.Afd        = self.f_events.variables['A_FD'].data.copy()
         #------------------------------------
 
@@ -1015,6 +1292,7 @@ class events_mgr:
 
         #------- orientacion del shock (catalogo Wang)
         if FILTER['wang']:
+            ThetaThres  = self.CUTS['ThetaThres']
             ThetaCond   = thetacond(ThetaThres, ThetaSh)
 
         #------- duration of sheaths
@@ -1066,12 +1344,16 @@ class events_mgr:
 
         self.SELECC     = SELECC
         self.n_SELECC   = len(find(SELECC))
-        #+++++++++++++++++ end: SELECCION DE EVENTOS +++++++++++++++++++++++++
-        #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        #+++++++++++++++++ end: SELECCION DE EVENTOS ++++++++++++++++++++
+        #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         if self.n_SELECC<=0:
             print ccl.Rn + "\n --------> FATAL ERROR!!!: self.n_SELECC=<0"
             print " exiting....... \n" + ccl.W
             raise SystemExit
 
 
-##
+#+++++++++++++++++++++++++++++++++
+if __name__=='__main__':
+    print " ---> this is a library!\n"
+
+#EOF

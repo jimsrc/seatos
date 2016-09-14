@@ -1,4 +1,8 @@
 #!/usr/bin/env ipython
+"""
+ runtime:
+ ./mm.py  13.41s user 6.58s system 144% cpu 13.859 total
+ """
 from mix_funcs import *
 import os
 
@@ -24,7 +28,7 @@ if CorrShift:
 else:
     prexShift = 'woShiftCorr'
 
-dir_mc      =     '../../icmes/ascii/MCflag%s/%s' % (MCwant, prexShift) 
+dir_mc      = '../../icmes/ascii/MCflag%s/%s' % (MCwant, prexShift) 
 dir_sh      = '../../sheaths.icmes/ascii/MCflag%s/%s' % (MCwant, prexShift)
 dir_figs    = '../plots/%s/MCflag%s' % (prexShift, MCwant) 
 
@@ -41,7 +45,7 @@ print " output: "
 print " --->  " + dir_figs + '\n'
 nbins       = 50
 
-#------------ nro de perfiles promediados por variable (MC)
+#------------ nro de perfiles promediados por variable (ICME)
 N_MCs   = {}
 fname_nro_mcs   = '%s/n.events_%s.txt' % (dir_mc, FNAME)
 print " ---> Abriendo: " + fname_nro_mcs
@@ -52,7 +56,7 @@ for line in f:
     N_MCs[varname] = int(N)
 f.close()
 
-#------------ nro de perfiles promediados por variable (sheath)
+#------------ nro de perfiles promediados por variable (sheath-of-ICME)
 N_SHs   = {}
 fname_nro_shs   = '%s/n.events_%s.txt' % (dir_sh, FNAME)
 print " ---> Abriendo: " + fname_nro_shs
@@ -66,4 +70,5 @@ f.close()
 #-------------------------
 os.system('mkdir -p ' + dir_figs)
 run_plot(dir_mc, dir_sh, dir_figs, FNAME, nbins, MCwant, WangFlag, fgap, N_MCs, N_SHs)
-##
+
+#EOF

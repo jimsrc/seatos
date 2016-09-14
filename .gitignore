@@ -11,22 +11,23 @@
 *bckp*
 
 mcs/ascii
-mcs/plots
-mcs/src/plots
+#mcs/plots
+#mcs/src/plots
 mcs/src/ascii
 
-sheaths/plots
+#sheaths/plots
 sheaths/ascii
 
-icmes/plots
+#icmes/plots
 icmes/ascii
 
-sheaths.icmes/plots
+#sheaths.icmes/plots
 sheaths.icmes/ascii
 
-mixed/src/plots
-mixed/figs
-mixed/plots
+#mixed/src/plots
+#mixed/figs
+#mixed/plots
 
-
+# incluyamos la tabla larga
+!etc/table_paper.sheaths/src/long_table.txt
 

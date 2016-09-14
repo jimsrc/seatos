@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 import os
 
 HOME        = os.environ['HOME']
-fname_rich	= '%s/ASOC_ICME-FD/icmes_richardson/RichardsonList.csv' % HOME
+fname_rich	= '%s/ASOC_ICME-FD/icmes_richardson/RichardsonList_until.2016.csv' % HOME
 print " leyendo tabla Richardson: %s" % fname_rich
 frich		= open(fname_rich, 'r')
 print " archivo leido."

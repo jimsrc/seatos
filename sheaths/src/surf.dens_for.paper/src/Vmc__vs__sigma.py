@@ -58,29 +58,35 @@ ax1     = fig.add_subplot(122, position=(0.55, 0.1, .2, .5))
 #ax0.set_position((0.1, 0.1, .45, .5))
 
 #--- scatter plot
-ax0.scatter(v, sigs, edgecolor='None') 
+ax0.scatter(v, sigs/(1e14), edgecolor='None') 
 #--- version suavizada
 #ax0.scatter(v, sigss, c='red')
 #--- ajuste
-ax0.plot(v, m*v+b, c='b', alpha=.7)
+#ax0.plot(v, m*v+b, c='b', alpha=.7)  # linear fit
 
 ax0.axvline(x=450., ls='--', c='k', lw=2, alpha=.8) 
 ax0.axvline(x=550., ls='--', c='k', lw=2, alpha=.8)
 ax0.grid()
 ax0.set_xlabel('$V_{mc}$', fontsize=17)
-ax0.set_ylabel('$\sigma_{sh}$ $[cm^{-2}]$', fontsize=17)
-ax0.set_ylim(-.1e14, 1.4e14)
+ax0.set_ylabel('$\sigma_{sh}$ $[cm^{-2}]$ ($\\times 10^{14}$)', fontsize=17)
+ax0.set_ylim(-1.0, 14) #(-.1e14, 1.4e14)
 #ax0.tick_params(labeltop=True)
+"""
+XTICKS = [300., 450., 600., 750., 900.]
+ax0.set_xticks(XTICKS)
+ax0.set_xticklabels(XTICKS, visible=True)
+"""
 
 #--- histograma
-ax1.barh(hx, hc, align='center', height=0.08e14)
+ax1.barh(hx, hc, align='center', height=0.8e14)
 ax1.grid()
 ax1.set_yticklabels([], visible=False)
 ax1.tick_params(labeltop=True, labelbottom=False)
-ax1.set_ylim(-.1e14, 1.4e14)
+ax1.set_ylim(-.1e15, 1.4e15)
 #ax1.set_xlabel('#')
 
 fname_fig = '../figs/Vmc__vs__sigma.png'
 savefig(fname_fig, dpi=100, bbox_inches='tight')
 print " ---> "+ fname_fig
 close()
+#EOF

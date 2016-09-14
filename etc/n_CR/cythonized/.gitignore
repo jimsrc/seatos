@@ -1,0 +1,8 @@
+# logs del cProfile y otros:
+*.log
+*.prof
+*.lprof
+
+*.so
+*.cpp
+*.o
