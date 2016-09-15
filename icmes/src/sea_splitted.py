@@ -3,6 +3,7 @@ from pylab import *
 from numpy import *
 from scipy.io.netcdf import netcdf_file
 from datetime import datetime, time, timedelta
+import argparse
 #------------ shared libraries:
 """
 --- antes de modificar cosas, tener en cuenta los bugs en: 
@@ -34,6 +35,32 @@ class boundaries:
     def __init__(self):
         name = 'name'
 
+#--- retrieve args
+parser = argparse.ArgumentParser(
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter
+)
+parser.add_argument(
+'-auger', '--inp_auger',
+type=str,
+default=None,
+help='input filename of Auger histograms-data'
+)
+parser.add_argument(
+'-fig', '--dir_fig',
+type=str,
+default='../plots',
+help='output directory for figures'
+)
+parser.add_argument(
+'-prof', '--dir_prof',
+type=str,
+default='../ascii',
+help='output directory for data of built mean-profiles'
+)
+
+pa = parser.parse_args()
+
+
 HOME                = os.environ['HOME']
 PAO                 = os.environ['PAO']
 PAO_PROCESS         = os.environ['PAO_PROCESS']
@@ -44,7 +71,7 @@ gral.fnames = fnames = {}
 fnames['ACE']       = '%s/data_ace/64sec_mag-swepam/ace.1998-2015.nc' % HOME
 fnames['McMurdo']   = '%s/actividad_solar/neutron_monitors/mcmurdo/mcmurdo_utc_correg.dat' % HOME
 fnames['Auger_scals']     = '%s/data_auger/estudios_AoP/data/unir_con_presion/data_final_2006-2013.h5' % PAO
-fnames['Auger_BandMuons'] = '%s/data_auger/data_histogramas/all.array.avrs/temp.corrected/shape.ok_and_3pmt.ok/15min/test_temp.corrected.nc' % PAO
+fnames['Auger_BandMuons'] = pa.inp_auger #'%s/data_auger/data_histogramas/all.array.avrs/temp.corrected/shape.ok_and_3pmt.ok/15min/test_temp.corrected.nc' % PAO
 fnames['Auger_BandMuons_avrs'] = '%s/long_trends/code_figs/avr_histos_press_shape.ok_and_3pmt.ok.txt' % PAO_PROCESS  # average histogram
 fnames['Auger_BandScals'] = fnames['Auger_BandMuons']
 fnames['Auger_BandScals_avrs'] = fnames['Auger_BandMuons_avrs']
@@ -56,8 +83,8 @@ for name in fnames.keys():
 
 #---- directorios de salida
 gral.dirs =  dirs   = {}
-dirs['dir_plots']   = '../plots'
-dirs['dir_ascii']   = '../ascii'
+dirs['dir_plots']   = pa.dir_fig  #'../plots'
+dirs['dir_ascii']   = pa.dir_prof #'../ascii'
 dirs['suffix']      = '_auger_'    # sufijo para el directorio donde guardare
                                     # estas figuras
 
