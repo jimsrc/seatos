@@ -520,12 +520,9 @@ class events_mgr:
         self.build_params_file()
 
 
-    """
-    collects data from filtered events
-    """
     def collect_data(self):
         """
-        rebineo de c/evento
+        collects data from filtered events
         """
         nvars   = self.nvars #len(VARS)
         n_icmes = self.tb.n_icmes
@@ -537,18 +534,17 @@ class events_mgr:
 
         #---- quiero una lista de los eventos-id q van a incluirse en c/promedio :-)
         IDs     = {}
-        Enough  = {}
-        nEnough = {}
-        self.__ADAP__       = ADAP    = []   # conjunto de varios 'adap' (uno x c/variable)
+        Enough, nEnough = {}, {}
+        self.__ADAP__ = ADAP    = []   # conjunto de varios 'adap' (uno x c/variable)
         for varname in VARS.keys():
             IDs[varname]        = []
             Enough[varname]     = []
-            nEnough[varname]    = 0     # contador
+            nEnough[varname]    = 0     # counter
 
         # recorremos los eventos:
-        nok=0; nbad=0;
-        nnn     = 0     # nro de evento q pasan el filtro a-priori
-        self.out = {}
+        nok, nbad = 0, 0
+        nnn       = 0     # nro de evento q pasan el filtro a-priori
+        self.out  = {}
         self.out['events_data'] = {} # bag to save data from events
         for i in range(n_icmes):
             ok=False
@@ -558,10 +554,10 @@ class events_mgr:
                 ok  =  date_to_utc(bd.tini[i]) >= self.t_utc[0] #True
                 ok  &= date_to_utc(bd.tend[i]) <= self.t_utc[-1]
             except:
-                continue    # saltar al sgte evento 'i'
+                continue # jump to next event 'i'
 
             ADAP += [ {} ] # agrego un diccionario a la lista
-            #np.set_printoptions(4)         # nro de digitos a imprimir cuando use numpy.arrays
+            #np.set_printoptions(4)  # nro de digitos a imprimir cuando use numpy.arrays
             if (ok & self.SELECC[i]):# (MCsig[i]>=MCwant)):  ---FILTRO--- (*1)
                 nnn += 1
                 print ccl.Gn + " id:%d ---> dT/day:%g" % (i, dT) + ccl.W
@@ -583,20 +579,12 @@ class events_mgr:
                     if self.data_name in self.CR_observs:   # is it CR data?
                         rate_pre = getattr(self, 'rate_pre_'+self.data_name)
                         var = 100.*(var - rate_pre[i]) / rate_pre[i]
-                    """
-                    if self.data_name=='McMurdo':
-                        var = 100.*(var - self.rate_pre[i]) / self.rate_pre[i]
-
-                    elif self.data_name=='Auger':
-                        #print " ---> var.size: ", var.size
-                        var = 100.*(var - self.rate_pre_Auger[i]) / self.rate_pre_Auger[i]
-                    """
 
                     # rebinea usando 'dt' como el ancho de nuevo bineo
                     out       = adaptar_ii(nwndw, dT, nbin, dt, t, var, self.fgap)
-                    enough    = out[0]       # True: data con menos de 100*'fgap'% de gap
-                    Enough[varname]         += [ enough ]
-                    ADAP[nok-1][varname]    = out[1]  # donde: out[1] = [tiempo, variable]
+                    enough    = out[0]   # `True` for data with less than 100*`fgap`% of gap
+                    Enough[varname]      += [ enough ]
+                    ADAP[nok-1][varname] = out[1]  # donde: out[1] = [tiempo, variable]
 
                     if enough:
                         IDs[varname]     += [i]
@@ -610,7 +598,6 @@ class events_mgr:
         print " ----> len.ADAP: %d" % len(ADAP)
         self.__nok__    = nok
         self.__nbad__   = nbad
-        #self.out = {}
         self.out['nok']     = nok
         self.out['nbad']    = nbad
         self.out['IDs']     = IDs

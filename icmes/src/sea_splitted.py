@@ -46,6 +46,12 @@ default=None,
 help='input filename of Auger histograms-data'
 )
 parser.add_argument(
+'-ic', '--icme_table',
+type=str,
+default=None,
+help='{ASO}/icmes_richardson/data/rich_events_ace.nc'.format(**os.environ)
+)
+parser.add_argument(
 '-fig', '--dir_fig',
 type=str,
 default='../plots',
@@ -76,7 +82,7 @@ fnames['Auger_BandMuons_avrs'] = '%s/long_trends/code_figs/avr_histos_press_shap
 fnames['Auger_BandScals'] = fnames['Auger_BandMuons']
 fnames['Auger_BandScals_avrs'] = fnames['Auger_BandMuons_avrs']
 
-fnames['table_richardson']  = '%s/ASOC_ICME-FD/icmes_richardson/data/rich_events_ace.nc' % HOME
+fnames['table_richardson']  = pa.icme_table #'%s/ASOC_ICME-FD/icmes_richardson/data/rich_events_ace.nc' % HOME
 for name in fnames.keys():
     assert isfile(fnames[name]),\
         " --> NO EXISTE: " + fnames[name]
