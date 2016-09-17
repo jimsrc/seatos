@@ -8,7 +8,7 @@ from datetime import datetime, time, timedelta
 --- antes de modificar cosas, tener en cuenta los bugs en: 
 '../../shared_lib/COMENTARIOS.txt' 
 """
-import sys
+import sys, os
 sys.path.append('../../shared_lib')
 from shared_funcs import * #c_funcs import *
 #------------------------------
@@ -18,6 +18,33 @@ import numpy as np
 from z_expansion_gulisano import z as z_exp
 import console_colors as ccl
 import read_NewTable as tb
+import argparse
+
+
+#--- retrieve args
+parser = argparse.ArgumentParser(
+formatter_class=argparse.ArgumentDefaultsHelpFormatter
+)
+parser.add_argument(
+'-InpACE', '--inp_ace',
+type=str,
+default='{HOME}/data_ace/64sec_mag-swepam/ace.1998-2014.nc'.format(**os.environ),
+help='input filename of ACE data',
+)
+parser.add_argument(
+'-dd', '--dir_data',
+type=str,
+default='../ascii',
+help='directory for output data',
+)
+parser.add_argument(
+'-dp', '--dir_plot',
+type=str,
+default='../plots',
+help='directory for output plots',
+)
+pa = parser.parse_args()
+
 
 class boundaries:
     def __init__(self):
@@ -28,7 +55,7 @@ gral                = general()
 day                 = 86400.
 #---- cosas input
 gral.fnames = fnames = {}
-fnames['ACE']       = '%s/data_ace/64sec_mag-swepam/ace.1998-2014.nc' % HOME
+fnames['ACE']       = pa.inp_ace #'%s/data_ace/64sec_mag-swepam/ace.1998-2014.nc' % HOME
 fnames['McMurdo']   = '%s/actividad_solar/neutron_monitors/mcmurdo/mcmurdo_utc_correg.dat' % HOME
 #fnames['table_richardson']  = '../../../../data_317events_iii.nc'
 #fnames['table_richardson']  = '%s/ASOC_ICME-FD/icmes_richardson/data/data_317events_iii.nc' % HOME
@@ -36,8 +63,8 @@ fnames['table_richardson']  = '%s/ASOC_ICME-FD/icmes_richardson/data/rich_events
 
 #---- directorios de salida
 gral.dirs =  dirs   = {}
-dirs['dir_plots']   = '../plots'
-dirs['dir_ascii']   = '../ascii'
+dirs['dir_plots']   = pa.dir_plot #'../plots'
+dirs['dir_ascii']   = pa.dir_data #'../ascii'
 dirs['suffix']      = '_test_Vmc_'    # sufijo para el directorio donde guardare
                                     # estas figuras
 
@@ -96,12 +123,13 @@ emgr.FILTER['vsw_filter']    = True
 emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID2, TOP #MID1, MID2 #LOW, MID1 #
 #emgr.run_all()
 emgr.filter_events()
-emgr.load_data_and_timeshift()
+#emgr.load_data_and_timeshift()
+emgr.load_files_and_timeshift_ii()
 emgr.collect_data()
 
 # save to file
 #---- dest directory
-dir_dst = '../ascii/MCflag%s' % FILTER['MCwant']['alias']
+dir_dst = '%s/MCflag%s' % (pa.dir_data, FILTER['MCwant']['alias'])
 if FILTER['CorrShift']:
     dir_dst += '/wShiftCorr/events_data'
 else:
@@ -119,8 +147,8 @@ for id, i in zip(events, range(n_evnts)):
     ndata    = len(t)
     data_out = np.nan*np.ones((ndata, 3))
     data_out[:,0] = t
-    B = emgr.out['events_data'][id]['B'] # B-data from 'id' event
-    rmsB = emgr.out['events_data'][id]['rmsB'] # data from 'id' event
+    B = emgr.out['events_data'][id]['B.'+emgr.data_name] # B-data from 'id' event
+    rmsB = emgr.out['events_data'][id]['rmsB.'+emgr.data_name] # data from 'id' event
     data_out[:,1] = B
     data_out[:,2] = rmsB
     
@@ -135,6 +163,8 @@ for id, i in zip(events, range(n_evnts)):
     COMMS += '\n# dt_MC [days]: %g' % dtmc
     f.write(COMMS)
     f.close()
+
+print " --> saved in: "+dir_dst
 
 """
 emgr.FILTER['vsw_filter']    = True
