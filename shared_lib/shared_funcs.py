@@ -1339,6 +1339,107 @@ class events_mgr:
             raise SystemExit
 
 
+class RichTable(object):
+    def __init__(s, fname_rich):
+        #fname_rich	= '%s/ASOC_ICME-FD/icmes_richardson/RichardsonList_until.2016.csv'.format
+        s.fname_rich = fname_rich
+        s.tshck 	= []
+        s.tini_icme, s.tend_icme	= [], []
+        s.tini_mc,   s.tend_mc      = [], []
+        s.Qicme		= []
+        s.MCsig		= []
+        s.Dst		= []
+
+    def read(s):
+        print " leyendo tabla Richardson: %s" % s.fname_rich
+        frich = open(s.fname_rich, 'r')
+        print " archivo leido."
+        ll, n = [], 0
+        for line in frich:
+            ll 	+= [line.split(',')]
+            n +=1
+        print " lineas leidas: %d" % n
+
+        for i in range(1,n):
+            #------ fecha shock
+            s.tshck += [datetime.strptime(ll[i][1][1:20],"%Y-%m-%d %H:%M:%S")]
+            #------ fecha ini icme
+            ss	= ll[i][2][1:11].split()  # string de la fecha ini-icme
+            HH	= int(ss[1][0:2])
+            MM	= int(ss[1][2:4])
+            mm	= int(ss[0].split('/')[0])
+            dd	= int(ss[0].split('/')[1])
+            if mm==s.tshck[i-1].month:
+                yyyy = s.tshck[i-1].year
+            else:
+                yyyy = s.tshck[i-1].year + 1
+            s.tini_icme += [datetime(yyyy, mm, dd, HH, MM)]
+            #------ fecha fin icme
+            ss      = ll[i][3][1:11].split()
+            HH      = int(ss[1][0:2])
+            MM      = int(ss[1][2:4])
+            mm      = int(ss[0].split('/')[0])
+            dd      = int(ss[0].split('/')[1])
+            if mm==s.tshck[i-1].month:
+                yyyy = s.tshck[i-1].year
+            else:
+                if s.tshck[i-1].month==12:
+                    yyyy = s.tshck[i-1].year + 1
+
+            s.tend_icme += [datetime(yyyy, mm, dd, HH, MM)]
+            #------ fechas MCs
+            if ll[i][6]=='':
+                s.tini_mc += [nan]
+                s.tend_mc += [nan]
+            else:
+                hrs_ini	= int(ll[i][6])			# col6 es inicio del MC
+                dummy = ll[i][7].split('(')		# col7 es fin del MC
+                ndummy = len(dummy)
+                if ndummy==1:
+                    hrs_end = int(ll[i][7])
+                else:
+                    hrs_end	= int(ll[i][7].split('(')[0][1:])
+                s.tini_mc += [ s.tini_icme[i-1] + timedelta(hours=hrs_ini) ]
+                s.tend_mc += [ s.tend_icme[i-1] + timedelta(hours=hrs_end) ]
+            # calidad de ICME boundaries
+            s.Qicme 	+= [ ll[i][10] ]		# quality of ICME boundaries
+            # flag de MC
+            s.MCsig	+= [ ll[i][15] ]
+            #if ll[i][15]=='2H':
+            #	MCsig   += [ 2 ]
+            #else:
+            #	MCsig	+= [ int(ll[i][15]) ]	# MC flag
+            #
+            s.Dst	+= [ int(ll[i][16]) ]		# Dst
+
+        #--------------------------------------
+        s.MCsig   = np.array(s.MCsig)
+        s.Dst	  = np.array(s.Dst)
+        s.n_icmes = len(s.tshck)
+        #
+        """
+        col0 : id
+        col1 : disturbance time
+        col2 : ICME start
+        col3 : ICME end
+        col4 : Composition start
+        col5 : Composition end
+        col6 : MC start
+        col7 : MC end
+        col8 : BDE
+        col9 : BIF
+        col10: Quality of ICME boundaries (1=best)
+        col11: dV --> 'S' indica q incluye shock
+        col12: V_ICME
+        col13: V_max
+        col14: B
+        col15: MC flag --> '0', '1', '2', '2H': irregular, B-rotation, MC, or MC of "Huttunen etal05" respectively.
+        col16: Dst
+        col17: V_transit
+        col18: LASCO_CME --> time of associated event, generally the CME observed by SOHO/LASCO.
+               A veces tiene 'H' por Halo. 
+        """
+
 #+++++++++++++++++++++++++++++++++
 if __name__=='__main__':
     print " ---> this is a library!\n"
