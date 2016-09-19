@@ -57,6 +57,27 @@ and '2H' for MCs by Huttunen etal05.
 To specify several flags, separe by dots (e.g. '0.1.2H').
 """
 )
+parser.add_argument(
+'-i', '--ini',
+type=str,
+default='shock',
+help='name of leading border. Use any of these: shock, ini_mc, end_mc, ini_icme, end_icme.',
+)
+parser.add_argument(
+'-e', '--end',
+type=str,
+default='ini_mc',
+help='name of trailing border. Use any of these: shock, ini_mc, end_mc, ini_icme, end_icme.',
+)
+parser.add_argument(
+'-ba', '--BefAft',
+type=float,
+nargs=2,
+default=[0.0, 0.0],
+help='number of days before and after the `ini` and `end` border\
+ respectively. Can be float values.',
+)
+
 
 pa = parser.parse_args()
 
@@ -123,8 +144,19 @@ fgap                    = 0.2
 tb = sf.RichTable('{ASO}/icmes_richardson/RichardsonList_until.2016.csv'.format(**os.environ))
 tb.read()
 bounds      = boundaries()
-bounds.tini = tb.tshck      #tb.tini_mc #tb.tshck 
-bounds.tend = tb.tini_mc    #tb.tend_mc #tb.tini_mc
+bdname = {
+'shock': tb.tshck,
+'ini_mc': tb.tini_mc,
+'end_mc': tb.tend_mc,
+'ini_icme': tb.tini_icme,
+'end_icme': tb.tend_icme,
+}
+if not(pa.ini in bdname.keys()):
+    print ' ## ERROR ##: border name must be one of these: ', bdname.keys()
+bef, aft = [pa.BefAft[0]]*tb.n_icmes, [pa.BefAft[1]]*tb.n_icmes
+bounds.tini = map(sf.Add2Date, bdname[pa.ini], bef) 
+bounds.tend = map(sf.Add2Date, bdname[pa.end], aft)
+
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 gral.data_name      = 'ACE'

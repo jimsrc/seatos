@@ -1437,6 +1437,14 @@ class RichTable(object):
                A veces tiene 'H' por Halo. 
         """
 
+def Add2Date(date, days, hrs=0, BadFlag=np.nan):
+    """
+    NOTE: `days` can be fractional.
+    """
+    if type(date) is not datetime:
+        return BadFlag
+    return date + timedelta(days=days, hours=hrs)
+
 #+++++++++++++++++++++++++++++++++
 if __name__=='__main__':
     print " ---> this is a library!\n"
