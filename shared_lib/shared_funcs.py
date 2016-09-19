@@ -1341,7 +1341,6 @@ class events_mgr:
 
 class RichTable(object):
     def __init__(s, fname_rich):
-        #fname_rich	= '%s/ASOC_ICME-FD/icmes_richardson/RichardsonList_until.2016.csv'.format
         s.fname_rich = fname_rich
         s.tshck 	= []
         s.tini_icme, s.tend_icme	= [], []
@@ -1359,7 +1358,6 @@ class RichTable(object):
             ll 	+= [line.split(',')]
             n +=1
         print " lineas leidas: %d" % n
-
         for i in range(1,n):
             #------ fecha shock
             s.tshck += [datetime.strptime(ll[i][1][1:20],"%Y-%m-%d %H:%M:%S")]
@@ -1382,9 +1380,8 @@ class RichTable(object):
             dd      = int(ss[0].split('/')[1])
             if mm==s.tshck[i-1].month:
                 yyyy = s.tshck[i-1].year
-            else:
-                if s.tshck[i-1].month==12:
-                    yyyy = s.tshck[i-1].year + 1
+            elif s.tshck[i-1].month==12:
+                yyyy = s.tshck[i-1].year + 1
 
             s.tend_icme += [datetime(yyyy, mm, dd, HH, MM)]
             #------ fechas MCs
