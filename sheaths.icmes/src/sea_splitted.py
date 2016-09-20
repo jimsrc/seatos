@@ -19,16 +19,87 @@ IMPORTANT:
       and 'events_mgr.filter_events()' uses this flag to know which 
       average values it will use to filter events.
 """
-import sys
-#sys.path.append('../../shared_lib')
-from shared.shared_funcs import * #c_funcs import *
+import sys, os, argparse
+import shared.shared_funcs as sf 
 #------------------------------
-#from read_NewTable import tshck, tini_icme, tend_icme, tini_mc, tend_mc, n_icmes, MCsig
 from shared.ShiftTimes import *
 import numpy as np
-from shared.z_expansion_gulisano import z as z_exp
+#from shared.z_expansion_gulisano import z as z_exp
 import shared.console_colors as ccl
-import shared.read_NewTable as tb
+#import shared.read_NewTable as tb
+
+
+#--- retrieve args
+parser = argparse.ArgumentParser(
+formatter_class=argparse.ArgumentDefaultsHelpFormatter
+)
+parser.add_argument(
+'-ace', '--ace',
+type=str,
+default='{HOME}/data_ace/64sec_mag-swepam/ace.1998-2015.nc'.format(**os.environ),
+help='input filename of ACE data',
+)
+parser.add_argument(
+'-mu', '--mcmurdo',
+type=str,
+default='{HOME}/actividad_solar/neutron_monitors/mcmurdo/mcmurdo_utc_correg.dat'.format(**os.environ)
+)
+parser.add_argument(
+'-avr', '--avr',
+type=str,
+default='{ASO}/icmes_richardson/data/rich_events2_ace.nc'.format(**os.environ),
+help='.nc file with the average values inside diferent ICME sub-structures.'
+)
+parser.add_argument(
+'-rc', '--rich_csv',
+type=str,
+default='{ASO}/icmes_richardson/RichardsonList_until.2016.csv'.format(**os.environ),
+help='.csv file of Richardson\'s table',
+)
+parser.add_argument(
+'-ah', '--auger_hsts',
+type=str,
+default='{AUGER_REPO}/out/out.build_temp.corr/shape.ok_and_3pmt.ok/15min/histos_temp.corrected.h5'.format(**os.environ),
+help='.h5 file with Auger charge-histograms data (until temperature-correction).'
+)
+parser.add_argument(
+'-as', '--auger_scls',
+default='{PAO}/data_auger/estudios_AoP/data/unir_con_presion/data_final_2006-2013.h5'.format(**os.environ),
+help='.h5 file with Auger scalers (until pressure correction).'
+)
+parser.add_argument(
+'-dp', '--dir_plot',
+type=str,
+default='../plots3',
+help='directory for output figures.'
+)
+parser.add_argument(
+'-dd', '--dir_data',
+type=str,
+default='../ascii3',
+help='directory for output data.',
+)
+parser.add_argument(
+'-s', '--suffix',
+type=str,
+default='__auger__',
+help='suffix string used as the name of the last inner\
+ output-subdirectory (created automatically)'
+)
+parser.add_argument(
+'-if', '--icme_flag',
+type=str,
+default='2',
+help="""
+list of Richardson's ICME-flags. They are: 
+'0' for irregulars,
+'1' for smooth B rotation,
+'2' for MCs,
+and '2H' for MCs by Huttunen etal05.
+To specify several flags, separe by dots (e.g. '0.1.2H').
+"""
+)
+pa = parser.parse_args()
 
 class boundaries:
     def __init__(self):
@@ -37,40 +108,39 @@ class boundaries:
 HOME                = os.environ['HOME']
 PAO                 = os.environ['PAO']
 PAO_PROCESS         = os.environ['PAO_PROCESS']
-gral                = general()
+gral                = sf.general()
 day                 = 86400.
 #---- cosas input
 gral.fnames = fnames = {}
-fnames['ACE']       = '%s/data_ace/64sec_mag-swepam/ace.1998-2015.nc' % HOME
-fnames['McMurdo']   = '%s/actividad_solar/neutron_monitors/mcmurdo/mcmurdo_utc_correg.dat' % HOME
-fnames['Auger_scals']     = '%s/data_auger/estudios_AoP/data/unir_con_presion/data_final_2006-2013.h5' % PAO
+fnames['ACE']       = pa.ace #'%s/data_ace/64sec_mag-swepam/ace.1998-2015.nc' % HOME
+fnames['McMurdo']   = pa.mcmurdo #'%s/actividad_solar/neutron_monitors/mcmurdo/mcmurdo_utc_correg.dat' % HOME
+fnames['Auger_scals']     = pa.auger_scls #'%s/data_auger/estudios_AoP/data/unir_con_presion/data_final_2006-2013.h5' % PAO
 #fnames['Auger_BandMuons'] = '%s/data_auger/data_histogramas/all.array.avrs/temp.corrected/shape.ok_and_3pmt.ok/15min/test_temp.corrected.nc' % PAO
-fnames['Auger_BandMuons'] = '{AUGER_REPO}/out/out.build_temp.corr/shape.ok_and_3pmt.ok/15min/histos_temp.corrected.h5'.format(**os.environ)
+fnames['Auger_BandMuons'] = pa.auger_hsts #'{AUGER_REPO}/out/out.build_temp.corr/shape.ok_and_3pmt.ok/15min/histos_temp.corrected.h5'.format(**os.environ)
 fnames['Auger_BandScals'] = fnames['Auger_BandMuons']
 
-fnames['table_richardson']  = '%s/ASOC_ICME-FD/icmes_richardson/data/rich_events2_ace.nc' % HOME
+fnames['table_richardson']  = pa.avr #'%s/ASOC_ICME-FD/icmes_richardson/data/rich_events2_ace.nc' % HOME
+fname_rich = pa.rich_csv #'{ASO}/icmes_richardson/RichardsonList_until.2016.csv'.format(**os.environ)
 for name in fnames.keys():
-    assert isfile(fnames[name]),\
+    assert os.path.isfile(fnames[name]),\
         " --> NO EXISTE: " + fnames[name]
+
+tb = sf.RichTable(fname_rich)
+tb.read()
 
 #---- directorios de salida
 gral.dirs =  dirs   = {}
-dirs['dir_plots']   = '../plots3'
-dirs['dir_ascii']   = '../ascii3'
+dirs['dir_plots']   = pa.dir_plot #'../plots3'
+dirs['dir_ascii']   = pa.dir_data #'../ascii3'
 dirs['suffix']      = '_auger_'    # sufijo para el directorio donde guardare
                                     # estas figuras
 
 #-------------------------------------------------------------
 #------- seleccionamos MCs con label-de-catalogo (lepping=2, etc)
-MCwant  = {'flags':     ('0', '1', '2', '2H'),
-           'alias':     '0.1.2.2H'}       # para "flagear" el nombre/ruta de las figuras
-#MCwant  = {'flags':     ('1', '2', '2H'),
-#           'alias':     '1.2.2H'}         # para "flagear" el nombre/ruta de las figuras
-#MCwant  = {'flags':     ('2', '2H'),
-#           'alias':     '2.2H'}           # para "flagear" el nombre/ruta de las figuras
-#MCwant  = {'flags':     ('2',),
-#           'alias':     '2'}            # para "flagear" el nombre/ruta de las figuras
-
+MCwant  = {
+'flags': pa.icme_flag.split('.'), #('0', '1', '2', '2H'),
+'alias': pa.icme_flag, #'0.1.2.2H'}   # para "flagear" el nombre/ruta de las figuras
+} 
 FILTER                  = {}
 FILTER['Mcmultiple']    = False # True para incluir eventos multi-MC
 FILTER['CorrShift']     = False #True
@@ -106,7 +176,7 @@ bounds.tend = tb.tini_icme    #tb.tend_mc #tb.tini_mc
 gral.data_name      = 'Auger_scals' #'McMurdo' #'ACE'
 
 FILTER['vsw_filter']    = False
-emgr = events_mgr(gral, FILTER, CUTS, bounds, nBin, fgap, tb, z_exp, structure='sh.i')
+emgr = sf.events_mgr(gral, FILTER, CUTS, bounds, nBin, fgap, tb, None, structure='sh.i')
 emgr.run_all()
 emgr.lock_IDs()
 
