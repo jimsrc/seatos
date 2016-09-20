@@ -6,7 +6,7 @@ import numpy as np
 import console_colors as ccl
 from scipy.io.netcdf import netcdf_file
 from ShiftTimes import ShiftCorrection, ShiftDts
-import os
+import os, argparse
 import matplotlib.patches as patches
 import matplotlib.transforms as transforms
 import h5py
@@ -1454,11 +1454,56 @@ class RichTable(object):
 
 def Add2Date(date, days, hrs=0, BadFlag=np.nan):
     """
+    Mapping to add `days` and `hrs` to a given
+    `datetime` object.
     NOTE: `days` can be fractional.
     """
     if type(date) is not datetime:
         return BadFlag
     return date + timedelta(days=days, hours=hrs)
+
+def utc2date(t):
+    date_utc = datetime(1970, 1, 1, 0, 0, 0, 0)
+    date = date_utc + timedelta(days=(t/86400.))
+    return date
+
+
+def date2utc(date):
+    date_utc = datetime(1970, 1, 1, 0, 0, 0, 0)
+    utcsec = (date - date_utc).total_seconds() # [utc sec]
+    return utcsec
+
+class arg_to_datetime(argparse.Action):
+    """
+    argparse-action to handle command-line arguments of 
+    the form "dd/mm/yyyy" (string type), and converts
+    it to datetime object.
+    """
+    def __init__(self, option_strings, dest, nargs=None, **kwargs):
+        if nargs is not None:
+            raise ValueError("nargs not allowed")
+        super(arg_to_datetime, self).__init__(option_strings, dest, **kwargs)
+    def __call__(self, parser, namespace, values, option_string=None):
+        #print '%r %r %r' % (namespace, values, option_string)
+        dd,mm,yyyy = map(int, values.split('/'))
+        value = datetime(yyyy,mm,dd)
+        setattr(namespace, self.dest, value)
+
+class arg_to_utcsec(argparse.Action):
+    """
+    argparse-action to handle command-line arguments of 
+    the form "dd/mm/yyyy" (string type), and converts
+    it to UTC-seconds.
+    """
+    def __init__(self, option_strings, dest, nargs=None, **kwargs):
+        if nargs is not None:
+            raise ValueError("nargs not allowed")
+        super(arg_to_utcsec, self).__init__(option_strings, dest, **kwargs)
+    def __call__(self, parser, namespace, values, option_string=None):
+        #print '%r %r %r' % (namespace, values, option_string)
+        dd,mm,yyyy = map(int, values.split('/'))
+        value = (datetime(yyyy,mm,dd)-datetime(1970,1,1)).total_seconds()
+        setattr(namespace, self.dest, value)
 
 #+++++++++++++++++++++++++++++++++
 if __name__=='__main__':
