@@ -178,7 +178,7 @@ gral.data_name      = 'Auger_scals' #'McMurdo' #'ACE'
 FILTER['vsw_filter']    = False
 emgr = sf.events_mgr(gral, FILTER, CUTS, bounds, nBin, fgap, tb, None, structure='sh.i')
 emgr.run_all()
-emgr.lock_IDs()
+#emgr.lock_IDs()
 
 #++++ limites
 LOW, MID1, MID2, TOP = 100.0, 375.0, 450.0, 3000.0
