@@ -509,7 +509,6 @@ class events_mgr(object):
                 resctricted only with theses locked id's.
         """
 
-
     def run_all(self):
         #----- seleccion de eventos
         self.filter_events()
@@ -523,7 +522,6 @@ class events_mgr(object):
         self.make_plots()
         #----- archivos "stuff"
         self.build_params_file()
-
 
     def collect_data(self):
         """
@@ -608,7 +606,6 @@ class events_mgr(object):
         self.out['IDs']     = IDs
         self.out['nEnough'] = nEnough
         self.out['Enough']  = Enough
-
 
     def rebine(self):
         """
@@ -701,7 +698,6 @@ class events_mgr(object):
         self.out['nEnough'] = nEnough
         self.out['Enough']  = Enough
 
-
     def lock_IDs(self):
         """
         This assumes that 'IDs' has only *one* key.
@@ -714,7 +710,6 @@ class events_mgr(object):
 
         #dummy = np.array(self.restricted_IDs)
         #np.savetxt('./__dummy__', dummy)
-
 
     def rebine_final(self):
         """
@@ -782,11 +777,9 @@ class events_mgr(object):
         self.out['dVARS']    = stuff
         self.out['tnorm']    = tnorm #OUT['dVARS'][first_varname][2] # deberia ser =tnorm
 
-
     def __getattr__(self, attname):
         if attname[:10]=='load_data_':
             return self.attname
-
 
     def load_files_and_timeshift_ii(self):
         read_flag = 'read_'+self.data_name # e.g. self.read_Auger
@@ -810,7 +803,6 @@ class events_mgr(object):
 
             print " exiting.... "
             raise SystemExit
-
 
     def load_data_ACE_o7o6(self):
         tb          = self.tb
@@ -846,7 +838,6 @@ class events_mgr(object):
         self.aux = aux = {}
         aux['SELECC']    = self.SELECC
 
-
     def load_data_Auger_scals(self):
         """
         solo cargamos Auger Scalers
@@ -871,7 +862,6 @@ class events_mgr(object):
         #---------
         self.aux = aux = {}
         aux['SELECC']    = self.SELECC
-
 
     def load_data_Auger_BandMuons(self):
         """
@@ -906,7 +896,6 @@ class events_mgr(object):
         self.aux = aux = {}
         aux['SELECC']    = self.SELECC
 
-
     def load_data_Auger_BandScals(self):
         """
         para leer la data de histogramas Auger, banda scalers
@@ -940,7 +929,6 @@ class events_mgr(object):
         self.aux = aux = {}
         aux['SELECC']    = self.SELECC
 
-
     def load_data_McMurdo(self):
         tb          = self.tb
         nBin        = self.nBin
@@ -963,7 +951,6 @@ class events_mgr(object):
 
         self.aux = aux = {}
         aux['SELECC']    = self.SELECC
-
 
     def load_data_ACE(self):
         tb          = self.tb
@@ -1053,7 +1040,6 @@ class events_mgr(object):
         #self.VARS   = VARS
         #self.out    = out
         #self.aux    = aux
-
 
     def make_plots(self):
         """
@@ -1168,7 +1154,6 @@ class events_mgr(object):
         #--- salidas (a parte de los .png)
         self.DIR_ASCII  = DIR_ASCII
         self.FNAMEs     = FNAMEs
-
 
     def build_params_file(self):
         """

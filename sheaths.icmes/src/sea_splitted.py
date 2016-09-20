@@ -121,9 +121,9 @@ fnames['Auger_BandScals'] = fnames['Auger_BandMuons']
 
 fnames['table_richardson']  = pa.avr #'%s/ASOC_ICME-FD/icmes_richardson/data/rich_events2_ace.nc' % HOME
 fname_rich = pa.rich_csv #'{ASO}/icmes_richardson/RichardsonList_until.2016.csv'.format(**os.environ)
-for name in fnames.keys():
-    assert os.path.isfile(fnames[name]),\
-        " --> NO EXISTE: " + fnames[name]
+#for name in fnames.keys():
+#    assert os.path.isfile(fnames[name]),\
+#        " --> NO EXISTE: " + fnames[name]
 
 tb = sf.RichTable(fname_rich)
 tb.read()
@@ -190,63 +190,66 @@ emgr.run_all()
 emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID2, TOP # 550.0, 3000.0
 emgr.run_all()
 
-#++++++++++++++++++++++++++++++++++++++++++++++++ Auger Band-Scals
-emgr.data_name      = 'Auger_BandScals'
+if pa.auger_hsts!='0':
+    #++++++++++++++++++++++++++++++++ Auger Band-Scals
+    emgr.data_name      = 'Auger_BandScals'
 
-emgr.FILTER['vsw_filter'] = False
-emgr.run_all()
+    emgr.FILTER['vsw_filter'] = False
+    emgr.run_all()
 
-#++++ split
-emgr.FILTER['vsw_filter'] = True
-emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = LOW, MID1 # 100.0, 450.0
-emgr.run_all()
-emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID1, MID2 # 450.0, 550.0
-emgr.run_all()
-emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID2, TOP # 550.0, 3000.0
-emgr.run_all()
+    #++++ split
+    emgr.FILTER['vsw_filter'] = True
+    emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = LOW, MID1 
+    emgr.run_all()
+    emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID1, MID2 
+    emgr.run_all()
+    emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID2, TOP 
+    emgr.run_all()
 
-#++++++++++++++++++++++++++++++++++++++++++++++++ Auger Band-Muons
-emgr.data_name      = 'Auger_BandMuons'
+    #++++++++++++++++++++++++++++++++ Auger Band-Muons
+    emgr.data_name      = 'Auger_BandMuons'
 
-emgr.FILTER['vsw_filter'] = False
-emgr.run_all()
+    emgr.FILTER['vsw_filter'] = False
+    emgr.run_all()
 
-#++++ split
-emgr.FILTER['vsw_filter'] = True
-emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = LOW, MID1 # 100.0, 450.0
-emgr.run_all()
-emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID1, MID2 # 450.0, 550.0
-emgr.run_all()
-emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID2, TOP # 550.0, 3000.0
-emgr.run_all()
+    #++++ split
+    emgr.FILTER['vsw_filter'] = True
+    emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = LOW, MID1 
+    emgr.run_all()
+    emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID1, MID2 
+    emgr.run_all()
+    emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID2, TOP 
+    emgr.run_all()
 
 #++++++++++++++++++++++++++++++++++++++++++++++++ McMurdo
-emgr.data_name      = 'McMurdo'
+if pa.mcmurdo!='0':
+    emgr.data_name      = 'McMurdo'
 
-emgr.FILTER['vsw_filter']    = False
-emgr.run_all()
+    emgr.FILTER['vsw_filter']    = False
+    emgr.run_all()
 
-#++++ split
-emgr.FILTER['vsw_filter']    = True
-emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = LOW, MID1 # 100.0, 450.0
-emgr.run_all()
-emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID1, MID2 # 450.0, 550.0
-emgr.run_all()
-emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID2, TOP # 550.0, 3000.0
-emgr.run_all()
+    #++++ split
+    emgr.FILTER['vsw_filter']    = True
+    emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = LOW, MID1 
+    emgr.run_all()
+    emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID1, MID2 
+    emgr.run_all()
+    emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID2, TOP 
+    emgr.run_all()
 
 #++++++++++++++++++++++++++++++++++++++++++++++++ ACE
-emgr.data_name      = 'ACE' #'McMurdo'
+if pa.ace!='0':
+    emgr.data_name      = 'ACE' #'McMurdo'
 
-emgr.FILTER['vsw_filter']    = False
-emgr.run_all()
+    emgr.FILTER['vsw_filter']    = False
+    emgr.run_all()
 
-#++++ split
-emgr.FILTER['vsw_filter']    = True
-emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = LOW, MID1 # 100.0, 450.0
-emgr.run_all()
-emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID1, MID2 # 450.0, 550.0
-emgr.run_all()
-emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID2, TOP # 550.0, 3000.0
-emgr.run_all()
+    #++++ split
+    emgr.FILTER['vsw_filter']    = True
+    emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = LOW, MID1 
+    emgr.run_all()
+    emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID1, MID2 
+    emgr.run_all()
+    emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID2, TOP 
+    emgr.run_all()
 #EOF
