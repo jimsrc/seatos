@@ -31,16 +31,17 @@ if CorrShift:
 else:
     prexShift = 'woShiftCorr'
 
-dir_inp_mc  = '../../icmes/ascii/MCflag%s/%s' % (MCwant, prexShift) 
-dir_inp_sh  = '../../sheaths.icmes/ascii/MCflag%s/%s' % (MCwant, prexShift)
-dir_figs    = '../plots/%s/MCflag%s' % (prexShift, MCwant) 
+dir_inp_mc  = '../../icmes/ascii3/MCflag%s/%s' % (MCwant, prexShift) 
+dir_inp_sh  = '../../sheaths.icmes/ascii3/MCflag%s/%s' % (MCwant, prexShift)
+dir_figs    = '../plots3/%s/MCflag%s' % (prexShift, MCwant) 
 
 dir_inp_mc  += '/_auger_'
 dir_inp_sh  += '/_auger_'
 dir_figs    += '/_auger_'
 
-assert isdir(dir_inp_mc) and isdir(dir_inp_sh) and isdir(dir_figs),\
+assert isdir(dir_inp_mc) and isdir(dir_inp_sh),\
     " --> algun directorio no existe!"
+os.system('mkdir -p '+dir_figs)
 
 #--- limites se seleccion
 LOW, MID1, MID2, TOP = 100.0, 375.0, 450.0, 3000.0
@@ -118,8 +119,22 @@ stf['CRs.McMurdo']    = {
     'text_loc_2': {'mc':[4.5, -7.0], 'sh':[-1.95, -4.5]},
     'text_loc_3': {'mc':[4.5, -7.5], 'sh':[-1.95, -4.5]}
     }
-stf['CRs.Auger']    = {
-    'label': 'GCRs @Auger [%]',
+stf['CRs.Auger_scals']    = {
+    'label': 'GCRs @Auger-scals [%]',
+    'ylims': [-1.0, 0.2],
+    'text_loc_1': {'mc':[4.5, -0.50], 'sh':[-1.95, -0.5]},
+    'text_loc_2': {'mc':[4.5, -0.50], 'sh':[-1.95, -0.5]},
+    'text_loc_3': {'mc':[4.5, -0.85], 'sh':[-1.95, -0.5]}
+    }
+stf['CRs.Auger_BandScals']    = {
+    'label': 'GCRs @Auger-BandMuons [%]',
+    'ylims': [-1.0, 0.2],
+    'text_loc_1': {'mc':[4.5, -0.50], 'sh':[-1.95, -0.5]},
+    'text_loc_2': {'mc':[4.5, -0.50], 'sh':[-1.95, -0.5]},
+    'text_loc_3': {'mc':[4.5, -0.85], 'sh':[-1.95, -0.5]}
+    }
+stf['CRs.Auger_BandMuons']    = {
+    'label': 'GCRs @Auger-BandMuons [%]',
     'ylims': [-1.0, 0.2],
     'text_loc_1': {'mc':[4.5, -0.50], 'sh':[-1.95, -0.5]},
     'text_loc_2': {'mc':[4.5, -0.50], 'sh':[-1.95, -0.5]},
