@@ -452,8 +452,13 @@ def nans(sh):
 
 
 
-class events_mgr:
+class events_mgr(object):
     def __init__(self, gral, FILTER, CUTS, bd, nBin, fgap, tb, z_exp, structure='mc'):
+        """
+        structure: can be 'sh.mc', 'sh.i', 'mc', 'i', refering to sheath-of-mc,
+                   sheath-of-icme, mc, and icme, respectively. This is to
+                   use the proper mean values calculated in each structure.
+        """
         self.structure  = structure
         self.data_name  = gral.data_name
         self.FILTER     = FILTER
@@ -880,9 +885,7 @@ class events_mgr:
         f5          = h5py.File(fname_inp, 'r')
         ch_Eds      = (10, 11, 12, 13)
 
-        #fname_avr   = self.gral.fnames[self.data_name+'_avrs']#average histos
-        #prom        = loadtxt(fname_avr)
-        #typic       = nanmean(prom[:,1:], axis=0)#agarro el promedio del array de los 8 anios!
+        # get the global-average histogram
         nEd   = 50
         typic = np.zeros(nEd, dtype=np.float32)
         for i in range(nEd):
@@ -916,9 +919,13 @@ class events_mgr:
         f5          = h5py.File(fname_inp, 'r')
         ch_Eds      = (3, 4, 5)
 
-        fname_avr   = self.gral.fnames[self.data_name+'_avrs']#average histos
-        prom        = loadtxt(fname_avr)
-        typic       = nanmean(prom[:,1:], axis=0)#agarro el promedio del array de los 8 anios!
+        # get the global-average histogram
+        nEd   = 50
+        typic = np.zeros(nEd, dtype=np.float32)
+        for i in range(nEd):
+            Ed = i*20.+10.
+            typic[i] = f5['mean/corr_%04dMeV'%Ed].value
+
         self.t_utc, CRs = read_hsts_data(fname_inp,  typic, ch_Eds)
         print " -------> variables leidas!"
 

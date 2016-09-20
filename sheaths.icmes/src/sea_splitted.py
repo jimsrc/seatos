@@ -20,15 +20,15 @@ IMPORTANT:
       average values it will use to filter events.
 """
 import sys
-sys.path.append('../../shared_lib')
-from shared_funcs import * #c_funcs import *
+#sys.path.append('../../shared_lib')
+from shared.shared_funcs import * #c_funcs import *
 #------------------------------
 #from read_NewTable import tshck, tini_icme, tend_icme, tini_mc, tend_mc, n_icmes, MCsig
-from ShiftTimes import *
+from shared.ShiftTimes import *
 import numpy as np
-from z_expansion_gulisano import z as z_exp
-import console_colors as ccl
-import read_NewTable as tb
+from shared.z_expansion_gulisano import z as z_exp
+import shared.console_colors as ccl
+import shared.read_NewTable as tb
 
 class boundaries:
     def __init__(self):
@@ -44,20 +44,19 @@ gral.fnames = fnames = {}
 fnames['ACE']       = '%s/data_ace/64sec_mag-swepam/ace.1998-2015.nc' % HOME
 fnames['McMurdo']   = '%s/actividad_solar/neutron_monitors/mcmurdo/mcmurdo_utc_correg.dat' % HOME
 fnames['Auger_scals']     = '%s/data_auger/estudios_AoP/data/unir_con_presion/data_final_2006-2013.h5' % PAO
-fnames['Auger_BandMuons'] = '%s/data_auger/data_histogramas/all.array.avrs/temp.corrected/shape.ok_and_3pmt.ok/15min/test_temp.corrected.nc' % PAO
-fnames['Auger_BandMuons_avrs'] = '%s/long_trends/code_figs/avr_histos_press_shape.ok_and_3pmt.ok.txt' % PAO_PROCESS  # average histogram
+#fnames['Auger_BandMuons'] = '%s/data_auger/data_histogramas/all.array.avrs/temp.corrected/shape.ok_and_3pmt.ok/15min/test_temp.corrected.nc' % PAO
+fnames['Auger_BandMuons'] = '{AUGER_REPO}/out/out.build_temp.corr/shape.ok_and_3pmt.ok/15min/histos_temp.corrected.h5'.format(**os.environ)
 fnames['Auger_BandScals'] = fnames['Auger_BandMuons']
-fnames['Auger_BandScals_avrs'] = fnames['Auger_BandMuons_avrs']
 
-fnames['table_richardson']  = '%s/ASOC_ICME-FD/icmes_richardson/data/rich_events_ace.nc' % HOME
+fnames['table_richardson']  = '%s/ASOC_ICME-FD/icmes_richardson/data/rich_events2_ace.nc' % HOME
 for name in fnames.keys():
     assert isfile(fnames[name]),\
         " --> NO EXISTE: " + fnames[name]
 
 #---- directorios de salida
 gral.dirs =  dirs   = {}
-dirs['dir_plots']   = '../plots'
-dirs['dir_ascii']   = '../ascii'
+dirs['dir_plots']   = '../plots3'
+dirs['dir_ascii']   = '../ascii3'
 dirs['suffix']      = '_auger_'    # sufijo para el directorio donde guardare
                                     # estas figuras
 
@@ -107,7 +106,7 @@ bounds.tend = tb.tini_icme    #tb.tend_mc #tb.tini_mc
 gral.data_name      = 'Auger_scals' #'McMurdo' #'ACE'
 
 FILTER['vsw_filter']    = False
-emgr = events_mgr(gral, FILTER, CUTS, bounds, nBin, fgap, tb, z_exp, structure='i')
+emgr = events_mgr(gral, FILTER, CUTS, bounds, nBin, fgap, tb, z_exp, structure='sh.i')
 emgr.run_all()
 emgr.lock_IDs()
 
