@@ -880,9 +880,15 @@ class events_mgr:
         f5          = h5py.File(fname_inp, 'r')
         ch_Eds      = (10, 11, 12, 13)
 
-        fname_avr   = self.gral.fnames[self.data_name+'_avrs']#average histos
-        prom        = loadtxt(fname_avr)
-        typic       = nanmean(prom[:,1:], axis=0)#agarro el promedio del array de los 8 anios!
+        #fname_avr   = self.gral.fnames[self.data_name+'_avrs']#average histos
+        #prom        = loadtxt(fname_avr)
+        #typic       = nanmean(prom[:,1:], axis=0)#agarro el promedio del array de los 8 anios!
+        nEd   = 50
+        typic = np.zeros(nEd, dtype=np.float32)
+        for i in range(nEd):
+            Ed = i*20.+10.
+            typic[i] = f5['mean/corr_%04dMeV'%Ed].value
+
         self.t_utc, CRs = read_hsts_data(fname_inp,  typic, ch_Eds)
         print " -------> variables leidas!"
 
@@ -964,7 +970,7 @@ class events_mgr:
         t_utc   = utc_from_omni(self.f_sc)
         print " Ready."
 
-        #++++++++++++++++++++ CORRECCION DE BORDES +++++++++++++++++++++++++++
+        #++++++++++ CORRECCION DE BORDES ++++++++++
         # IMPORTANTE:
         # Solo valido para los "63 eventos" (MCflag='2', y visibles en ACE)
         # NOTA: dan saltos de shock mas marcados con True.
@@ -974,7 +980,9 @@ class events_mgr:
             ShiftCorrection(ShiftDts, tb.tend_icme)
             ShiftCorrection(ShiftDts, tb.tini_mc)
             ShiftCorrection(ShiftDts, tb.tend_mc)
-        #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            ShiftCorrection(ShiftDts, self.bd.tini)
+            ShiftCorrection(ShiftDts, self.bd.tend)
+        #+++++++++++++++++++++++++++++++++++++++++++
         B       = self.f_sc.variables['Bmag'].data.copy()
         Vsw     = self.f_sc.variables['Vp'].data.copy()
         Temp    = self.f_sc.variables['Tp'].data.copy()

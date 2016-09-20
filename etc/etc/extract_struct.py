@@ -11,10 +11,16 @@ parser = argparse.ArgumentParser(
 formatter_class=argparse.ArgumentDefaultsHelpFormatter
 )
 parser.add_argument(
-'-InpACE', '--inp_ace',
+'-inp', '--input',
 type=str,
 default='{HOME}/data_ace/64sec_mag-swepam/ace.1998-2014.nc'.format(**os.environ),
 help='input filename of ACE data',
+)
+parser.add_argument(
+'-in', '--inp_name',
+type=str,
+default='ACE',
+help='name/flag of input data. Must be one of these: ACE, ACE_o7o6, Auger_BandMuons, Auger_BandScals, McMurdo.',
 )
 parser.add_argument(
 '-dd', '--dir_data',
@@ -35,6 +41,17 @@ nargs=2,
 default=[550.,3000.],
 help='limits for the values of the Vsw (SW speed), to define\
  a filter of events. Recommended partition: 100, 450, 550, 3000.'
+)
+parser.add_argument(
+'-obs', '--obs',
+type=str,
+nargs='+',
+default=['B','rmsB'],
+help="""
+keyname of the variables to extract. 
+For ACE, must be one of these:
+B, rmsB, rmsBoB, V, beta, Pcc, Temp, AlphaRatio.
+""",
 )
 parser.add_argument(
 '-ts', '--tshift',
@@ -92,11 +109,12 @@ gral                = sf.general()
 day                 = 86400.
 #---- cosas input
 gral.fnames = fnames = {}
-fnames['ACE']       = pa.inp_ace #'%s/data_ace/64sec_mag-swepam/ace.1998-2014.nc' % HOME
+fnames[pa.inp_name]       = pa.input #'%s/data_ace/64sec_mag-swepam/ace.1998-2014.nc' % HOME
 fnames['McMurdo']   = '%s/actividad_solar/neutron_monitors/mcmurdo/mcmurdo_utc_correg.dat' % HOME
 #fnames['table_richardson']  = '../../../../data_317events_iii.nc'
 #fnames['table_richardson']  = '%s/ASOC_ICME-FD/icmes_richardson/data/data_317events_iii.nc' % HOME
 fnames['table_richardson']  = '%s/ASOC_ICME-FD/icmes_richardson/data/rich_events_ace.nc' % HOME
+#fnames['Auger_BandMuons_avrs'] = '{PAO_PROCESS}/long_trends/code_figs/avr_histos_press_shape.ok_and_3pmt.ok.txt'.format(**os.environ)  # average histogram
 
 #---- directorios de salida
 gral.dirs =  dirs   = {}
@@ -157,9 +175,8 @@ bef, aft = [pa.BefAft[0]]*tb.n_icmes, [pa.BefAft[1]]*tb.n_icmes
 bounds.tini = map(sf.Add2Date, bdname[pa.ini], bef) 
 bounds.tend = map(sf.Add2Date, bdname[pa.end], aft)
 
-
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-gral.data_name      = 'ACE'
+gral.data_name      = pa.inp_name #'ACE'
 
 FILTER['vsw_filter']    = False
 emgr    = sf.events_mgr(gral, FILTER, CUTS, bounds, nBin, fgap, tb, None)
@@ -185,17 +202,21 @@ if not(os.path.isdir(dir_dst)): os.system('mkdir -p '+dir_dst)
 
 events  = emgr.out['events_data'].keys()
 n_evnts = len(events)
+nobs    = len(pa.obs)
 
 for id, i in zip(events, range(n_evnts)):
     t        = emgr.out['events_data'][id]['t_days']
     ndata    = len(t)
-    data_out = np.nan*np.ones((ndata, 3))
+    data_out = np.nan*np.ones((ndata, 1+nobs))
     data_out[:,0] = t
+
+    #for obs, io in zip(pa.obs, range(nobs)):
+    #    data_out[:,io+1] = emgr.out['events_data'][id][obs+'.'+emgr.data_name]
     B = emgr.out['events_data'][id]['B.'+emgr.data_name] # B-data from 'id' event
     rmsB = emgr.out['events_data'][id]['rmsB.'+emgr.data_name] # data from 'id' event
     data_out[:,1] = B
     data_out[:,2] = rmsB
-    
+
     fname_out = '%s/event.data_vlo.%04d_vhi.%04d_id.%s.txt' % (dir_dst, emgr.CUTS['v_lo'], emgr.CUTS['v_hi'], id[3:])
     np.savetxt(fname_out, data_out, fmt='%g')
 
