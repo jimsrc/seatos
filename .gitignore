@@ -31,3 +31,8 @@ sheaths.icmes/ascii
 # incluyamos la tabla larga
 !etc/table_paper.sheaths/src/long_table.txt
 
+# vim
+.*.vim
+
+# github-pages
+_site

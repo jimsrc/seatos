@@ -3,11 +3,24 @@ from pylab import *
 import numpy as np
 import console_colors as ccl
 from scipy.io.netcdf import netcdf_file
-import os
+import os, argparse
 import matplotlib.patches as patches
 import matplotlib.transforms as transforms
 from mix_funcs import gral, makefig
 from os.path import isdir, isfile
+
+
+#--- retrieve args
+parser = argparse.ArgumentParser(
+formatter_class=argparse.ArgumentDefaultsHelpFormatter
+)
+parser.add_argument(
+'-g', '--group',
+type=str,
+default='low',
+help='name of the sub-group of events. Can be low, mid, and high.',
+)
+pa = parser.parse_args()
 
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 nbefore, nafter = 2, 4
@@ -31,22 +44,29 @@ if CorrShift:
 else:
     prexShift = 'woShiftCorr'
 
-dir_inp_mc  = '../../icmes/ascii/MCflag%s/%s' % (MCwant, prexShift) 
-dir_inp_sh  = '../../sheaths.icmes/ascii/MCflag%s/%s' % (MCwant, prexShift)
-dir_figs    = '../plots/%s/MCflag%s' % (prexShift, MCwant) 
+dir_inp_mc  = '../../icmes/ascii3/MCflag%s/%s' % (MCwant, prexShift) 
+dir_inp_sh  = '../../sheaths.icmes/ascii3/MCflag%s/%s' % (MCwant, prexShift)
+dir_figs    = '../plots3/%s/MCflag%s' % (prexShift, MCwant) 
 
 dir_inp_mc  += '/_auger_'
 dir_inp_sh  += '/_auger_'
 dir_figs    += '/_auger_'
 
-assert isdir(dir_inp_mc) and isdir(dir_inp_sh) and isdir(dir_figs),\
+assert isdir(dir_inp_mc) and isdir(dir_inp_sh),\
     " --> algun directorio no existe!"
+os.system('mkdir -p '+dir_figs)
 
 #--- limites se seleccion
 LOW, MID1, MID2, TOP = 100.0, 375.0, 450.0, 3000.0
-#vlo, vhi        = LOW, MID1     # rango de velocidad Vmc
-#vlo, vhi        = MID1, MID2     # rango de velocidad Vmc
-vlo, vhi        = MID2, TOP     # rango de velocidad Vmc
+if pa.group=='low':
+    vlo, vhi        = LOW, MID1     # rango de velocidad Vmc
+elif pa.group=='mid':
+    vlo, vhi        = MID1, MID2     # rango de velocidad Vmc
+elif pa.group=='high':
+    vlo, vhi        = MID2, TOP     # rango de velocidad Vmc
+else:
+    print " --> wrong group name!\n Exiting..."
+    raise SystemExit
 
 fname_inp       = '%s_vlo.%3.1f.vhi.%3.1f' % (FNAME, vlo, vhi)
 fname_inp_nro_mc   = dir_inp_mc + '/n.events_' + fname_inp + '.txt'
@@ -118,8 +138,22 @@ stf['CRs.McMurdo']    = {
     'text_loc_2': {'mc':[4.5, -7.0], 'sh':[-1.95, -4.5]},
     'text_loc_3': {'mc':[4.5, -7.5], 'sh':[-1.95, -4.5]}
     }
-stf['CRs.Auger']    = {
-    'label': 'GCRs @Auger [%]',
+stf['CRs.Auger_scals']    = {
+    'label': 'GCRs @Auger-scals [%]',
+    'ylims': [-1.0, 0.2],
+    'text_loc_1': {'mc':[4.5, -0.50], 'sh':[-1.95, -0.5]},
+    'text_loc_2': {'mc':[4.5, -0.50], 'sh':[-1.95, -0.5]},
+    'text_loc_3': {'mc':[4.5, -0.85], 'sh':[-1.95, -0.5]}
+    }
+stf['CRs.Auger_BandScals']    = {
+    'label': 'GCRs @Auger-BandMuons [%]',
+    'ylims': [-1.0, 0.2],
+    'text_loc_1': {'mc':[4.5, -0.50], 'sh':[-1.95, -0.5]},
+    'text_loc_2': {'mc':[4.5, -0.50], 'sh':[-1.95, -0.5]},
+    'text_loc_3': {'mc':[4.5, -0.85], 'sh':[-1.95, -0.5]}
+    }
+stf['CRs.Auger_BandMuons']    = {
+    'label': 'GCRs @Auger-BandMuons [%]',
     'ylims': [-1.0, 0.2],
     'text_loc_1': {'mc':[4.5, -0.50], 'sh':[-1.95, -0.5]},
     'text_loc_2': {'mc':[4.5, -0.50], 'sh':[-1.95, -0.5]},
