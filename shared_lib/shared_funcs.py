@@ -549,54 +549,58 @@ class events_mgr(object):
         nnn       = 0     # nro de evento q pasan el filtro a-priori
         self.out  = {}
         self.out['events_data'] = {} # bag to save data from events
+
+        ok = np.zeros(n_icmes,dtype=np.bool) # all `False` by default
         for i in range(n_icmes):
-            ok=False
             try: #no todos los elementos de 'tend' son fechas (algunos eventos no tienen fecha definida)
-                dT  = (bd.tend[i] - bd.tini[i]).total_seconds()/day  # [day]
-                # this 'i' event must be contained in our data
-                ok  =  date_to_utc(bd.tini[i]) >= self.t_utc[0] #True
-                ok  &= date_to_utc(bd.tend[i]) <= self.t_utc[-1]
-            except:
-                continue # jump to next event 'i'
+                # this 'i'-event must be contained in our data-base
+                ok[i]  =  date_to_utc(bd.tini[i]) >= self.t_utc[0] #True
+                ok[i]  &= date_to_utc(bd.tend[i]) <= self.t_utc[-1]
+                if self.IDs_locked:
+                    ok[i] &= i in self.restricted_IDs
+            except: # e.g. if `bd.{tini,tend}[i]` is NaN
+                ok[i] = False
 
-            ADAP += [ {} ] # agrego un diccionario a la lista
-            #np.set_printoptions(4)  # nro de digitos a imprimir cuando use numpy.arrays
-            if (ok & self.SELECC[i]):# (MCsig[i]>=MCwant)):  ---FILTRO--- (*1)
-                nnn += 1
-                print ccl.Gn + " id:%d ---> dT/day:%g" % (i, dT) + ccl.W
-                print self.tb.tshck[i]
-                nok +=1
-                evdata = self.out['events_data']['id_%03d'%i] = {} # evdata is just a pointer
-                # recorremos las variables:
-                for varname in VARS.keys():
-                    dt      = dT*(1+nwndw[0]+nwndw[1])/nbin
-                    t, var  = selecc_window_ii(
-                                nwndw, #rango ploteo
-                                [self.t_utc, VARS[varname]['value']],
-                                bd.tini[i],
-                                bd.tend[i]
-                              )
-                    evdata['t_days'] = t
-                    evdata[varname] = var
-
-                    if self.data_name in self.CR_observs:   # is it CR data?
-                        rate_pre = getattr(self, 'rate_pre_'+self.data_name)
-                        var = 100.*(var - rate_pre[i]) / rate_pre[i]
-
-                    # rebinea usando 'dt' como el ancho de nuevo bineo
-                    out       = adaptar_ii(nwndw, dT, nbin, dt, t, var, self.fgap)
-                    enough    = out[0]   # `True` for data with less than 100*`fgap`% of gap
-                    Enough[varname]      += [ enough ]
-                    ADAP[nok-1][varname] = out[1]  # donde: out[1] = [tiempo, variable]
-
-                    if enough:
-                        IDs[varname]     += [i]
-                        nEnough[varname] += 1
-
-            else:
-                print ccl.Rn + " id:%d ---> dT/day:%g" % (i, dT),\
-                      " (SELECC: ", self.SELECC[i], ')' + ccl.W
+        for i in range(n_icmes):
+            #np.set_printoptions(4)  # nro de digitos para imprimir numpy.arrays
+            if not (ok[i] & self.SELECC[i]):   #---FILTRO--- (*1)
+                print ccl.Rn, " id:%d ---> ok, SELECC: "%i, ok[i], self.SELECC[i], ccl.W
                 nbad +=1
+                continue
+
+            dT = (bd.tend[i] - bd.tini[i]).total_seconds()/day  # [day]
+            ADAP += [ {} ] # agrego un diccionario a la lista
+            nnn += 1
+            print ccl.Gn + " id:%d ---> dT/day:%g" % (i, dT) + ccl.W
+            print self.tb.tshck[i]
+            nok +=1
+            evdata = self.out['events_data']['id_%03d'%i] = {} # evdata is just a pointer
+            # recorremos las variables:
+            for varname in VARS.keys():
+                dt      = dT*(1+nwndw[0]+nwndw[1])/nbin
+                t, var  = selecc_window_ii(
+                            nwndw, #rango ploteo
+                            [self.t_utc, VARS[varname]['value']],
+                            bd.tini[i],
+                            bd.tend[i]
+                          )
+                evdata['t_days'] = t
+                evdata[varname] = var
+
+                if self.data_name in self.CR_observs:   # is it CR data?
+                    rate_pre = getattr(self, 'rate_pre_'+self.data_name)
+                    var = 100.*(var - rate_pre[i]) / rate_pre[i]
+
+                # rebinea usando 'dt' como el ancho de nuevo bineo
+                out       = adaptar_ii(nwndw, dT, nbin, dt, t, var, self.fgap)
+                enough    = out[0]   # `True` for data with less than 100*`fgap`% of gap
+                Enough[varname]      += [ enough ]
+                ADAP[nok-1][varname] = out[1]  # donde: out[1] = [tiempo, variable]
+
+                if enough:
+                    IDs[varname]     += [i]
+                    nEnough[varname] += 1
+
 
         print " ----> len.ADAP: %d" % len(ADAP)
         self.__nok__    = nok
@@ -643,7 +647,6 @@ class events_mgr(object):
                     ok[i] &= i in self.restricted_IDs
             except: # e.g. if `bd.{tini,tend}[i]` is NaN
                 ok[i] = False
-                #continue    # saltar al sgte evento 'i'
 
         for i in range(n_icmes):
             #np.set_printoptions(4)         # nro de digitos a imprimir cuando use numpy.arrays
@@ -652,7 +655,7 @@ class events_mgr(object):
                 nbad +=1
                 continue
 
-            dT  =  (bd.tend[i] - bd.tini[i]).total_seconds()/day  # [day]
+            dT = (bd.tend[i] - bd.tini[i]).total_seconds()/day  # [day]
             ADAP += [ {} ] # agrego un diccionario a la lista
             nnn += 1
             print ccl.Gn + " id:%d ---> dT/day:%g" % (i, dT) + ccl.W
@@ -1220,7 +1223,6 @@ class events_mgr(object):
         fout.close()
         print "**************************************** end: NC_FILE"
         #---------------------------------------------- end: NC_FILE
-
 
     def filter_events(self):
         structure       = self.structure

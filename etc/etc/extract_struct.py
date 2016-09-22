@@ -49,8 +49,10 @@ nargs='+',
 default=['B','rmsB'],
 help="""
 keyname of the variables to extract. 
-For ACE, must be one of these:
+For ACE, use:
 B, rmsB, rmsBoB, V, beta, Pcc, Temp, AlphaRatio.
+For Auger_..., use:
+CRs.
 """,
 )
 parser.add_argument(
@@ -83,7 +85,7 @@ help='name of leading border. Use any of these: shock, ini_mc, end_mc, ini_icme,
 parser.add_argument(
 '-e', '--end',
 type=str,
-default='ini_mc',
+default='ini_icme',
 help='name of trailing border. Use any of these: shock, ini_mc, end_mc, ini_icme, end_icme.',
 )
 parser.add_argument(
@@ -113,7 +115,7 @@ fnames[pa.inp_name]       = pa.input #'%s/data_ace/64sec_mag-swepam/ace.1998-201
 fnames['McMurdo']   = '%s/actividad_solar/neutron_monitors/mcmurdo/mcmurdo_utc_correg.dat' % HOME
 #fnames['table_richardson']  = '../../../../data_317events_iii.nc'
 #fnames['table_richardson']  = '%s/ASOC_ICME-FD/icmes_richardson/data/data_317events_iii.nc' % HOME
-fnames['table_richardson']  = '%s/ASOC_ICME-FD/icmes_richardson/data/rich_events_ace.nc' % HOME
+fnames['table_richardson']  = '%s/ASOC_ICME-FD/icmes_richardson/data/rich_events2_ace.nc' % HOME
 #fnames['Auger_BandMuons_avrs'] = '{PAO_PROCESS}/long_trends/code_figs/avr_histos_press_shape.ok_and_3pmt.ok.txt'.format(**os.environ)  # average histogram
 
 #---- directorios de salida
@@ -136,12 +138,13 @@ MCwant  = {'flags':     pa.icme_flag.split('.'), #('2',),
 FILTER                  = {}
 FILTER['Mcmultiple']    = False # True para incluir eventos multi-MC
 FILTER['CorrShift']     = pa.tshift #True
-FILTER['wang']          = True #False #True
+FILTER['wang']          = False #False #True
 FILTER['vsw_filter']    = True
 FILTER['z_filter_on']   = False
 FILTER['MCwant']        = MCwant
 FILTER['B_filter']      = False
 FILTER['filter_dR.icme'] = False #True
+FILTER['choose_1998-2006'] = False
 
 CUTS                    = {}
 CUTS['ThetaThres']      = 90.0      # all events with theta>ThetaThres
@@ -175,11 +178,11 @@ bef, aft = [pa.BefAft[0]]*tb.n_icmes, [pa.BefAft[1]]*tb.n_icmes
 bounds.tini = map(sf.Add2Date, bdname[pa.ini], bef) 
 bounds.tend = map(sf.Add2Date, bdname[pa.end], aft)
 
-#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#+++++++++++++++++++++++++++++++++++++++++++++++++
 gral.data_name      = pa.inp_name #'ACE'
 
 FILTER['vsw_filter']    = False
-emgr    = sf.events_mgr(gral, FILTER, CUTS, bounds, nBin, fgap, tb, None)
+emgr    = sf.events_mgr(gral, FILTER, CUTS, bounds, nBin, fgap, tb, None, structure='sh.i')
 
 #++++ limites
 emgr.FILTER['vsw_filter']    = True
@@ -209,25 +212,26 @@ for id, i in zip(events, range(n_evnts)):
     ndata    = len(t)
     data_out = np.nan*np.ones((ndata, 1+nobs))
     data_out[:,0] = t
+    for obs, io in zip(pa.obs, range(nobs)):
+        data_out[:,io+1] = emgr.out['events_data'][id][obs+'.'+emgr.data_name]
 
-    #for obs, io in zip(pa.obs, range(nobs)):
-    #    data_out[:,io+1] = emgr.out['events_data'][id][obs+'.'+emgr.data_name]
-    B = emgr.out['events_data'][id]['B.'+emgr.data_name] # B-data from 'id' event
-    rmsB = emgr.out['events_data'][id]['rmsB.'+emgr.data_name] # data from 'id' event
-    data_out[:,1] = B
-    data_out[:,2] = rmsB
-
-    fname_out = '%s/event.data_vlo.%04d_vhi.%04d_id.%s.txt' % (dir_dst, emgr.CUTS['v_lo'], emgr.CUTS['v_hi'], id[3:])
-    np.savetxt(fname_out, data_out, fmt='%g')
-
-    # append a legend
-    f = open(fname_out, 'a')  # append to file
-    dtsh = emgr.dt_sh[int(id[3:])]  # [days] sheath duration
-    dtmc = emgr.dt_mc[int(id[3:])]  # [days] MC duration
-    COMMS =  '# dt_sheath [days]: %g' % dtsh
-    COMMS += '\n# dt_MC [days]: %g' % dtmc
-    f.write(COMMS)
-    f.close()
+    myid = int(id[3:])
+    fname_out = '%s/event.data_vlo.%04d_vhi.%04d_id.%03d.txt' % (dir_dst, emgr.CUTS['v_lo'], emgr.CUTS['v_hi'], myid)
+    dtsh = emgr.dt_sh[myid]  # [days] sheath duration
+    dtmc = emgr.dt_mc[myid]  # [days] MC duration
+    FOOTER=''+\
+    'dt_sheath [days]: %g\n' % dtsh +\
+    'dt_MC [days]: %g' % dtmc
+    HEADER=''+\
+    'ini ({struct}) : {date}'.format(
+        struct=pa.ini,
+        date=emgr.bd.tini[myid].strftime('%d %B %Y %H:%M'),
+    )+'\n'+\
+    'end ({struct}) : {date}'.format(
+        struct=pa.end,
+        date=emgr.bd.tend[myid].strftime('%d %B %Y %H:%M'),
+    )
+    np.savetxt(fname_out,data_out,header=HEADER,footer=FOOTER,fmt='%g')
 
 print " --> saved in: "+dir_dst
 
