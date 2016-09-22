@@ -33,3 +33,6 @@ sheaths.icmes/ascii
 
 # vim
 .*.vim
+
+# github-pages
+_site

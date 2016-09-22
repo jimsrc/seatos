@@ -3,11 +3,24 @@ from pylab import *
 import numpy as np
 import console_colors as ccl
 from scipy.io.netcdf import netcdf_file
-import os
+import os, argparse
 import matplotlib.patches as patches
 import matplotlib.transforms as transforms
 from mix_funcs import gral, makefig
 from os.path import isdir, isfile
+
+
+#--- retrieve args
+parser = argparse.ArgumentParser(
+formatter_class=argparse.ArgumentDefaultsHelpFormatter
+)
+parser.add_argument(
+'-g', '--group',
+type=str,
+default='low',
+help='name of the sub-group of events. Can be low, mid, and high.',
+)
+pa = parser.parse_args()
 
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 nbefore, nafter = 2, 4
@@ -45,9 +58,15 @@ os.system('mkdir -p '+dir_figs)
 
 #--- limites se seleccion
 LOW, MID1, MID2, TOP = 100.0, 375.0, 450.0, 3000.0
-#vlo, vhi        = LOW, MID1     # rango de velocidad Vmc
-#vlo, vhi        = MID1, MID2     # rango de velocidad Vmc
-vlo, vhi        = MID2, TOP     # rango de velocidad Vmc
+if pa.group=='low':
+    vlo, vhi        = LOW, MID1     # rango de velocidad Vmc
+elif pa.group=='mid':
+    vlo, vhi        = MID1, MID2     # rango de velocidad Vmc
+elif pa.group=='high':
+    vlo, vhi        = MID2, TOP     # rango de velocidad Vmc
+else:
+    print " --> wrong group name!\n Exiting..."
+    raise SystemExit
 
 fname_inp       = '%s_vlo.%3.1f.vhi.%3.1f' % (FNAME, vlo, vhi)
 fname_inp_nro_mc   = dir_inp_mc + '/n.events_' + fname_inp + '.txt'
