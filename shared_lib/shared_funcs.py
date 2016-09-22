@@ -632,61 +632,64 @@ class events_mgr(object):
         # recorremos los eventos:
         nok, nbad = 0, 0
         nnn     = 0     # nro de evento q pasan el filtro a-priori
+
+        ok = np.zeros(n_icmes,dtype=np.bool) # all `False` by default
         for i in range(n_icmes):
-            ok = False
             try: #no todos los elementos de 'tend' son fechas (algunos eventos no tienen fecha definida)
-                dT  =  (bd.tend[i] - bd.tini[i]).total_seconds()/day  # [day]
-                # this 'i' event must be contained in our data
-                ok  =  date_to_utc(bd.tini[i]) >= self.t_utc[0] #True
-                ok  &= date_to_utc(bd.tend[i]) <= self.t_utc[-1]
+                # this 'i'-event must be contained in our data-base
+                ok[i]  =  date_to_utc(bd.tini[i]) >= self.t_utc[0] #True
+                ok[i]  &= date_to_utc(bd.tend[i]) <= self.t_utc[-1]
                 if self.IDs_locked:
-                    ok &= i in self.restricted_IDs
-            except:
-                continue    # saltar al sgte evento 'i'
+                    ok[i] &= i in self.restricted_IDs
+            except: # e.g. if `bd.{tini,tend}[i]` is NaN
+                ok[i] = False
+                #continue    # saltar al sgte evento 'i'
 
-            ADAP += [ {} ] # agrego un diccionario a la lista
+        for i in range(n_icmes):
             #np.set_printoptions(4)         # nro de digitos a imprimir cuando use numpy.arrays
-            if (ok & self.SELECC[i]):# (MCsig[i]>=MCwant)):  ---FILTRO--- (*1)
-                nnn += 1
-                print ccl.Gn + " id:%d ---> dT/day:%g" % (i, dT) + ccl.W
-                print self.tb.tshck[i]
-                nok +=1
-                # recorremos las variables:
-                for varname in VARS.keys():
-                    dt      = dT*(1+nwndw[0]+nwndw[1])/nbin
-                    t, var  = selecc_window_ii(
-                        nwndw=nwndw, #rango ploteo
-                        data=[self.t_utc, VARS[varname]['value']],
-                        tini=bd.tini[i],
-                        tend=bd.tend[i]
-                    )
-
-                    #--- read average CR rates before shock/disturbance
-                    if self.data_name in self.CR_observs:   # is it CR data?
-                        rate_pre = getattr(self, 'rate_pre_'+self.data_name)
-                        var = 100.*(var - rate_pre[i]) / rate_pre[i]
-
-                    #--- rebinea usando 'dt' como el ancho de nuevo bineo
-                    out       = adaptar_ii(
-                        nwndw = nwndw, 
-                        dT = dT, 
-                        n = nbin, 
-                        dt = dt, 
-                        t = t, 
-                        r = var, 
-                        fgap = self.fgap
-                    )
-                    enough    = out[0]       # True: data con menos de 100*'fgap'% de gap
-                    Enough[varname]         += [ enough ]
-                    ADAP[nok-1][varname]    = out[1]  # donde: out[1] = [tiempo, variable]
-
-                    if enough:
-                        IDs[varname]     += [i]
-                        nEnough[varname] += 1
-
-            else:
-                print ccl.Rn + " id:%d ---> dT/day:%g" % (i, dT), " (SELECC: ", self.SELECC[i], ')' + ccl.W
+            if not (ok[i] & self.SELECC[i]):   #---FILTRO--- (*1)
+                print ccl.Rn, " id:%d ---> ok, SELECC: ", ok[i], self.SELECC[i], ccl.W
                 nbad +=1
+                continue
+
+            dT  =  (bd.tend[i] - bd.tini[i]).total_seconds()/day  # [day]
+            ADAP += [ {} ] # agrego un diccionario a la lista
+            nnn += 1
+            print ccl.Gn + " id:%d ---> dT/day:%g" % (i, dT) + ccl.W
+            print self.tb.tshck[i]
+            nok +=1
+            # recorremos las variables:
+            for varname in VARS.keys():
+                dt      = dT*(1+nwndw[0]+nwndw[1])/nbin
+                t, var  = selecc_window_ii(
+                    nwndw=nwndw, #rango ploteo
+                    data=[self.t_utc, VARS[varname]['value']],
+                    tini=bd.tini[i],
+                    tend=bd.tend[i]
+                )
+
+                #--- read average CR rates before shock/disturbance
+                if self.data_name in self.CR_observs:   # is it CR data?
+                    rate_pre = getattr(self, 'rate_pre_'+self.data_name)
+                    var = 100.*(var - rate_pre[i]) / rate_pre[i]
+
+                #--- rebinea usando 'dt' como el ancho de nuevo bineo
+                out       = adaptar_ii(
+                    nwndw = nwndw, 
+                    dT = dT, 
+                    n = nbin, 
+                    dt = dt, 
+                    t = t, 
+                    r = var, 
+                    fgap = self.fgap
+                )
+                enough    = out[0]       # True: data con menos de 100*'fgap'% de gap
+                Enough[varname]         += [ enough ]
+                ADAP[nok-1][varname]    = out[1]  # donde: out[1] = [tiempo, variable]
+
+                if enough:
+                    IDs[varname]     += [i]
+                    nEnough[varname] += 1
 
         print " ----> len.ADAP: %d" % len(ADAP)
         self.__nok__    = nok
