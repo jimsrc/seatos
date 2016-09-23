@@ -136,7 +136,7 @@ def nCR2(data, tau, q, off, bp, bo):
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-class fit_forbush():
+class fit_forbush(object):
     def __init__(s, data, sems):
         s.sems = sems
         s.data = data
@@ -168,7 +168,6 @@ class fit_forbush():
             # termino rms
             s.sum1[j] = np.sum(s.fcc[:(i+1)]*s.dt[:(i+1)])
 
-
     def residuals(self, params):
         if hasattr(params, 'keys'):
             tau   = params['tau'].value
@@ -181,6 +180,11 @@ class fit_forbush():
         else:
             print " ---> params is WEIRD!"
             raise SystemExit
+        #print params; raw_input()
+        if self.monit:
+            self.niter += 1
+            for nm in params.keys():
+                self.foll[nm] += [ params[nm].value ]
 
         t     = self.t
         crs   = self.crs
@@ -190,7 +194,6 @@ class fit_forbush():
         sqr   = np.square(crs - model) # mas rapido q el np.square()
         diff  = np.nanmean(sqr)
         return diff
-
 
     def nCR2(s, tau, q, off, bp, bo):
         s.bc = s.b[1:-1] - bo
@@ -211,7 +214,6 @@ class fit_forbush():
         return s.nCR
         #END
 
-
     def make_fit_brute(self, rranges):
         """
         rranges: slices that define the boundaries && step-size
@@ -226,10 +228,7 @@ class fit_forbush():
             'bo':   rb[4],
         }
 
-        
-
-
-    def make_fit(self):
+    def make_fit(self, monit=False):
         sems    = self.sems
         #x   = self.t #data[0]
         #y   = self.crs #data[1]
@@ -278,6 +277,14 @@ class fit_forbush():
         params['bo'].max    = 20.0
 
         METHOD  = "lbfgsb"#"leastsq"#"lbfgsb"
+        self.monit = monit
+        if monit:
+            self.niter = 0
+            self.foll = {}
+            for nm in params.keys():
+                self.foll[nm] = []  
+                self.foll[nm] += [ params[nm].value ]
+
         result = minimize(self.residuals, params, method=METHOD)
 
         # write error report

@@ -1,4 +1,15 @@
 #!/usr/bin/env ipython
+"""
+Script to monitor the performance and 
+convergence of metho LBFGS
+
+See:
+http://www.ece.northwestern.edu/~morales/PSfiles/acm-remark.pdf
+Also implementations:
+scipy/optimize/__init__.py
+minimize() @
+~/my_projects/scipy/scipy/optimize/_minimize.py
+"""
 from pylab import *
 #from load_data import sh, mc, cr
 import func_data as fd
@@ -7,23 +18,83 @@ import matplotlib.patches as patches
 import matplotlib.transforms as transforms
 from os import environ as env
 from os.path import isfile, isdir
+import argparse
 #++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-dir_inp_sh      = '{dir}/sheaths.icmes/ascii/MCflag0.1.2.2H/woShiftCorr/_auger_/' .format(dir=env['MEAN_PROFILES_ACE'])
-dir_inp_mc      = '{dir}/icmes/ascii/MCflag0.1.2.2H/woShiftCorr/_auger_/' .format(dir=env['MEAN_PROFILES_ACE'])
+
+#--- retrieve args
+parser = argparse.ArgumentParser(
+formatter_class=argparse.ArgumentDefaultsHelpFormatter
+)
+parser.add_argument(
+'-left', '--left',
+type=str,
+default='{MEAN_PROFILES_ACE}/sheaths.icmes/ascii\
+    /MCflag0.1.2.2H/woShiftCorr/_auger_'.format(**env),
+help='input directory for left part',
+)
+parser.add_argument(
+'-right', '--right',
+type=str,
+default='{MEAN_PROFILES_ACE}/icmes/ascii\
+    /MCflag0.1.2.2H/woShiftCorr/_auger_'.format(**env),
+help='input directory for right part',
+)
+parser.add_argument(
+'-pref', '--prefix',
+type=str,
+default='MCflag0.1.2.2H_2before.4after_fgap0.2_WangNaN',
+help='prefix of input filenames (we build the other part\
+    of the basename).',
+)
+parser.add_argument(
+'-suff', '--suffix',
+type=str,
+default='CRs.Auger_scals',
+help='suffix of input filenames (we build the other part\
+    of the basename).'
+)
+parser.add_argument(
+'-fig', '--fig',
+type=str,
+default='../figs/indiv/', # if directory, must end in '/'
+help='figure full-filename or directory. If directory, it MUST\
+    end with \'/\' character, and we build the basename of file.'
+)
+parser.add_argument(
+'-lim', '--lim',
+nargs=2,
+type=float,
+default=[100.0, 375.0],
+help='lower & higher threshold values associated to\
+    input filenames.'
+)
+pa = parser.parse_args()
+
+
+dir_inp_sh      = pa.left #'{dir}/sheaths.icmes/ascii/MCflag0.1.2.2H/woShiftCorr/_auger_/' .format(dir=env['MEAN_PROFILES_ACE'])
+dir_inp_mc      = pa.right #'{dir}/icmes/ascii/MCflag0.1.2.2H/woShiftCorr/_auger_/' .format(dir=env['MEAN_PROFILES_ACE'])
 #dir_inp_sh      = '{dir}/sheaths/ascii/MCflag2/wShiftCorr/_test_Vmc_' .format(dir=env['MEAN_PROFILES_ACE'])
 #dir_inp_mc      = '{dir}/mcs/ascii/MCflag2/wShiftCorr/_test_Vmc_' .format(dir=env['MEAN_PROFILES_ACE'])
-fname_inp_part  = 'MCflag0.1.2.2H_2before.4after_fgap0.2_WangNaN' # '_vlo.100.0.vhi.375.0_CRs.Auger_BandScals.txt'
+fname_inp_part  = pa.prefix #'MCflag0.1.2.2H_2before.4after_fgap0.2_WangNaN' # '_vlo.100.0.vhi.375.0_CRs.Auger_BandScals.txt'
 #fname_inp_part  = 'MCflag2_2before.4after_fgap0.2_Wang90.0'
 
 #CRstr           = 'CRs.Auger_BandScals'
 #CRstr           = 'CRs.Auger_BandMuons'
-CRstr           = 'CRs.Auger_scals'
+CRstr           = pa.suffix #'CRs.Auger_scals'
 mgr             = fd.mgr_data(dir_inp_sh, dir_inp_mc, fname_inp_part)
-sh, mc, cr      = mgr.run(vlo=100.0, vhi=375.0, CRstr=CRstr)
+sh, mc, cr      = mgr.run(vlo=pa.lim[0], vhi=pa.lim[1], CRstr=CRstr)
 #sh, mc, cr      = mgr.run(vlo=375.0, vhi=450.0, CRstr=CRstr)
 #sh, mc, cr      = mgr.run(vlo=450.0, vhi=3000.0, CRstr=CRstr)
-fname_fig       = '../figs/indiv/nCR_vlo.{lo:4.1f}.vhi.{hi:4.1f}_{name}.png' .format(lo=mgr.vlo, hi=mgr.vhi, name=CRstr)
+
+#--- `fig` argument must be full-filename or directory!
+if pa.fig=='':
+    raise SystemExit(' --> must specify filename or directory!')
+elif pa.fig[-1]=='/':
+    fname_fig = pa.fig + 'nCR_vlo.{lo:4.1f}.vhi.{hi:4.1f}\
+        _{name}.png'.format(lo=mgr.vlo, hi=mgr.vhi, name=CRstr)
+else:
+    fname_fig = pa.fig
 #++++++++++++++++++++++++++++++++++++++++++++++++++++
 #-- mc:
 mc.cc   = (mc.t>0.0) & (mc.t<=2.0)
@@ -62,11 +133,12 @@ b       = B
 fig     = figure(1, figsize=(6,3.))
 ax     = fig.add_subplot(111)
 
-tau_o, q, off   = 5., -6., 0.1 #2.0, -400.0
+tau_o, q, off   = 3., -6., 0.1 #2.0, -400.0
 bp, bo          = -0.1, 10.0
 
-fit     = ff.fit_forbush([t, fc, crs, b], [tau_o, q, off, bp, bo])
-fit.make_fit()
+data    = np.array([t, fc, crs, b])
+fit     = ff.fit_forbush(data, [tau_o, q, off, bp, bo])
+fit.make_fit(monit=True)
 
 print fit.par
 #raise SystemExit
