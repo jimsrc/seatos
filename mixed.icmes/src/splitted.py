@@ -20,6 +20,23 @@ type=str,
 default='low',
 help='name of the sub-group of events. Can be low, mid, and high.',
 )
+parser.add_argument(
+'-right', '--right',
+type=str,
+default='../../icmes/ascii3',
+help='input directory for right part',
+)
+parser.add_argument(
+'-left', '--left',
+type=str,
+default='../../sheaths.icmes/ascii3',
+help='input directory for left part',
+)
+parser.add_argument(
+'-plot', '--plot',
+type=str,
+default='../plots3'
+)
 pa = parser.parse_args()
 
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -44,9 +61,9 @@ if CorrShift:
 else:
     prexShift = 'woShiftCorr'
 
-dir_inp_mc  = '../../icmes/ascii3/MCflag%s/%s' % (MCwant, prexShift) 
-dir_inp_sh  = '../../sheaths.icmes/ascii3/MCflag%s/%s' % (MCwant, prexShift)
-dir_figs    = '../plots3/%s/MCflag%s' % (prexShift, MCwant) 
+dir_inp_mc  = pa.right+'/MCflag%s/%s' % (MCwant, prexShift) 
+dir_inp_sh  = pa.left +'/MCflag%s/%s' % (MCwant, prexShift)
+dir_figs    = pa.plot+'/%s/MCflag%s' % (prexShift, MCwant) 
 
 dir_inp_mc  += '/_auger_'
 dir_inp_sh  += '/_auger_'
@@ -146,7 +163,7 @@ stf['CRs.Auger_scals']    = {
     'text_loc_3': {'mc':[4.5, -0.85], 'sh':[-1.95, -0.5]}
     }
 stf['CRs.Auger_BandScals']    = {
-    'label': 'GCRs @Auger-BandMuons [%]',
+    'label': 'GCRs @Auger-BandScals [%]',
     'ylims': [-1.0, 0.2],
     'text_loc_1': {'mc':[4.5, -0.50], 'sh':[-1.95, -0.5]},
     'text_loc_2': {'mc':[4.5, -0.50], 'sh':[-1.95, -0.5]},
