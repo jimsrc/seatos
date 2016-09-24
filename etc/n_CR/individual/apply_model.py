@@ -129,11 +129,6 @@ fc      = np.zeros(rms.size)
 fc[cc]  = (rms-rms_o)[cc]
 b       = B
 
-#++++++++++++++++++++++++++++++++++++++++++++++++ figura
-fig     = figure(1, figsize=(6,3.))
-ax     = fig.add_subplot(111)
-
-
 _tau  = np.linspace(2.,6.,2)
 _q    = np.linspace(-3., 0., 2)
 _off  = np.linspace(0.01,1.,2)
@@ -152,57 +147,53 @@ for tau_o,q,off,bp,bo in all_seeds:
     it       += 1
 
 MinRes = np.array([ _fit[i].resid for i in range(len(_fit)) ])
-for i in find(MinRes.min()==MinRes):
+ind = find(MinRes.min()==MinRes)
+for i in ind:
     print _fit[i].niter
     print _fit[i].par
 
-sys.exit(0)
-print fit.par
+#sys.exit(0)
+#print fit.par
 #raise SystemExit
 """
 tau, bp     = 2.36, 0.0
 q, off, bo  = -9.373, 0.89, 16.15
 """
-ncr     = ff.nCR2([t, fc, b], **fit.par)
-sqr     = np.nanmean(np.square(crs - ncr))
 
-#--- plot izq
-ax.plot(org_t, org_crs, '-o', c='gray', ms=3)
-ax.plot(t, ncr, '-', c='red', lw=5, alpha=0.8, label='$\\{tau:3.3g}$'.format(**fit.par))
+for i in range(len(ind)):
+    fit  = _fit[i]
+    ncr     = ff.nCR2([t, fc, b], **fit.par)
+    sqr     = np.nanmean(np.square(crs - ncr))
+    #++++++++++++++++++++++++++++++++++++ figura
+    fig     = figure(1, figsize=(6,3.))
+    ax     = fig.add_subplot(111)
+    #--- plot izq
+    ax.plot(org_t, org_crs, '-o', c='gray', ms=3)
+    ax.plot(t, ncr, '-', c='red', lw=5, alpha=0.8, label='$\\{tau:3.3g}$'.format(**fit.par))
+    #++++ region sheath (naranja)
+    trans   = transforms.blended_transform_factory(ax.transData, ax.transAxes)
+    rect1   = patches.Rectangle((0., 0.), width=1, height=1, 
+                transform=trans, color='orange',
+                alpha=0.3)
+    ax.add_patch(rect1)
+    #++++ region mc (blue)
+    trans   = transforms.blended_transform_factory(ax.transData, ax.transAxes)
+    rect1   = patches.Rectangle((1., 0.), width=3, height=1, 
+                transform=trans, color='blue',
+                alpha=0.3)
+    ax.add_patch(rect1)
 
-#++++ region sheath (naranja)
-trans   = transforms.blended_transform_factory(ax.transData, ax.transAxes)
-rect1   = patches.Rectangle((0., 0.), width=1, height=1, 
-            transform=trans, color='orange',
-            alpha=0.3)
-ax.add_patch(rect1)
-#++++ region mc (blue)
-trans   = transforms.blended_transform_factory(ax.transData, ax.transAxes)
-rect1   = patches.Rectangle((1., 0.), width=3, height=1, 
-            transform=trans, color='blue',
-            alpha=0.3)
-ax.add_patch(rect1)
+    ax.plot(t, crs, '-o', c='k', ms=3)
+    #ax.axhline(y=0.0, c='g')
+    ax.grid()
+    ax.set_xlabel('time normalized to sheath/MC passage [1]', fontsize=14)
+    ax.set_ylabel('$n_{CR}$ [%]', fontsize=21)
+    ax.set_ylim(-1., 0.5)
+    #+++ save fig
+    savefig(fname_fig+'_%d'%i,format='png',dpi=135, bbox_inches='tight')
+    print " ---> generamos: " + fname_fig
+    close()
 
-ax.plot(t, crs, '-o', c='k', ms=3)
-#ax.axhline(y=0.0, c='g')
-ax.grid()
-ax.set_xlabel('time normalized to sheath/MC passage [1]', fontsize=14)
-ax.set_ylabel('$n_{CR}$ [%]', fontsize=21)
-ax.set_ylim(-1., 0.5)
-"""
-#+++++ bordes
-ax.axvline(x=0, ls='--', c='gray', lw=3)
-ax.axvline(x=1, ls='--', c='gray', lw=3)
-ax.axvline(x=4, ls='--', c='gray', lw=3)
-ax.legend()
-ax.grid()
-ax.set_ylabel('n_CR  [%]')
-ax.set_xlim(-2,+7)
-ax.set_ylim(-8, +2.)
-"""
-savefig(fname_fig, dpi=135, bbox_inches='tight')
-print " ---> generamos: " + fname_fig
-close()
 """
 #+++++ guardo ajuste en ascii
 out = np.array([t, ncr, crs]).T
