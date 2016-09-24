@@ -285,14 +285,17 @@ class fit_forbush(object):
                 self.foll[nm] = []  
                 self.foll[nm] += [ params[nm].value ]
 
+        print " --------> METODO_FITEO: %s" % METHOD
         result = minimize(self.residuals, params, method=METHOD)
 
         # write error report
-        print " --------> METODO_FITEO: %s" % METHOD
         #print " --------> funcion: %s" % func_name
         #report_errors(params)
         self.par = {}
         for name in result.params.keys():
             self.par[name] = result.params[name].value
+
+        if monit:
+            self.resid = self.residuals(result.params)
 
 #EOF

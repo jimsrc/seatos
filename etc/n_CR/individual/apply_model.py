@@ -18,7 +18,7 @@ import matplotlib.patches as patches
 import matplotlib.transforms as transforms
 from os import environ as env
 from os.path import isfile, isdir
-import argparse
+import argparse, itertools, sys
 #++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
@@ -133,13 +133,30 @@ b       = B
 fig     = figure(1, figsize=(6,3.))
 ax     = fig.add_subplot(111)
 
-tau_o, q, off   = 3., -6., 0.1 #2.0, -400.0
-bp, bo          = -0.1, 10.0
 
-data    = np.array([t, fc, crs, b])
-fit     = ff.fit_forbush(data, [tau_o, q, off, bp, bo])
-fit.make_fit(monit=True)
+_tau  = np.linspace(2.,6.,2)
+_q    = np.linspace(-3., 0., 2)
+_off  = np.linspace(0.01,1.,2)
+_bp   = np.linspace(-0.5, -0.1, 2)
+_bo   = np.linspace(8., 12., 2)
+#tau_o, q, off   = 3., -6., 0.1 #2.0, -400.0
+#bp, bo          = -0.1, 10.0
 
+data      = np.array([t, fc, crs, b])
+_fit, it  = [], 0
+all_seeds = list(itertools.product(_tau,_q,_off,_bp,_bo))
+for tau_o,q,off,bp,bo in all_seeds:
+    print " it: ", it 
+    _fit     += [ ff.fit_forbush(data, [tau_o, q, off, bp, bo]) ]
+    _fit[it].make_fit(monit=True)
+    it       += 1
+
+MinRes = np.array([ _fit[i].resid for i in range(len(_fit)) ])
+for i in find(MinRes.min()==MinRes):
+    print _fit[i].niter
+    print _fit[i].par
+
+sys.exit(0)
 print fit.par
 #raise SystemExit
 """
