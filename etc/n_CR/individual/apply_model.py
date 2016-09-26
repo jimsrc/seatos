@@ -129,11 +129,11 @@ fc      = np.zeros(rms.size)
 fc[cc]  = (rms-rms_o)[cc]
 b       = B
 
-_tau  = np.linspace(2.,6.,2)
-_q    = np.linspace(-3., 0., 2)
-_off  = np.linspace(0.01,1.,2)
-_bp   = np.linspace(-0.5, -0.1, 2)
-_bo   = np.linspace(8., 12., 2)
+_tau  = np.linspace(2., 6., 6)
+_q    = np.linspace(-3., 1e-4, 6)
+_off  = np.linspace(0.001, 1., 6)
+_bp   = np.linspace(-0.5, -0.1, 6)
+_bo   = np.linspace(6., 10., 6)
 #tau_o, q, off   = 3., -6., 0.1 #2.0, -400.0
 #bp, bo          = -0.1, 10.0
 
@@ -141,7 +141,7 @@ data      = np.array([t, fc, crs, b])
 _fit, it  = [], 0
 all_seeds = list(itertools.product(_tau,_q,_off,_bp,_bo))
 for tau_o,q,off,bp,bo in all_seeds:
-    print " it: ", it 
+    print " it, total: ", it+1, len(all_seeds)
     _fit     += [ ff.fit_forbush(data, [tau_o, q, off, bp, bo]) ]
     _fit[it].make_fit(monit=True)
     it       += 1
@@ -154,7 +154,6 @@ for i in ind:
 
 #sys.exit(0)
 #print fit.par
-#raise SystemExit
 """
 tau, bp     = 2.36, 0.0
 q, off, bo  = -9.373, 0.89, 16.15

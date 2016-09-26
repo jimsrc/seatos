@@ -99,11 +99,39 @@ and '2H' for MCs by Huttunen etal05.
 To specify several flags, separe by dots (e.g. '0.1.2H').
 """
 )
+parser.add_argument(
+'-st', '--struct',
+type=str,
+default='sh.i', # sheath-of-icme
+help='alias name of structure to analyze.\
+ Options are "sh.mc", "sh.i", "mc", "i" for sheath-of-mc, \
+ sheath-of-icme, mc, and icme respectively.',
+)
+
 pa = parser.parse_args()
 
 class boundaries:
     def __init__(self):
         name = 'name'
+
+def run_analysis(em, dname, LOW, MID1, MID2, TOP, lock=False):
+    #+++ global
+    em.data_name = dname #'Auger_BandScals'
+    em.FILTER['vsw_filter'] = False
+    em.run_all()
+    if lock: 
+        em.lock_IDs()
+
+    #+++ split
+    em.FILTER['vsw_filter'] = True
+    em.CUTS['v_lo'], emgr.CUTS['v_hi'] = LOW, MID1 
+    em.run_all()
+    em.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID1, MID2 
+    em.run_all()
+    em.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID2, TOP 
+    em.run_all()
+
+
 
 HOME                = os.environ['HOME']
 PAO                 = os.environ['PAO']
@@ -169,87 +197,59 @@ fgap                    = 0.2
 
 #--- bordes de estructura
 bounds      = boundaries()
-bounds.tini = tb.tshck      #tb.tini_mc #tb.tshck 
-bounds.tend = tb.tini_icme    #tb.tend_mc #tb.tini_mc
+if pa.struct=='sh.i':
+    bounds.tini = tb.tshck      #tb.tini_mc #tb.tshck 
+    bounds.tend = tb.tini_icme    #tb.tend_mc #tb.tini_mc
+elif pa.struct=='sh.mc':
+    bounds.tini = tb.tshck
+    bounds.tend = tb.tini_mc
+elif pa.struct=='i':
+    bounds.tini = tb.tini_icme
+    bounds.tend = tb.tend_icme
+elif pa.struct=='mc':
+    bounds.tini = tb.tini_mc
+    bounds.tend = tb.tend_mc
+else:
+    raise SystemExit(' ---> wrong structure! : '+pa.struct)
 
-#++++++++++++++++++++++++++++++++++++++++++++++++ Auger Scalers
 gral.data_name      = 'Auger_scals' #'McMurdo' #'ACE'
-
-FILTER['vsw_filter']    = False
-emgr = sf.events_mgr(gral, FILTER, CUTS, bounds, nBin, fgap, tb, None, structure='sh.i')
-emgr.run_all()
-#emgr.lock_IDs()
-
-#++++ limites
-LOW, MID1, MID2, TOP = 100.0, 375.0, 450.0, 3000.0
-emgr.FILTER['vsw_filter']    = True
-emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = LOW, MID1 # 100.0, 450.0
-emgr.run_all()
-emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID1, MID2 # 450.0, 550.0
-emgr.run_all()
-emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID2, TOP # 550.0, 3000.0
-emgr.run_all()
-
+emgr = sf.events_mgr(gral, FILTER, CUTS, bounds, nBin, fgap, tb, None, structure=pa.struct)
+LOW, MID1, MID2, TOP = 100., 375., 450., 3000.
+if pa.auger_scls!='0':
+    """  Auger Scalers  """
+    run_analysis(
+        emgr, 
+        'Auger_scals', 
+        LOW, MID1, MID2, TOP,
+    )
 if pa.auger_hsts!='0':
-    #++++++++++++++++++++++++++++++++ Auger Band-Scals
-    emgr.data_name      = 'Auger_BandScals'
-
-    emgr.FILTER['vsw_filter'] = False
-    emgr.run_all()
-
-    #++++ split
-    emgr.FILTER['vsw_filter'] = True
-    emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = LOW, MID1 
-    emgr.run_all()
-    emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID1, MID2 
-    emgr.run_all()
-    emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID2, TOP 
-    emgr.run_all()
-
-    #++++++++++++++++++++++++++++++++ Auger Band-Muons
-    emgr.data_name      = 'Auger_BandMuons'
-
-    emgr.FILTER['vsw_filter'] = False
-    emgr.run_all()
-
-    #++++ split
-    emgr.FILTER['vsw_filter'] = True
-    emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = LOW, MID1 
-    emgr.run_all()
-    emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID1, MID2 
-    emgr.run_all()
-    emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID2, TOP 
-    emgr.run_all()
-
-#++++++++++++++++++++++++++++++++++++++++++++++++ McMurdo
+    """  Auger Histograms  """
+    #+++++++++++++++++++++++++ Auger Band-Scals
+    run_analysis(
+        emgr,
+        'Auger_BandScals',
+        LOW, MID1, MID2, TOP,
+        lock=True, # nos restrigimos a estos eventos de aqui en adelante!
+    )
+    #+++++++++++++++++++++++++ Auger Band-Muons
+    run_analysis(
+        emgr,
+        'Auger_BandMuons',
+        LOW, MID1, MID2, TOP,
+    )
 if pa.mcmurdo!='0':
-    emgr.data_name      = 'McMurdo'
-
-    emgr.FILTER['vsw_filter']    = False
-    emgr.run_all()
-
-    #++++ split
-    emgr.FILTER['vsw_filter']    = True
-    emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = LOW, MID1 
-    emgr.run_all()
-    emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID1, MID2 
-    emgr.run_all()
-    emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID2, TOP 
-    emgr.run_all()
-
-#++++++++++++++++++++++++++++++++++++++++++++++++ ACE
+    """  McMurdo  """
+    run_analysis(
+        emgr,
+        'McMurdo',
+        LOW, MID1, MID2, TOP,
+    )
 if pa.ace!='0':
-    emgr.data_name      = 'ACE' #'McMurdo'
+    """  ACE   """
+    run_analysis(
+        emgr,
+        'ACE',
+        LOW, MID1, MID2, TOP,
+    )
 
-    emgr.FILTER['vsw_filter']    = False
-    emgr.run_all()
-
-    #++++ split
-    emgr.FILTER['vsw_filter']    = True
-    emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = LOW, MID1 
-    emgr.run_all()
-    emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID1, MID2 
-    emgr.run_all()
-    emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID2, TOP 
-    emgr.run_all()
 #EOF
