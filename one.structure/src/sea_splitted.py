@@ -157,8 +157,8 @@ tb.read()
 gral.dirs =  dirs   = {}
 dirs['dir_plots']   = pa.dir_plot #'../plots3'
 dirs['dir_ascii']   = pa.dir_data #'../ascii3'
-dirs['suffix']      = '_auger_'    # sufijo para el directorio donde guardare
-                                    # estas figuras
+dirs['suffix']      = pa.suffix   # sufijo para el directorio donde guardare
+                                  # estas figuras
 
 #-------------------------------------------------------------
 #------- seleccionamos MCs con label-de-catalogo (lepping=2, etc)

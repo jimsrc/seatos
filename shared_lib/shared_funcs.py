@@ -445,11 +445,56 @@ def read_hsts_data(fname, typic, ch_Eds):
     f.close()
     return t, r
 
-
-
 def nans(sh):
     return np.nan*np.ones(sh)
 
+class _read_auger_scals(object):
+    """
+    reads different varsions of corrected-scalers
+    """
+    def __init__(self, tb, nBin, bd, fname_inp, data_name):
+        self.tb         = tb
+        self.nBin       = nBin
+        self.bd         = bd
+        self.fname_inp  = fname_inp
+        self.data_name  = data_name
+
+    def read(self):
+        with h5py.File(self.fname_inp,'r') as f:
+            if 'auger' in f.keys():
+                return self.read_i()
+            elif 't_utc' in f.keys():
+                return self.read_ii()
+            else:
+                raise SystemExit('\
+                 ---> no reader setup for this version scaler file!\
+                ')
+
+    def read_i(self):
+        """
+        read first version of processed 
+        corrected-scalers.
+        """
+        day = 86400.
+        f5  = h5py.File(self.fname_inp, 'r')
+        t_utc = f5['auger/time_seg_utc'][...].copy() #data_murdo[:,0]
+        CRs   = f5['auger/sc_wAoP_wPres'][...].copy() #data_murdo[:,1]
+        print " -------> variables leidas!"
+
+        VARS = {
+            'CRs.'+self.data_name : {
+                'value' : CRs,
+                'lims'  : [-1.0, 1.0],
+                'label' : 'Auger Scaler rate [%]',
+                },
+        }
+        return t_utc, VARS
+
+    def read_ii(self):
+        """
+        read 2nd version of processed correctd-scalers.
+        """
+        pass
 
 
 class events_mgr(object):
@@ -848,23 +893,17 @@ class events_mgr(object):
         """
         solo cargamos Auger Scalers
         """
-        tb          = self.tb
-        nBin        = self.nBin
-        bd          = self.bd
-        day         = 86400.
-        fname_inp   = self.gral.fnames[self.data_name]
-        f5          = h5py.File(fname_inp, 'r')
-        self.t_utc  = t_utc = f5['auger/time_seg_utc'][...].copy() #data_murdo[:,0]
-        CRs         = f5['auger/sc_wAoP_wPres'][...].copy() #data_murdo[:,1]
-        print " -------> variables leidas!"
-
-        self.VARS   = VARS = {} #[]
-        VARS['CRs.'+self.data_name] = {
-            'value' : CRs,
-            'lims'  : [-1.0, 1.0],
-            'label' : 'Auger Scaler rate [%]'
+        opt = {
+        'tb'        : self.tb,
+        'nBin'      : self.nBin,
+        'bd'        : self.bd,
+        'fname_inp' : self.gral.fnames[self.data_name],
+        'data_name' : self.data_name,
         }
-        self.nvars  = len(VARS.keys())
+        sc = _read_auger_scals(**opt)
+        self.t_utc, self.VARS = sc.read()
+
+        self.nvars  = len(self.VARS.keys())
         #---------
         self.aux = aux = {}
         aux['SELECC']    = self.SELECC
