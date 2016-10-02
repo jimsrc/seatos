@@ -21,6 +21,14 @@ from os.path import isfile, isdir
 import argparse, itertools, sys
 #++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+def str_to_other(mystr):
+    """
+    a callable type for my argparse
+    See:
+    https://docs.python.org/2/library/argparse.html?highlight=argparse#type
+    """
+    f1, f2, f3 = map(float, mystr.split(' '))
+    return [f1, f2, int(f3)]
 
 #--- retrieve args
 parser = argparse.ArgumentParser(
@@ -67,8 +75,29 @@ nargs=2,
 type=float,
 default=[100.0, 375.0],
 help='lower & higher threshold values associated to\
-    input filenames.'
+    input filenames.',
+metavar=('Vmin','Vmax'),
 )
+#---BEGIN: seeds for fitting
+seeds_default = {
+'tau'   : [4.8, 5.0, 2],
+'q'     : [-2.0, -1.9, 2],
+'off'   : [0.15, 0.20, 2],
+'bp'    : [-0.15, -0.13, 2],
+'bo'    : [8.5, 9.0, 2],
+}
+for seed_nm, seed_default in seeds_default.iteritems():
+    #--- config all seed command-line arguments
+    parser.add_argument(
+    '-'+seed_nm, '--seed_'+seed_nm,
+    nargs=3,
+    type=str_to_other,
+    default=seed_default,
+    help='try seeds uniformly equiparted in a given range, \
+     for `'+seed_nm+'` parameter.',
+    metavar=('MIN','MAX','BINS'),
+    )
+#--- END
 pa = parser.parse_args()
 
 
@@ -129,11 +158,11 @@ fc      = np.zeros(rms.size)
 fc[cc]  = (rms-rms_o)[cc]
 b       = B
 
-_tau  = np.linspace(2., 6., 6)
-_q    = np.linspace(-3., 1e-4, 6)
-_off  = np.linspace(0.001, 1., 6)
-_bp   = np.linspace(-0.5, -0.1, 6)
-_bo   = np.linspace(6., 10., 6)
+_tau  = np.linspace(*pa.sem_tau)
+_q    = np.linspace(*pa.sem_q)
+_off  = np.linspace(*pa.sem_off)
+_bp   = np.linspace(*pa.sem_bp)
+_bo   = np.linspace(*pa.sem_bo)
 #tau_o, q, off   = 3., -6., 0.1 #2.0, -400.0
 #bp, bo          = -0.1, 10.0
 
@@ -189,7 +218,7 @@ for i in range(len(ind)):
     ax.set_ylabel('$n_{CR}$ [%]', fontsize=21)
     ax.set_ylim(-1., 0.5)
     #+++ save fig
-    savefig(fname_fig+'_%d'%i,format='png',dpi=135, bbox_inches='tight')
+    fig.savefig(fname_fig+'_%d'%i,format='png',dpi=135, bbox_inches='tight')
     print " ---> generamos: " + fname_fig
     close()
 
