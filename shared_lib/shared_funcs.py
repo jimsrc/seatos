@@ -475,7 +475,6 @@ class _read_auger_scals(object):
         read first version of processed 
         corrected-scalers.
         """
-        day = 86400.
         f5  = h5py.File(self.fname_inp, 'r')
         t_utc = f5['auger/time_seg_utc'][...].copy() #data_murdo[:,0]
         CRs   = f5['auger/sc_wAoP_wPres'][...].copy() #data_murdo[:,1]
@@ -490,11 +489,45 @@ class _read_auger_scals(object):
         }
         return t_utc, VARS
 
+    def _pair_yyyymm(self, f, kname):
+        years = map(int, f[kname].keys())
+        ly, lm = [], []
+        for year in years:
+            months = map(int, f[kname+'/%04d'%year].keys())
+            nm     = len(months)
+            ly     += [year]*nm
+            lm     += months
+        return zip(ly,lm)
+
     def read_ii(self):
         """
         read 2nd version of processed correctd-scalers.
+        We do NOT read the geop-height-corrected scalers, because
+        seems unphysical (i.e. geop height is not a parameter
+        for scalers correction!). So just use pressure-corrected ones.
         """
-        pass
+        f = h5py.File(self.fname_inp,'r')
+        years_and_months = self._pair_yyyymm(f, 't_utc')
+        t_utc = My2DArray((3,), dtype=np.float32)
+        CRs   = My2DArray((3,), dtype=np.float32)
+        n = 0
+        for yyyy, mm in years_and_months:
+            nt = f['t_utc/%04d/%02d'%(yyyy,mm)].size
+            t_utc[n:n+nt] = f['t_utc/%04d/%02d'%(yyyy,mm)][...]
+            CRs[n:n+nt]   = f['wAoP_wPrs/%04d/%02d'%(yyyy,mm)][...]
+            n             += nt
+
+        print " --> Auger scalers leidos!"
+        VARS = {
+            'CRs.'+self.data_name : {
+                'value' : CRs[:n],
+                'lims'  : [-1.0, 1.0],
+                'label' : 'Auger Scaler rate [%]',
+                },
+        }
+        return t_utc[:n], VARS
+
+        
 
 
 class events_mgr(object):
@@ -1533,6 +1566,90 @@ class arg_to_utcsec(argparse.Action):
         dd,mm,yyyy = map(int, values.split('/'))
         value = (datetime(yyyy,mm,dd)-datetime(1970,1,1)).total_seconds()
         setattr(namespace, self.dest, value)
+
+class My2DArray(object):
+    """
+    wrapper around numpy array with:
+    - flexible number of rows
+    - records the maximum nrow requested
+    NOTE:
+    This was test for 1D and 2D arrays.
+    """
+    def __init__(self, shape, dtype=np.float32):
+        self.this = np.empty(shape, dtype=dtype)
+        setattr(self, '__array__', self.this.__array__)
+
+    def resize_rows(self, nx_new=None):
+        """ Increment TWICE the size of axis=0, **without**
+        losing data.
+        """
+        sh_new = np.copy(self.this.shape)
+        nx     = self.this.shape[0]
+        if nx_new is None:
+            sh_new[0] = 2*sh_new[0]
+        elif nx_new<=nx:
+            return 0 # nothing to do
+        else:
+            sh_new[0] = nx_new
+
+        tmp    = self.this.copy()
+        #print "----> tmp: ", tmp.shape
+        new    = np.zeros(sh_new)
+        new[:nx] = tmp
+        self.this = new
+        """
+        for some reason (probably due to numpy 
+        implementation), if we don't do this, the:
+        >>> print self.__array__()
+        
+        stucks truncated to the original size that was
+        set in __init__() time.
+        So we need to tell numpy our new resized shape!
+        """
+        setattr(self, '__array__', self.this.__array__)
+
+    def __get__(self, instance, owner):
+        return self.this
+
+    def __getitem__(self, i):
+        return self.this[i]
+
+    def __setitem__(self, i, value):
+        """ 
+        We can safely use:
+        >>> ma[n:n+m,:] = [...]
+
+        assuming n+m is greater than our size in axis=0.
+        """
+        stop = i
+        if type(i)==slice:
+            stop = i.stop
+        elif type(i)==tuple:
+            if type(i[0])==slice:
+                """
+                in case:
+                ma[n:n+m,:] = ...
+                """
+                stop = i[0].stop
+            else:
+                stop = i[0]
+
+        #--- if requested row exceeds limits, duplicate
+        #    our size in axis=0
+        if stop>=self.this.shape[0]:
+            nx_new = self.this.shape[0]
+            while nx_new<=stop:
+                nx_new *= 2
+            self.resize_rows(nx_new)
+
+        self.this[i] = value
+        #--- register the maximum nrow requested.
+        # NOTE here we are referring to size, and *not* row-index.
+        self.max_nrow_used = stop+1 # (row-size, not row-index)
+
+    def __getattr__(self, attnm):
+        return getattr(self.this, attnm)
+
 
 #+++++++++++++++++++++++++++++++++
 if __name__=='__main__':
