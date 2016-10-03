@@ -26,6 +26,24 @@ from shared.ShiftTimes import *
 import numpy as np
 import shared.console_colors as ccl
 
+#--- type for argparse
+class str_to_other(argparse.Action):
+    """
+    argparse-action to handle command-line arguments of 
+    the form "dd/mm/yyyy" (string type), and converts
+    it to datetime object.
+    """
+    def __init__(self, option_strings, dest, **kwargs):
+        #if nargs is not None:
+        #    raise ValueError("nargs not allowed")
+        super(str_to_other, self).__init__(option_strings, dest, **kwargs)
+    def __call__(self, parser, namespace, values, option_string=None):
+        #print '%r %r %r' % (namespace, values, option_string)
+        #dd,mm,yyyy = map(int, values.split('/'))
+        f1, f2 = map(float, values)
+        value = [int(f1), f2]
+        setattr(namespace, self.dest, value)
+
 
 #--- retrieve args
 parser = argparse.ArgumentParser(
@@ -105,6 +123,22 @@ help='alias name of structure to analyze.\
  Options are "sh.mc", "sh.i", "mc", "i" for sheath-of-mc, \
  sheath-of-icme, mc, and icme respectively.',
 )
+parser.add_argument(
+'-wang', '--wang',
+type=str,
+nargs=2,
+default=[0, 90.0],
+help='switch to wether use or not the Wang\'s list of IP shocks.',
+action=str_to_other,
+metavar=('SWITCH','THRESHOLD'),
+)
+parser.add_argument(
+'-Vs', '--Vsplit',
+type=float,
+nargs=2,
+default=[375.,450.],
+help='SW speed values to split in three sub-groups of events.',
+)
 
 pa = parser.parse_args()
 
@@ -169,7 +203,7 @@ MCwant  = {
 FILTER                  = {}
 FILTER['Mcmultiple']    = False # True para incluir eventos multi-MC
 FILTER['CorrShift']     = False #True
-FILTER['wang']          = False #True #False #True
+FILTER['wang']          = True if pa.wang[0] else False #True #False #True
 FILTER['vsw_filter']    = False #True
 FILTER['z_filter_on']   = False
 FILTER['MCwant']        = MCwant
@@ -178,7 +212,7 @@ FILTER['filter_dR.icme'] = False #True
 FILTER['choose_1998-2006'] = False # False:no excluye el periodo 1998-2006
 
 CUTS                    = {}
-CUTS['ThetaThres']      = 90.0      # all events with theta>ThetaThres
+CUTS['ThetaThres']      = pa.wang[1] #90.0   # all events with theta>ThetaThres
 CUTS['dTday']           = 0.0
 CUTS['v_lo']            = 550.0
 CUTS['v_hi']            = 3000.0
@@ -209,9 +243,9 @@ elif pa.struct=='mc':
 else:
     raise SystemExit(' ---> wrong structure! : '+pa.struct)
 
-gral.data_name      = 'Auger_scals' #'McMurdo' #'ACE'
+gral.data_name      = 'ACE' #'Auger_scals' #'McMurdo' #'ACE'
 emgr = sf.events_mgr(gral, FILTER, CUTS, bounds, nBin, fgap, tb, None, structure=pa.struct)
-LOW, MID1, MID2, TOP = 100., 375., 450., 3000.
+LOW, MID1, MID2, TOP = 100., pa.Vsplit[0], pa.Vsplit[1], 3000.
 if pa.auger_scls!='0':
     """  Auger Scalers  """
     run_analysis(
