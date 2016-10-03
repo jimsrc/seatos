@@ -44,21 +44,56 @@ class str_to_other(argparse.Action):
         value = [int(f1), f2]
         setattr(namespace, self.dest, value)
 
+#--- type for argparse
+class str_to_other_ii(argparse.Action):
+    """
+    argparse-action to handle command-line arguments of 
+    the form "dd/mm/yyyy" (string type), and converts
+    it to datetime object.
+    """
+    def __init__(self, option_strings, dest, **kwargs):
+        #if nargs is not None:
+        #    raise ValueError("nargs not allowed")
+        super(str_to_other_ii, self).__init__(option_strings, dest, **kwargs)
+    def __call__(self, parser, namespace, values, option_string=None):
+        #print '%r %r %r' % (namespace, values, option_string)
+        #dd,mm,yyyy = map(int, values.split('/'))
+        i1, i2 = map(int, values)
+        value = [i1, values[1]]
+        setattr(namespace, self.dest, value)
+
 
 #--- retrieve args
 parser = argparse.ArgumentParser(
 formatter_class=argparse.ArgumentDefaultsHelpFormatter
 )
 parser.add_argument(
-'-ace', '--ace',
+'-ace', '--inp_ACE',
 type=str,
 default='{HOME}/data_ace/64sec_mag-swepam/ace.1998-2015.nc'.format(**os.environ),
 help='input filename of ACE data',
 )
 parser.add_argument(
-'-mu', '--mcmurdo',
+'-mu', '--inp_McMurdo',
 type=str,
 default='{HOME}/actividad_solar/neutron_monitors/mcmurdo/mcmurdo_utc_correg.dat'.format(**os.environ)
+)
+parser.add_argument(
+'-am', '--inp_Auger_BandMuons',
+type=str,
+default='{AUGER_REPO}/out/out.build_temp.corr/shape.ok_and_3pmt.ok/15min/histos_temp.corrected.h5'.format(**os.environ),
+help='.h5 file with Auger charge-histograms data (until temperature-correction).'
+)
+parser.add_argument(
+'-as', '--inp_Auger_BandScals',
+type=str,
+default='{AUGER_REPO}/out/out.build_temp.corr/shape.ok_and_3pmt.ok/15min/histos_temp.corrected.h5'.format(**os.environ),
+help='.h5 file with Auger charge-histograms data (until temperature-correction).'
+)
+parser.add_argument(
+'-as', '--inp_Auger_scals',
+default='{PAO}/data_auger/estudios_AoP/data/unir_con_presion/data_final_2006-2013.h5'.format(**os.environ),
+help='.h5 file with Auger scalers (until pressure correction).'
 )
 parser.add_argument(
 '-avr', '--avr',
@@ -71,17 +106,6 @@ parser.add_argument(
 type=str,
 default='{ASO}/icmes_richardson/RichardsonList_until.2016.csv'.format(**os.environ),
 help='.csv file of Richardson\'s table',
-)
-parser.add_argument(
-'-ah', '--auger_hsts',
-type=str,
-default='{AUGER_REPO}/out/out.build_temp.corr/shape.ok_and_3pmt.ok/15min/histos_temp.corrected.h5'.format(**os.environ),
-help='.h5 file with Auger charge-histograms data (until temperature-correction).'
-)
-parser.add_argument(
-'-as', '--auger_scls',
-default='{PAO}/data_auger/estudios_AoP/data/unir_con_presion/data_final_2006-2013.h5'.format(**os.environ),
-help='.h5 file with Auger scalers (until pressure correction).'
 )
 parser.add_argument(
 '-dp', '--dir_plot',
@@ -138,6 +162,16 @@ type=float,
 nargs=2,
 default=[375.,450.],
 help='SW speed values to split in three sub-groups of events.',
+)
+parser.add_argument(
+'-lock', '--lock',
+type=str,
+default=[0,'Auger_BandMuons'],
+help='name of dataset of which we\'ll lock the set of selected \
+    events; so that the analysis of other datasets are made with \
+    the restriction of these "locked" events.',
+action=str_to_other_ii,
+metavar=('BOOL','NAME'),
 )
 
 pa = parser.parse_args()
@@ -243,7 +277,17 @@ elif pa.struct=='mc':
 else:
     raise SystemExit(' ---> wrong structure! : '+pa.struct)
 
-gral.data_name      = 'ACE' #'Auger_scals' #'McMurdo' #'ACE'
+#--- list of data-sets
+lnm = [nm[4:] for nm in dir(pa) if nm.startswith('inp_')]
+#--- reordenamos la lista, si hay q hacer un `lock_in()`
+if pa.lock[0]:
+    lnm.remove(pa.lock[1])
+    lnm_ = [ pa.lock[1], ]
+    for nm in lnm:
+        lnm_ += [ nm ]
+    
+
+gral.data_name      = lnm[0] #'ACE' #'Auger_scals' #'McMurdo' #'ACE'
 emgr = sf.events_mgr(gral, FILTER, CUTS, bounds, nBin, fgap, tb, None, structure=pa.struct)
 LOW, MID1, MID2, TOP = 100., pa.Vsplit[0], pa.Vsplit[1], 3000.
 if pa.auger_scls!='0':
