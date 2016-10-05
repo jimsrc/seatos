@@ -58,8 +58,7 @@ class str_to_other_ii(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         #print '%r %r %r' % (namespace, values, option_string)
         #dd,mm,yyyy = map(int, values.split('/'))
-        i1, i2 = map(int, values)
-        value = [i1, values[1]]
+        value = [int(values[0]), values[1]]
         setattr(namespace, self.dest, value)
 
 
@@ -74,18 +73,18 @@ default='{HOME}/data_ace/64sec_mag-swepam/ace.1998-2015.nc'.format(**os.environ)
 help='input filename of ACE data',
 )
 parser.add_argument(
-'-mu', '--inp_McMurdo',
+'-murdo', '--inp_McMurdo',
 type=str,
 default='{HOME}/actividad_solar/neutron_monitors/mcmurdo/mcmurdo_utc_correg.dat'.format(**os.environ)
 )
 parser.add_argument(
-'-am', '--inp_Auger_BandMuons',
+'-ahm', '--inp_Auger_BandMuons',
 type=str,
 default='{AUGER_REPO}/out/out.build_temp.corr/shape.ok_and_3pmt.ok/15min/histos_temp.corrected.h5'.format(**os.environ),
 help='.h5 file with Auger charge-histograms data (until temperature-correction).'
 )
 parser.add_argument(
-'-as', '--inp_Auger_BandScals',
+'-ahs', '--inp_Auger_BandScals',
 type=str,
 default='{AUGER_REPO}/out/out.build_temp.corr/shape.ok_and_3pmt.ok/15min/histos_temp.corrected.h5'.format(**os.environ),
 help='.h5 file with Auger charge-histograms data (until temperature-correction).'
@@ -167,6 +166,7 @@ parser.add_argument(
 '-lock', '--lock',
 type=str,
 default=[0,'Auger_BandMuons'],
+nargs=2,
 help='name of dataset of which we\'ll lock the set of selected \
     events; so that the analysis of other datasets are made with \
     the restriction of these "locked" events.',
@@ -203,12 +203,12 @@ gral                = sf.general()
 day                 = 86400.
 #---- cosas input
 gral.fnames = fnames = {}
-fnames['ACE']       = pa.ace #'%s/data_ace/64sec_mag-swepam/ace.1998-2015.nc' % HOME
-fnames['McMurdo']   = pa.mcmurdo #'%s/actividad_solar/neutron_monitors/mcmurdo/mcmurdo_utc_correg.dat' % HOME
-fnames['Auger_scals']     = pa.auger_scls #'%s/data_auger/estudios_AoP/data/unir_con_presion/data_final_2006-2013.h5' % PAO
+fnames['ACE']       = pa.inp_ACE #'%s/data_ace/64sec_mag-swepam/ace.1998-2015.nc' % HOME
+fnames['McMurdo']   = pa.inp_McMurdo #'%s/actividad_solar/neutron_monitors/mcmurdo/mcmurdo_utc_correg.dat' % HOME
+fnames['Auger_scals']     = pa.inp_Auger_scals #'%s/data_auger/estudios_AoP/data/unir_con_presion/data_final_2006-2013.h5' % PAO
 #fnames['Auger_BandMuons'] = '%s/data_auger/data_histogramas/all.array.avrs/temp.corrected/shape.ok_and_3pmt.ok/15min/test_temp.corrected.nc' % PAO
-fnames['Auger_BandMuons'] = pa.auger_hsts #'{AUGER_REPO}/out/out.build_temp.corr/shape.ok_and_3pmt.ok/15min/histos_temp.corrected.h5'.format(**os.environ)
-fnames['Auger_BandScals'] = fnames['Auger_BandMuons']
+fnames['Auger_BandMuons'] = pa.inp_Auger_BandMuons #'{AUGER_REPO}/out/out.build_temp.corr/shape.ok_and_3pmt.ok/15min/histos_temp.corrected.h5'.format(**os.environ)
+fnames['Auger_BandScals'] = pa.inp_Auger_BandScals #fnames['Auger_BandMuons']
 
 fnames['table_richardson']  = pa.avr #'%s/ASOC_ICME-FD/icmes_richardson/data/rich_events2_ace.nc' % HOME
 fname_rich = pa.rich_csv #'{ASO}/icmes_richardson/RichardsonList_until.2016.csv'.format(**os.environ)
@@ -277,54 +277,26 @@ elif pa.struct=='mc':
 else:
     raise SystemExit(' ---> wrong structure! : '+pa.struct)
 
-#--- list of data-sets
-lnm = [nm[4:] for nm in dir(pa) if nm.startswith('inp_')]
+#--- list of data-sets that have an input-filename !='0'
+lnm = [nm[4:] for nm in dir(pa) if (nm.startswith('inp_') & (getattr(pa,nm)!='0') )]
+print lnm
+
 #--- reordenamos la lista, si hay q hacer un `lock_in()`
 if pa.lock[0]:
     lnm.remove(pa.lock[1])
-    lnm_ = [ pa.lock[1], ]
-    for nm in lnm:
-        lnm_ += [ nm ]
+    lnm = [pa.lock[1],] + lnm
     
+print lnm
 
 gral.data_name      = lnm[0] #'ACE' #'Auger_scals' #'McMurdo' #'ACE'
 emgr = sf.events_mgr(gral, FILTER, CUTS, bounds, nBin, fgap, tb, None, structure=pa.struct)
 LOW, MID1, MID2, TOP = 100., pa.Vsplit[0], pa.Vsplit[1], 3000.
-if pa.auger_scls!='0':
-    """  Auger Scalers  """
-    run_analysis(
-        emgr, 
-        'Auger_scals', 
-        LOW, MID1, MID2, TOP,
-    )
-if pa.auger_hsts!='0':
-    """  Auger Histograms  """
-    #+++++++++++++++++++++++++ Auger Band-Scals
+for dname in lnm:
+    print " ---> dataset: "+dname
     run_analysis(
         emgr,
-        'Auger_BandScals',
-        LOW, MID1, MID2, TOP,
-        lock=True, # nos restrigimos a estos eventos de aqui en adelante!
-    )
-    #+++++++++++++++++++++++++ Auger Band-Muons
-    run_analysis(
-        emgr,
-        'Auger_BandMuons',
-        LOW, MID1, MID2, TOP,
-    )
-if pa.mcmurdo!='0':
-    """  McMurdo  """
-    run_analysis(
-        emgr,
-        'McMurdo',
-        LOW, MID1, MID2, TOP,
-    )
-if pa.ace!='0':
-    """  ACE   """
-    run_analysis(
-        emgr,
-        'ACE',
-        LOW, MID1, MID2, TOP,
+        dname,
+        LOW,MID1,MID2,TOP,
     )
 
 #EOF
