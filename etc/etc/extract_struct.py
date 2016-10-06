@@ -76,25 +76,38 @@ and '2H' for MCs by Huttunen etal05.
 To specify several flags, separe by dots (e.g. '0.1.2H').
 """
 )
-parser.add_argument(
-'-i', '--ini',
-type=str,
-default='shock',
-help='name of leading border. Use any of these: shock, ini_mc, end_mc, ini_icme, end_icme.',
-)
-parser.add_argument(
-'-e', '--end',
-type=str,
-default='ini_icme',
-help='name of trailing border. Use any of these: shock, ini_mc, end_mc, ini_icme, end_icme.',
-)
+#parser.add_argument(
+#'-i', '--ini',
+#type=str,
+#default='shock',
+#help='name of leading border. Use any of these: shock, ini_mc, end_mc, ini_icme, end_icme.',
+#)
+#parser.add_argument(
+#'-e', '--end',
+#type=str,
+#default='ini_icme',
+#help='name of trailing border. Use any of these: shock, ini_mc, end_mc, ini_icme, end_icme.',
+#)
 parser.add_argument(
 '-ba', '--BefAft',
-type=float,
+type=int,
 nargs=2,
-default=[0.0, 0.0],
-help='number of days before and after the `ini` and `end` border\
- respectively. Can be float values.',
+default=[0,0],
+help="""
+Fractions of the extraction time-span in units of the time-width 
+of the structure. These fractions refer to before and 
+after the leading and trailing border respectively. Can 
+be float values. 
+Must be integers.
+""",
+)
+parser.add_argument(
+'-st', '--struct',
+type=str,
+default='sh.i', # sheath-of-icme
+help='alias name of structure to analyze.\
+ Options are "sh.mc", "sh.i", "mc", "i" for sheath-of-mc, \
+ sheath-of-icme, mc, and icme respectively.',
 )
 
 
@@ -155,8 +168,8 @@ CUTS['z_lo']            = -50.0
 CUTS['z_hi']            = 0.65
 
 nBin                    = {}
-nBin['before']          = 2
-nBin['after']           = 4
+nBin['before']          = pa.BefAft[0] #2
+nBin['after']           = pa.BefAft[1] #4
 nBin['bins_per_utime']  = 50    # bins por unidad de tiempo
 nBin['total']           = (1+nBin['before']+nBin['after'])*nBin['bins_per_utime']
 fgap                    = 0.2
@@ -164,25 +177,29 @@ fgap                    = 0.2
 #--- bordes de estructura
 tb = sf.RichTable('{ASO}/icmes_richardson/RichardsonList_until.2016.csv'.format(**os.environ))
 tb.read()
+
+#--- bordes de estructura
 bounds      = boundaries()
-bdname = {
-'shock': tb.tshck,
-'ini_mc': tb.tini_mc,
-'end_mc': tb.tend_mc,
-'ini_icme': tb.tini_icme,
-'end_icme': tb.tend_icme,
-}
-if not(pa.ini in bdname.keys()):
-    print ' ## ERROR ##: border name must be one of these: ', bdname.keys()
-bef, aft = [pa.BefAft[0]]*tb.n_icmes, [pa.BefAft[1]]*tb.n_icmes
-bounds.tini = map(sf.Add2Date, bdname[pa.ini], bef) 
-bounds.tend = map(sf.Add2Date, bdname[pa.end], aft)
+if pa.struct=='sh.i':
+    bounds.tini = tb.tshck      #tb.tini_mc #tb.tshck 
+    bounds.tend = tb.tini_icme    #tb.tend_mc #tb.tini_mc
+elif pa.struct=='sh.mc':
+    bounds.tini = tb.tshck
+    bounds.tend = tb.tini_mc
+elif pa.struct=='i':
+    bounds.tini = tb.tini_icme
+    bounds.tend = tb.tend_icme
+elif pa.struct=='mc':
+    bounds.tini = tb.tini_mc
+    bounds.tend = tb.tend_mc
+else:
+    raise SystemExit(' ---> wrong structure! : '+pa.struct)
 
 #+++++++++++++++++++++++++++++++++++++++++++++++++
 gral.data_name      = pa.inp_name #'ACE'
 
 FILTER['vsw_filter']    = False
-emgr    = sf.events_mgr(gral, FILTER, CUTS, bounds, nBin, fgap, tb, None, structure='sh.i')
+emgr    = sf.events_mgr(gral, FILTER, CUTS, bounds, nBin, fgap, tb, None, structure=pa.struct)
 
 #++++ limites
 emgr.FILTER['vsw_filter']    = True
@@ -219,16 +236,18 @@ for id, i in zip(events, range(n_evnts)):
     fname_out = '%s/event.data_vlo.%04d_vhi.%04d_id.%03d.txt' % (dir_dst, emgr.CUTS['v_lo'], emgr.CUTS['v_hi'], myid)
     dtsh = emgr.dt_sh[myid]  # [days] sheath duration
     dtmc = emgr.dt_mc[myid]  # [days] MC duration
+    dt   = (bounds.tend[myid]-bounds.tini[myid]).total_seconds()/86400.
     FOOTER=''+\
+    'dt [days]: %g\n' % dt +\
     'dt_sheath [days]: %g\n' % dtsh +\
     'dt_MC [days]: %g' % dtmc
     HEADER=''+\
     'ini ({struct}) : {date}'.format(
-        struct=pa.ini,
+        struct=pa.struct,
         date=emgr.bd.tini[myid].strftime('%d %B %Y %H:%M'),
     )+'\n'+\
     'end ({struct}) : {date}'.format(
-        struct=pa.end,
+        struct=pa.struct,
         date=emgr.bd.tend[myid].strftime('%d %B %Y %H:%M'),
     )
     np.savetxt(fname_out,data_out,header=HEADER,footer=FOOTER,fmt='%g')
