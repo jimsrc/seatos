@@ -361,85 +361,6 @@ class boundaries:
 def nans(sh):
     return np.nan*np.ones(sh)
 
-class _read_auger_scals(object):
-    """
-    reads different varsions of corrected-scalers
-    """
-    def __init__(self, tb, nBin, bd, fname_inp, data_name):
-        self.tb         = tb
-        self.nBin       = nBin
-        self.bd         = bd
-        self.fname_inp  = fname_inp
-        self.data_name  = data_name
-
-    def read(self):
-        with h5py.File(self.fname_inp,'r') as f:
-            if 'auger' in f.keys():
-                return self.read_i()
-            elif 't_utc' in f.keys():
-                return self.read_ii()
-            else:
-                raise SystemExit('\
-                 ---> no reader setup for this version scaler file!\
-                ')
-
-    def read_i(self):
-        """
-        read first version of processed 
-        corrected-scalers.
-        """
-        f5  = h5py.File(self.fname_inp, 'r')
-        t_utc = f5['auger/time_seg_utc'][...].copy() #data_murdo[:,0]
-        CRs   = f5['auger/sc_wAoP_wPres'][...].copy() #data_murdo[:,1]
-        print " -------> variables leidas!"
-
-        VARS = {
-            'CRs.'+self.data_name : {
-                'value' : CRs,
-                'lims'  : [-1.0, 1.0],
-                'label' : 'Auger Scaler rate [%]',
-                },
-        }
-        return t_utc, VARS
-
-    def _pair_yyyymm(self, f, kname):
-        years = map(int, f[kname].keys())
-        ly, lm = [], []
-        for year in years:
-            months = map(int, f[kname+'/%04d'%year].keys())
-            nm     = len(months)
-            ly     += [year]*nm
-            lm     += months
-        return zip(ly,lm)
-
-    def read_ii(self):
-        """
-        read 2nd version of processed correctd-scalers.
-        We do NOT read the geop-height-corrected scalers, because
-        seems unphysical (i.e. geop height is not a parameter
-        for scalers correction!). So just use pressure-corrected ones.
-        """
-        f = h5py.File(self.fname_inp,'r')
-        years_and_months = self._pair_yyyymm(f, 't_utc')
-        t_utc = My2DArray((3,), dtype=np.float32)
-        CRs   = My2DArray((3,), dtype=np.float32)
-        n = 0
-        for yyyy, mm in years_and_months:
-            nt = f['t_utc/%04d/%02d'%(yyyy,mm)].size
-            t_utc[n:n+nt] = f['t_utc/%04d/%02d'%(yyyy,mm)][...]
-            CRs[n:n+nt]   = f['wAoP_wPrs/%04d/%02d'%(yyyy,mm)][...]
-            n             += nt
-
-        print " --> Auger scalers leidos!"
-        VARS = {
-            'CRs.'+self.data_name : {
-                'value' : CRs[:n],
-                'lims'  : [-1.0, 1.0],
-                'label' : 'Auger Scaler rate [%]',
-                },
-        }
-        return t_utc[:n], VARS
-
         
 
 
@@ -791,56 +712,26 @@ class events_mgr(object):
             "\n Must be one of these: %r" % [self.names_ok]
         
     def load_data_ACE_o7o6(self):
-        tb          = self.tb
-        nBin        = self.nBin
-        bd          = self.bd
-        day         = 86400.
-        fname_inp   = self.gral.fnames[self.data_name]
-        self.f_sc   = netcdf_file(fname_inp, 'r')
-        print " leyendo tiempo..."
-        t_utc   = utc_from_omni(self.f_sc)
-        print " Ready."
+        from readers import _data_ACE_o7o6
+        d   = _data_ACE_o7o6(self.gral.fnames[self.data_name])
+        out = d.load(self.data_name)
 
-        #++++++++++++++++++++ CORRECCION DE BORDES +++++++++++++++++++++++++++
-        # IMPORTANTE:
-        # El shift es necesario, pero ya lo hice en la corrida del
-        # primer 'self.data_name'. Si lo hago aqui, estaria hacia
-        # doble shift-time.
-        #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-        o7o6    = self.f_sc.variables['O7toO6'].data.copy()
-        print " -------> variables leidas!"
-        #------------------------------------ VARIABLES
-        self.t_utc  = t_utc
-        self.VARS = VARS = {}
-        # variable, nombre archivo, limite vertical, ylabel
-        VARS['o7o6'] = {
-            'value' : o7o6,
-            'lims'  : [0.0, 1.5],
-            'label' : 'O7/O6 [1]'
-        }
-
+        for nm, value in out.iteritems():
+            # set `t_utc` and `VAR` to `self`
+            setattr(self,nm,value)
         self.nvars  = len(VARS.keys())
 
     def load_data_Auger_scals(self):
-        """
-        solo cargamos Auger Scalers
-        """
-        opt = {
-        'tb'        : self.tb,
-        'nBin'      : self.nBin,
-        'bd'        : self.bd,
-        'fname_inp' : self.gral.fnames[self.data_name],
-        'data_name' : self.data_name,
-        }
-        sc = _read_auger_scals(**opt)
-        self.t_utc, self.VARS = sc.read()
+        from readers import _data_Auger_scals
+        d   = _data_Auger_scals(self.gral.fnames[self.data_name])
+        out = d.load(self.data_name)
 
+        for nm, value in out.iteritems():
+            # set `t_utc` and `VAR` to `self`
+            setattr(self,nm,value)
         self.nvars  = len(self.VARS.keys())
 
     def load_data_Auger_BandMuons(self):
-        """
-        para leer la data de histogramas Auger
-        """
         from readers import _data_Auger_BandMuons
         d   = _data_Auger_BandMuons(self.gral.fnames[self.data_name])
         out = d.load(self.data_name)
@@ -864,23 +755,14 @@ class events_mgr(object):
         self.nvars  = len(self.VARS.keys())
 
     def load_data_McMurdo(self):
-        tb          = self.tb
-        nBin        = self.nBin
-        bd          = self.bd
-        day         = 86400.
-        fname_inp   = self.gral.fnames[self.data_name]
-        data_murdo  = np.loadtxt(fname_inp)
-        self.t_utc  = t_utc = data_murdo[:,0]
-        CRs         = data_murdo[:,1]
-        print " -------> variables leidas!"
+        from readers import _data_McMurdo
+        d   = _data_McMurdo(self.gral.fnames[self.data_name])
+        out = d.load(self.data_name)
 
-        self.VARS   = VARS = {} 
-        VARS['CRs.'+self.data_name] = {
-            'value' : CRs,
-            'lims'  : [-8.0, 1.0],
-            'label' : 'mcmurdo rate [%]'
-        }
-        self.nvars  = len(VARS.keys())
+        for nm, value in out.iteritems():
+            # set `t_utc` and `VAR` to `self`
+            setattr(self,nm,value)
+        self.nvars  = len(self.VARS.keys())
 
     def load_data_ACE(self):
         from readers import _data_ACE

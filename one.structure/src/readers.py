@@ -4,11 +4,11 @@ from scipy.io.netcdf import netcdf_file
 import numpy as np
 from datetime import datetime, timedelta
 from h5py import File as h5
-import os, sys
+import os, sys, h5py, argparse
 #--- shared libs
 from shared.ShiftTimes import ShiftCorrection, ShiftDts
 import shared.console_colors as ccl
-from shared.shared_funcs import nans
+from shared.shared_funcs import nans, My2DArray
 
 
 def calc_beta(Temp, Pcc, B):
@@ -112,6 +112,83 @@ def read_hsts_data(fname, typic, ch_Eds):
     f.close()
     return t, r
 
+class _read_auger_scals(object):
+    """
+    reads different versions of corrected-scalers
+    """
+    def __init__(self, fname_inp, data_name):
+        self.fname_inp  = fname_inp
+        self.data_name  = data_name
+
+    def read(self):
+        with h5py.File(self.fname_inp,'r') as f:
+            if 'auger' in f.keys():
+                return self.read_i()
+            elif 't_utc' in f.keys():
+                return self.read_ii()
+            else:
+                raise SystemExit('\
+                 ---> no reader setup for this version scaler file!\
+                ')
+
+    def read_i(self):
+        """
+        read first version of processed 
+        corrected-scalers.
+        """
+        f5  = h5py.File(self.fname_inp, 'r')
+        t_utc = f5['auger/time_seg_utc'][...].copy() #data_murdo[:,0]
+        CRs   = f5['auger/sc_wAoP_wPres'][...].copy() #data_murdo[:,1]
+        print " -------> variables leidas!"
+
+        VARS = {
+            'CRs.'+self.data_name : {
+                'value' : CRs,
+                'lims'  : [-1.0, 1.0],
+                'label' : 'Auger Scaler rate [%]',
+                },
+        }
+        return t_utc, VARS
+
+    def _pair_yyyymm(self, f, kname):
+        years = map(int, f[kname].keys())
+        ly, lm = [], []
+        for year in years:
+            months = map(int, f[kname+'/%04d'%year].keys())
+            nm     = len(months)
+            ly     += [year]*nm
+            lm     += months
+        return zip(ly,lm)
+
+    def read_ii(self):
+        """
+        read 2nd version of processed correctd-scalers.
+        We do NOT read the geop-height-corrected scalers, because
+        seems unphysical (i.e. geop height is not a parameter
+        for scalers correction!). So just use pressure-corrected ones.
+        """
+        f = h5py.File(self.fname_inp,'r')
+        years_and_months = self._pair_yyyymm(f, 't_utc')
+        t_utc = My2DArray((3,), dtype=np.float32)
+        CRs   = My2DArray((3,), dtype=np.float32)
+        n = 0
+        for yyyy, mm in years_and_months:
+            nt = f['t_utc/%04d/%02d'%(yyyy,mm)].size
+            t_utc[n:n+nt] = f['t_utc/%04d/%02d'%(yyyy,mm)][...]
+            CRs[n:n+nt]   = f['wAoP_wPrs/%04d/%02d'%(yyyy,mm)][...]
+            n             += nt
+
+        print " --> Auger scalers leidos!"
+        VARS = {
+            'CRs.'+self.data_name : {
+                'value' : CRs[:n],
+                'lims'  : [-1.0, 1.0],
+                'label' : 'Auger Scaler rate [%]',
+                },
+        }
+        return t_utc[:n], VARS
+
+
 
 #------- data parsers -------
 class _data_ACE(object):
@@ -139,6 +216,9 @@ class _data_ACE(object):
         # IMPORTANTE:
         # Solo valido para los "63 eventos" (MCflag='2', y visibles en ACE)
         # NOTA: dan saltos de shock mas marcados con True.
+        # TODO: make a copy/deepcopy of `tb` and `bd`, so that we don't 
+        # bother the rest of data_names (i.e. Auger_scals, Auger_BandMuons, 
+        # etc.)
         if self.tshift:
             ShiftCorrection(ShiftDts, tb.tshck)
             ShiftCorrection(ShiftDts, tb.tini_icme)
@@ -270,7 +350,7 @@ class _data_Auger_BandScals(object):
         para leer la data de histogramas Auger
         """
         f5          = h5(self.fname_inp, 'r')
-        ch_Eds      = (10, 11, 12, 13)
+        ch_Eds      = (3, 4, 5)
         # get the global-average histogram
         nEd   = 50
         typic = np.zeros(nEd, dtype=np.float32)
@@ -292,5 +372,93 @@ class _data_Auger_BandScals(object):
         't_utc'  : t_utc,
         'VARS'   : VARS,
         }
+
+
+class _data_ACE_o7o6(object):
+    def __init__(self, fname_inp, tshift=False):
+        self.fname_inp  = fname_inp
+        self.tshift     = tshift
+
+    def load(self, data_name, **kws):
+        tb          = self.tb
+        nBin        = self.nBin
+        bd          = self.bd
+        day         = 86400.
+        self.f_sc   = netcdf_file(self.fname_inp, 'r')
+        print " leyendo tiempo..."
+        t_utc   = utc_from_omni(self.f_sc)
+        print " Ready."
+
+        #++++++++++++++++++++ CORRECCION DE BORDES +++++++++++++++++++++++++++
+        # IMPORTANTE:
+        # El shift es necesario, pero ya lo hice en la corrida del
+        # primer 'self.data_name' (i.e. `_data_ACE()`). Si lo hago aqui, 
+        # estaria haciendo doble shift.
+        #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        o7o6    = self.f_sc.variables['O7toO6'].data.copy()
+        print " -------> variables leidas!"
+        #------------------------------------ VARIABLES
+        self.t_utc  = t_utc
+        self.VARS = VARS = {}
+        # variable, nombre archivo, limite vertical, ylabel
+        VARS['o7o6'] = {
+            'value' : o7o6,
+            'lims'  : [0.0, 1.5],
+            'label' : 'O7/O6 [1]'
+        }
+        return {
+        't_utc'  : t_utc,
+        'VARS'   : VARS,
+        }
+
+
+class _data_Auger_scals(object):
+    def __init__(self, fname_inp):
+        self.fname_inp  = fname_inp
+
+    def load(self, data_name):
+        """
+        solo cargamos Auger Scalers
+        """
+        opt = {
+        'fname_inp' : self.fname_inp,
+        'data_name' : data_name,
+        }
+
+        """
+        the class `_read_auger_scals` reads both versions of
+        scalers (old & new).
+        """
+        sc = _read_auger_scals(**opt)
+        t_utc, VARS = sc.read()
+
+        return {
+        't_utc'  : t_utc,
+        'VARS'   : VARS,
+        }
+
+
+class _data_McMurdo(object):
+    def __init__(self, fname_inp):
+        self.fname_inp = fname_inp
+
+    def load(self, data_name):
+        fname_inp   = self.fname_inp
+        data_murdo  = np.loadtxt(fname_inp)
+        t_utc       = t_utc = data_murdo[:,0]
+        CRs         = data_murdo[:,1]
+        print " -------> variables leidas!"
+
+        VARS = {} 
+        VARS['CRs.'+data_name] = {
+            'value' : CRs,
+            'lims'  : [-8.0, 1.0],
+            'label' : 'mcmurdo rate [%]'
+        }
+        return {
+        't_utc'  : t_utc,
+        'VARS'   : VARS,
+        }
+
 
 #EOF
