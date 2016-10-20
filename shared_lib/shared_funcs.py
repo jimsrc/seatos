@@ -358,67 +358,6 @@ class boundaries:
         self.fg = 0.2
 
 
-def read_hsts_data(fname, typic, ch_Eds):
-    """
-    code adapted from ...ch_Eds_smoo2.py
-    """
-    f   = h5(fname, 'r')
-
-    # initial date
-    datestr = f['date_ini'].value
-    yyyy, mm, dd = map(int, datestr.split('-'))
-    INI_DATE = datetime(yyyy, mm, dd)
-
-    # final date
-    datestr = f['date_end'].value
-    yyyy, mm, dd = map(int, datestr.split('-'))
-    END_DATE = datetime(yyyy, mm, dd)
-
-    date = INI_DATE
-    tt, rr = [], []
-    ntot, nt = 0, 0
-    while date < END_DATE:
-        yyyy, mm, dd = date.year, date.month, date.day
-        path    = '%04d/%02d/%02d' % (yyyy, mm, dd)
-        try:
-            dummy = f[path] # test if this exists!
-        except:
-            date    += timedelta(days=1)    # next day...
-            continue
-
-        ntanks  = f['%s/tanks'%path][...]
-        cc  = ntanks>150.
-        ncc = len(find(cc))
-
-        if ncc>1: #mas de un dato tiene >150 tanques
-            time    = f['%s/t_utc'%path][...] # utc secs
-            cts, typ = np.zeros(96, dtype=np.float64), 0.0
-            for i in ch_Eds:
-                Ed  =  i*20.+10.
-                cts += f['%s/cts_temp-corr_%04dMeV'%(path,Ed)][...]
-                typ += typic[i] # escalar
-
-            cts_norm = cts/typ
-            #aux  = np.nanmean(cts_norm[cc])
-            tt += [ time[cc] ]
-            rr += [ cts_norm[cc] ]
-            ntot += 1 # files read ok
-            nt += ncc # total nmbr ok elements
-
-        date    += timedelta(days=1)        # next day...
-
-    #--- converting tt, rr to 1D-numpy.arrays
-    t, r = nans(nt), nans(nt)
-    ini, end = 0, 0
-    for i in range(ntot):
-        ni = len(tt[i])
-        t[ini:ini+ni] = tt[i]
-        r[ini:ini+ni] = rr[i]
-        ini += ni
-
-    f.close()
-    return t, r
-
 def nans(sh):
     return np.nan*np.ones(sh)
 
@@ -902,61 +841,27 @@ class events_mgr(object):
         """
         para leer la data de histogramas Auger
         """
-        tb          = self.tb
-        nBin        = self.nBin
-        bd          = self.bd
-        day         = 86400.
-        fname_inp   = self.gral.fnames[self.data_name]
-        f5          = h5py.File(fname_inp, 'r')
-        ch_Eds      = (10, 11, 12, 13)
+        from readers import _data_Auger_BandMuons
+        d   = _data_Auger_BandMuons(self.gral.fnames[self.data_name])
+        out = d.load(self.data_name)
 
-        # get the global-average histogram
-        nEd   = 50
-        typic = np.zeros(nEd, dtype=np.float32)
-        for i in range(nEd):
-            Ed = i*20.+10.
-            typic[i] = f5['mean/corr_%04dMeV'%Ed].value
-
-        self.t_utc, CRs = read_hsts_data(fname_inp,  typic, ch_Eds)
-        print " -------> variables leidas!"
-
-        self.VARS   = VARS = {} #[]
-        VARS['CRs.'+self.data_name] = {
-            'value' : CRs,
-            'lims'  : [-1.0, 1.0],
-            'label' : 'Auger (muon band) [%]'
-        }
-        self.nvars  = len(VARS.keys())
+        for nm, value in out.iteritems():
+            # set `t_utc` and `VAR` to `self`
+            setattr(self,nm,value)
+        self.nvars = len(self.VARS.keys())
 
     def load_data_Auger_BandScals(self):
         """
         para leer la data de histogramas Auger, banda scalers
         """
-        tb          = self.tb
-        nBin        = self.nBin
-        bd          = self.bd
-        day         = 86400.
-        fname_inp   = self.gral.fnames[self.data_name]
-        f5          = h5py.File(fname_inp, 'r')
-        ch_Eds      = (3, 4, 5)
+        from readers import _data_Auger_BandMuons
+        d   = _data_Auger_BandMuons(self.gral.fnames[self.data_name])
+        out = d.load(self.data_name)
 
-        # get the global-average histogram
-        nEd   = 50
-        typic = np.zeros(nEd, dtype=np.float32)
-        for i in range(nEd):
-            Ed = i*20.+10.
-            typic[i] = f5['mean/corr_%04dMeV'%Ed].value
-
-        self.t_utc, CRs = read_hsts_data(fname_inp,  typic, ch_Eds)
-        print " -------> variables leidas!"
-
-        self.VARS   = VARS = {} #[]
-        VARS['CRs.'+self.data_name] = {
-            'value' : CRs,
-            'lims'  : [-1.0, 1.0],
-            'label' : 'Auger (muon band) [%]'
-        }
-        self.nvars  = len(VARS.keys())
+        for nm, value in out.iteritems():
+            # set `t_utc` and `VAR` to `self`
+            setattr(self,nm,value)
+        self.nvars  = len(self.VARS.keys())
 
     def load_data_McMurdo(self):
         tb          = self.tb
@@ -980,7 +885,7 @@ class events_mgr(object):
     def load_data_ACE(self):
         from readers import _data_ACE
         d   = _data_ACE(self.gral.fnames[self.data_name], self.FILTER['CorrShift'])
-        out = d.load(self.data_name, self.tb, self.bd)
+        out = d.load(self.data_name, tb=self.tb, bd=self.bd)
         #NOTE: if self.FILTER['CorrShift']==True, then `self.tb` and
         # `self.bd` will be shifted!
         for nm, value in out.iteritems():
@@ -988,10 +893,6 @@ class events_mgr(object):
             setattr(self,nm,value)
 
         self.nvars = len(self.VARS.keys())
-        #---- SALIDA:
-        #self.VARS   = VARS
-        #self.out    = out
-        #self.aux    = aux
 
     def make_plots(self):
         """

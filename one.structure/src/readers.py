@@ -8,6 +8,7 @@ import os, sys
 #--- shared libs
 from shared.ShiftTimes import ShiftCorrection, ShiftDts
 import shared.console_colors as ccl
+from shared.shared_funcs import nans
 
 
 def calc_beta(Temp, Pcc, B):
@@ -50,9 +51,73 @@ def utc_from_omni(file):
 
     return time
 
+def read_hsts_data(fname, typic, ch_Eds):
+    """
+    code adapted from ...ch_Eds_smoo2.py
+    """
+    f   = h5(fname, 'r')
+
+    # initial date
+    datestr = f['date_ini'].value
+    yyyy, mm, dd = map(int, datestr.split('-'))
+    INI_DATE = datetime(yyyy, mm, dd)
+
+    # final date
+    datestr = f['date_end'].value
+    yyyy, mm, dd = map(int, datestr.split('-'))
+    END_DATE = datetime(yyyy, mm, dd)
+
+    date = INI_DATE
+    tt, rr = [], []
+    ntot, nt = 0, 0
+    while date < END_DATE:
+        yyyy, mm, dd = date.year, date.month, date.day
+        path    = '%04d/%02d/%02d' % (yyyy, mm, dd)
+        try:
+            dummy = f[path] # test if this exists!
+        except:
+            date    += timedelta(days=1)    # next day...
+            continue
+
+        ntanks  = f['%s/tanks'%path][...]
+        cc  = ntanks>150.
+        ncc = cc.nonzero()[0].size
+
+        if ncc>1: #mas de un dato tiene >150 tanques
+            time    = f['%s/t_utc'%path][...] # utc secs
+            cts, typ = np.zeros(96, dtype=np.float64), 0.0
+            for i in ch_Eds:
+                Ed  =  i*20.+10.
+                cts += f['%s/cts_temp-corr_%04dMeV'%(path,Ed)][...]
+                typ += typic[i] # escalar
+
+            cts_norm = cts/typ
+            #aux  = np.nanmean(cts_norm[cc])
+            tt += [ time[cc] ]
+            rr += [ cts_norm[cc] ]
+            ntot += 1 # files read ok
+            nt += ncc # total nmbr ok elements
+
+        date    += timedelta(days=1)        # next day...
+
+    #--- converting tt, rr to 1D-numpy.arrays
+    t, r = nans(nt), nans(nt)
+    ini, end = 0, 0
+    for i in range(ntot):
+        ni = len(tt[i])
+        t[ini:ini+ni] = tt[i]
+        r[ini:ini+ni] = rr[i]
+        ini += ni
+
+    f.close()
+    return t, r
+
 
 #------- data parsers -------
 class _data_ACE(object):
+    """
+    to read the .nc file of ACE data, built from ASCII versions
+    """
     def __init__(self, fname_inp, tshift=False):
         """
         if tshift==True, we return shifted versions of
@@ -61,11 +126,14 @@ class _data_ACE(object):
         self.fname_inp = fname_inp
         self.tshift    = tshift
 
-    def load(self, data_name, tb, bd):
+    def load(self, data_name, **kws):
         f_sc   = netcdf_file(self.fname_inp, 'r')
         print " leyendo tiempo..."
         t_utc   = utc_from_omni(f_sc)
         print " Ready."
+
+        tb = kws['tb']  # datetimes of borders of all structures
+        bd = kws['bd']  # borders of the structures we will use
 
         #++++++++++ CORRECTION OF BORDERS ++++++++++
         # IMPORTANTE:
@@ -140,16 +208,89 @@ class _data_ACE(object):
         #self.aux = aux = {}
         #aux['SELECC']    = self.SELECC
 
-        out = {
-        't_utc' : t_utc,
-        'VARS'  : VARS,
-        }
-        #--- out
         """
         NOTE: `bd` and `tb` have been shifted if
         `selg.tshift`==True.
         """
-        return out
-        #---- SALIDA:
+        return {
+        't_utc' : t_utc,
+        'VARS'  : VARS,
+        }
+
+
+class _data_Auger_BandMuons(object):
+    """
+    for muon band of Auger charge histograms
+    """
+    def __init__(self, fname_inp, tshift=False):
+        self.fname_inp  = fname_inp
+        self.tshift     = tshift
+
+
+    def load(self, data_name):
+        """
+        para leer la data de histogramas Auger
+        """
+        f5          = h5(self.fname_inp, 'r')
+        ch_Eds      = (10, 11, 12, 13)
+        # get the global-average histogram
+        nEd   = 50
+        typic = np.zeros(nEd, dtype=np.float32)
+        for i in range(nEd):
+            Ed = i*20.+10.
+            typic[i] = f5['mean/corr_%04dMeV'%Ed].value
+
+        t_utc, CRs = read_hsts_data(self.fname_inp,  typic, ch_Eds)
+        print " -------> variables leidas!"
+
+        VARS = {} #[]
+        VARS['CRs.'+data_name] = {
+            'value' : CRs,
+            'lims'  : [-1.0, 1.0],
+            'label' : 'Auger (muon band) [%]'
+        }
+
+        return {
+        't_utc'  : t_utc,
+        'VARS'   : VARS,
+        }
+
+
+class _data_Auger_BandScals(object):
+    """
+    for muon band of Auger charge histograms
+    """
+    def __init__(self, fname_inp, tshift=False):
+        self.fname_inp  = fname_inp
+        self.tshift     = tshift
+
+
+    def load(self, data_name):
+        """
+        para leer la data de histogramas Auger
+        """
+        f5          = h5(self.fname_inp, 'r')
+        ch_Eds      = (10, 11, 12, 13)
+        # get the global-average histogram
+        nEd   = 50
+        typic = np.zeros(nEd, dtype=np.float32)
+        for i in range(nEd):
+            Ed = i*20.+10.
+            typic[i] = f5['mean/corr_%04dMeV'%Ed].value
+
+        t_utc, CRs = read_hsts_data(self.fname_inp,  typic, ch_Eds)
+        print " -------> variables leidas!"
+
+        VARS = {} #[]
+        VARS['CRs.'+data_name] = {
+            'value' : CRs,
+            'lims'  : [-1.0, 1.0],
+            'label' : 'Auger (muon band) [%]'
+        }
+
+        return {
+        't_utc'  : t_utc,
+        'VARS'   : VARS,
+        }
 
 #EOF
