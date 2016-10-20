@@ -33,32 +33,6 @@ def date_to_utc(fecha):
     return sec_utc
 
 
-def dates_from_omni(t):
-    time = []
-    n = len(t)
-    for i in range(n):
-        yyyy = t[i][0]
-        mm = t[i][1]
-        dd = t[i][2]
-        HH = t[i][3]
-        MM = t[i][4]
-        SS = t[i][5]
-        uSS = t[i][6]
-        time += [datetime(yyyy, mm, dd, HH, MM, SS, uSS)]
-
-    return time
-
-
-def utc_from_omni(file):
-    t = np.array(file.variables['time'].data)
-    dates = dates_from_omni(t)
-    n = len(dates)
-    time = np.zeros(n)
-    for i in range(n):
-        time[i] = date_to_utc(dates[i])
-
-    return time
-
 def selecc_data(data, tshk):
     time    = data[0]       #[s] utc sec
     rate    = data[1]
@@ -567,9 +541,6 @@ class events_mgr(object):
             'McMurdo')
 
         #--- just a check for load_data_.. methods
-        #print " --> MYDIR... ", type(dir), dir
-        #print " --> METHODS... ", dir(events_mgr) #self.__dict__.keys()
-        #print "\n --> METHODS AGAIN... ", dir(self.__dir__)
         for att_name in dir(events_mgr): # iterate on all methods
             if att_name.startswith('load_data_'):
                 att_suffix = att_name.replace('load_data_', '')
@@ -792,9 +763,6 @@ class events_mgr(object):
         self.restricted_IDs = IDs[varname]
         self.IDs_locked = True
 
-        #dummy = np.array(self.restricted_IDs)
-        #np.savetxt('./__dummy__', dummy)
-
     def rebine_final(self):
         """
         rebineo de c/evento ... PARTE FINAL
@@ -879,14 +847,10 @@ class events_mgr(object):
             #setattr(self, read_flag, True) # True: if files are already read
 
         #--- check weird case
-        if not(self.data_name in self.names_ok):
-            print " --------> BAD 'self.data_name'!!!"
-            for name in self.names_ok:
-                read_flag = getattr(self, 'read_'+self.data_name)
-                print " ---> self.read_%s: " % name, read_flag
-
-            raise SystemExit(' Exiting...')
-
+        assert self.data_name in self.names_ok,\
+            "  ERROR: not on my list!: %s" % self.data_name+\
+            "\n Must be one of these: %r" % [self.names_ok]
+        
     def load_data_ACE_o7o6(self):
         tb          = self.tb
         nBin        = self.nBin
@@ -917,9 +881,6 @@ class events_mgr(object):
         }
 
         self.nvars  = len(VARS.keys())
-        #---------
-        self.aux = aux = {}
-        aux['SELECC']    = self.SELECC
 
     def load_data_Auger_scals(self):
         """
@@ -936,9 +897,6 @@ class events_mgr(object):
         self.t_utc, self.VARS = sc.read()
 
         self.nvars  = len(self.VARS.keys())
-        #---------
-        self.aux = aux = {}
-        aux['SELECC']    = self.SELECC
 
     def load_data_Auger_BandMuons(self):
         """
@@ -969,9 +927,6 @@ class events_mgr(object):
             'label' : 'Auger (muon band) [%]'
         }
         self.nvars  = len(VARS.keys())
-        #---------
-        self.aux = aux = {}
-        aux['SELECC']    = self.SELECC
 
     def load_data_Auger_BandScals(self):
         """
@@ -1002,9 +957,6 @@ class events_mgr(object):
             'label' : 'Auger (muon band) [%]'
         }
         self.nvars  = len(VARS.keys())
-        #---------
-        self.aux = aux = {}
-        aux['SELECC']    = self.SELECC
 
     def load_data_McMurdo(self):
         tb          = self.tb
@@ -1024,95 +976,18 @@ class events_mgr(object):
             'label' : 'mcmurdo rate [%]'
         }
         self.nvars  = len(VARS.keys())
-        #---------
-
-        self.aux = aux = {}
-        aux['SELECC']    = self.SELECC
 
     def load_data_ACE(self):
-        tb          = self.tb
-        nBin        = self.nBin
-        bd          = self.bd
-        day         = 86400.
+        from readers import _data_ACE
+        d   = _data_ACE(self.gral.fnames[self.data_name], self.FILTER['CorrShift'])
+        out = d.load(self.data_name, self.tb, self.bd)
+        #NOTE: if self.FILTER['CorrShift']==True, then `self.tb` and
+        # `self.bd` will be shifted!
+        for nm, value in out.iteritems():
+            # set `t_utc` and `VAR` to `self`
+            setattr(self,nm,value)
 
-        #----------------------------------------------------------
-        self.f_sc   = netcdf_file(self.gral.fnames[self.data_name], 'r')
-        print " leyendo tiempo..."
-        t_utc   = utc_from_omni(self.f_sc)
-        print " Ready."
-
-        #++++++++++ CORRECCION DE BORDES ++++++++++
-        # IMPORTANTE:
-        # Solo valido para los "63 eventos" (MCflag='2', y visibles en ACE)
-        # NOTA: dan saltos de shock mas marcados con True.
-        if self.FILTER['CorrShift']:
-            ShiftCorrection(ShiftDts, tb.tshck)
-            ShiftCorrection(ShiftDts, tb.tini_icme)
-            ShiftCorrection(ShiftDts, tb.tend_icme)
-            ShiftCorrection(ShiftDts, tb.tini_mc)
-            ShiftCorrection(ShiftDts, tb.tend_mc)
-            ShiftCorrection(ShiftDts, self.bd.tini)
-            ShiftCorrection(ShiftDts, self.bd.tend)
-        #+++++++++++++++++++++++++++++++++++++++++++
-        B       = self.f_sc.variables['Bmag'].data.copy()
-        Vsw     = self.f_sc.variables['Vp'].data.copy()
-        Temp    = self.f_sc.variables['Tp'].data.copy()
-        Pcc     = self.f_sc.variables['Np'].data.copy()
-        rmsB    = self.f_sc.variables['dBrms'].data.copy()
-        alphar  = self.f_sc.variables['Alpha_ratio'].data.copy()
-        beta    = calc_beta(Temp, Pcc, B)
-        rmsBoB  = rmsB/B
-        print " -------> variables leidas!"
-        #------------------------------------ VARIABLES
-        self.t_utc  = t_utc
-        #self.VARS = VARS = []
-        self.VARS = VARS = {}
-        # variable, nombre archivo, limite vertical, ylabel
-        VARS['B.'+self.data_name] = {
-            'value' : B,
-            'lims'  : [5., 18.],
-            'label' : 'B [nT]'
-        }
-        VARS['V.'+self.data_name] = {
-            'value' : Vsw,
-            'lims'  : [300., 650.],
-            'label' : 'Vsw [km/s]'
-        }
-        VARS['rmsBoB.'+self.data_name] = {
-            'value' : rmsBoB,
-            'lims'  : [0.01, 0.2],
-            'label' : 'rms($\hat B$/|B|) [1]'
-        }
-        VARS['rmsB.'+self.data_name] = {
-            'value' : rmsB,
-            'lims'  : [0.05, 2.0],
-            'label' : 'rms($\hat B$) [nT]'
-        }
-        VARS['beta.'+self.data_name] = {
-            'value' : beta,
-            'lims'  : [0.001, 5.],
-            'label' : '$\\beta$ [1]'
-        }
-        VARS['Pcc.'+self.data_name] = {
-            'value' : Pcc,
-            'lims'  : [2, 17.],
-            'label' : 'proton density [#/cc]'
-        }
-        VARS['Temp.'+self.data_name] = {
-            'value' : Temp,
-            'lims'  : [1e4, 4e5],
-            'label' : 'Temp [K]'
-        }
-        VARS['AlphaRatio.'+self.data_name] = {
-            'value' : alphar,
-            'lims'  : [1e-3, 0.1],
-            'label' : 'alpha ratio [1]'
-        }
-
-        self.nvars = len(VARS.keys())
-        #---------
-        self.aux = aux = {}
-        aux['SELECC']    = self.SELECC
+        self.nvars = len(self.VARS.keys())
         #---- SALIDA:
         #self.VARS   = VARS
         #self.out    = out
@@ -1407,6 +1282,7 @@ class events_mgr(object):
 
         self.SELECC     = SELECC
         self.n_SELECC   = len(find(SELECC))
+        #self.aux['SELECC']    = self.SELECC
         #+++++++++++++++++ end: SELECCION DE EVENTOS ++++++++++++++++++++
         #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         if self.n_SELECC<=0:
@@ -1426,9 +1302,9 @@ class RichTable(object):
         s.Dst		= []
 
     def read(s):
-        print " leyendo tabla Richardson: %s" % s.fname_rich
+        print "\n ---> reading Richardson's table: %s" % s.fname_rich
         frich = open(s.fname_rich, 'r')
-        print " archivo leido."
+        print " file read."
         ll, n = [], 0
         for line in frich:
             ll 	+= [line.split(',')]

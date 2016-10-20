@@ -122,8 +122,8 @@ parser.add_argument(
 '-s', '--suffix',
 type=str,
 default='__auger__',
-help='suffix string used as the name of the last inner\
- output-subdirectory (created automatically)'
+help='string used as the name of the last inner\
+ output subdirectories (created automatically)'
 )
 parser.add_argument(
 '-if', '--icme_flag',
@@ -180,24 +180,6 @@ pa = parser.parse_args()
 class boundaries:
     def __init__(self):
         name = 'name'
-
-def run_analysis(em, dname, LOW, MID1, MID2, TOP, lock=False):
-    #+++ global
-    em.data_name = dname #'Auger_BandScals'
-    em.FILTER['vsw_filter'] = False
-    em.run_all()
-    if lock: 
-        em.lock_IDs()
-
-    #+++ split
-    em.FILTER['vsw_filter'] = True
-    em.CUTS['v_lo'], emgr.CUTS['v_hi'] = LOW, MID1 
-    em.run_all()
-    em.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID1, MID2 
-    em.run_all()
-    em.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID2, TOP 
-    em.run_all()
-
 
 
 gral                = sf.general()
@@ -294,12 +276,21 @@ emgr = sf.events_mgr(gral, FILTER, CUTS, bounds, nBin, fgap, tb, None, structure
 LOW, MID1, MID2, TOP = 100., pa.Vsplit[0], pa.Vsplit[1], 3000.
 for dname in lnm:
     print " ---> dataset: "+dname
-    run_analysis(
-        emgr,
-        dname,
-        LOW,MID1,MID2,TOP,
-        lock = (dname==pa.lock[1] and pa.lock[0])
-    )
+    #+++ global
+    emgr.data_name = dname #'Auger_BandScals'
+    emgr.FILTER['vsw_filter'] = False
+    emgr.run_all()
+    if (dname==pa.lock[1] and pa.lock[0]): 
+        emgr.lock_IDs()
+
+    #+++ split
+    emgr.FILTER['vsw_filter'] = True
+    emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = LOW, MID1 
+    emgr.run_all()
+    emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID1, MID2 
+    emgr.run_all()
+    emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID2, TOP 
+    emgr.run_all()
 
 print " ---> we processed:"
 for dname in lnm:
