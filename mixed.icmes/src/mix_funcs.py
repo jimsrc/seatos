@@ -18,7 +18,8 @@ def makefig(mc, sh, TEXT, TEXT_LOC, YLIMS, YLAB, fname_fig):
     fig     = figure(1, figsize=(13, 6))
     ax      = fig.add_subplot(111)
 
-    varname = fname_fig[:-4].split('_')[3]
+    # catch the name of the observable
+    varname = fname_fig[:-4].split('_')[-1]
     if(varname == 'Temp'):
         mc.med      /= 1.0e4; sh.med      /= 1.0e4
         mc.avr      /= 1.0e4; sh.avr      /= 1.0e4
@@ -59,7 +60,6 @@ def makefig(mc, sh, TEXT, TEXT_LOC, YLIMS, YLAB, fname_fig):
                 alpha=0.3)
     ax.add_patch(rect1)
 
-    ax.legend(loc='best', fontsize=20)
     ax.tick_params(labelsize=17)
     ax.grid()
     ax.set_xlim(-2.0, 7.0)
@@ -69,11 +69,13 @@ def makefig(mc, sh, TEXT, TEXT_LOC, YLIMS, YLAB, fname_fig):
     ax.set_xlabel('time normalized to sheath/MC passage [1]', fontsize=25)
     ax.set_ylabel(YLAB, fontsize=27)
 
-    if(varname in ('beta','Temp', 'rmsB', 'rmsBoB')):
+    # if `varname` has any of these strings, plot in log-scale.
+    if any([(nm in varname) for nm in ('beta','Temp', 'rmsB', 'rmsBoB')]):
         ax.set_yscale('log')
     else:
         ax.set_yscale('linear')
 
+    ax.legend(loc='best', fontsize=20)
     savefig(fname_fig, format='png', dpi=100, bbox_inches='tight')
     close()
 

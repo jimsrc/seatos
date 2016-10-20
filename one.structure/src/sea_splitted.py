@@ -160,7 +160,8 @@ parser.add_argument(
 type=float,
 nargs=2,
 default=[375.,450.],
-help='SW speed values to split in three sub-groups of events.',
+help='SW speed values to define a partition of the sample in \
+three sub-groups of events.',
 )
 parser.add_argument(
 '-lock', '--lock',
@@ -297,6 +298,17 @@ for dname in lnm:
         emgr,
         dname,
         LOW,MID1,MID2,TOP,
+        lock = (dname==pa.lock[1] and pa.lock[0])
     )
+
+print " ---> we processed:"
+for dname in lnm:
+    print ' > '+dname
+print """
+--- output:
+ data  : %s
+ plots : %s
+""" % (pa.dir_plot, pa.dir_data)
+     
 
 #EOF

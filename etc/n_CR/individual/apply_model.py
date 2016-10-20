@@ -158,11 +158,11 @@ fc      = np.zeros(rms.size)
 fc[cc]  = (rms-rms_o)[cc]
 b       = B
 
-_tau  = np.linspace(*pa.sem_tau)
-_q    = np.linspace(*pa.sem_q)
-_off  = np.linspace(*pa.sem_off)
-_bp   = np.linspace(*pa.sem_bp)
-_bo   = np.linspace(*pa.sem_bo)
+_tau  = np.linspace(*pa.seed_tau)
+_q    = np.linspace(*pa.seed_q)
+_off  = np.linspace(*pa.seed_off)
+_bp   = np.linspace(*pa.seed_bp)
+_bo   = np.linspace(*pa.seed_bo)
 #tau_o, q, off   = 3., -6., 0.1 #2.0, -400.0
 #bp, bo          = -0.1, 10.0
 

@@ -37,6 +37,14 @@ parser.add_argument(
 type=str,
 default='../plots3'
 )
+parser.add_argument(
+'-Vs', '--Vsplit',
+type=float,
+nargs=2,
+default=[375.,450.],
+help='SW speed values to describe the input partition of \
+the sample in three sub-groups of events.',
+)
 pa = parser.parse_args()
 
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -61,20 +69,10 @@ if CorrShift:
 else:
     prexShift = 'woShiftCorr'
 
-dir_inp_mc  = pa.right+'/MCflag%s/%s' % (MCwant, prexShift) 
-dir_inp_sh  = pa.left +'/MCflag%s/%s' % (MCwant, prexShift)
-dir_figs    = pa.plot+'/%s/MCflag%s' % (prexShift, MCwant) 
-
-dir_inp_mc  += '/_auger_'
-dir_inp_sh  += '/_auger_'
-dir_figs    += '/_auger_'
-
-assert isdir(dir_inp_mc) and isdir(dir_inp_sh),\
-    " --> algun directorio no existe!"
-os.system('mkdir -p '+dir_figs)
+os.system('mkdir -p '+pa.plot)
 
 #--- limites se seleccion
-LOW, MID1, MID2, TOP = 100.0, 375.0, 450.0, 3000.0
+LOW, MID1, MID2, TOP = 100.0, pa.Vsplit[0], pa.Vsplit[1], 3000.0
 if pa.group=='low':
     vlo, vhi        = LOW, MID1     # rango de velocidad Vmc
 elif pa.group=='mid':
@@ -86,25 +84,25 @@ else:
     raise SystemExit
 
 fname_inp       = '%s_vlo.%3.1f.vhi.%3.1f' % (FNAME, vlo, vhi)
-fname_inp_nro_mc   = dir_inp_mc + '/n.events_' + fname_inp + '.txt'
-fname_inp_nro_sh   = dir_inp_sh + '/n.events_' + fname_inp + '.txt'
+fname_inp_nro_sh   = pa.left  + '/n.events_' + fname_inp + '.txt'
+fname_inp_nro_mc   = pa.right + '/n.events_' + fname_inp + '.txt'
 fnro_mc = open(fname_inp_nro_mc, 'r')
 fnro_sh = open(fname_inp_nro_sh, 'r')
 
 stf = {}
 stf['B.ACE']    = {
     'label': 'B [T]',
-    'ylims': [3., 17.],
-    'text_loc_1': {'mc':[4.5, 15.0], 'sh':[-1.95, 12.0]},
-    'text_loc_2': {'mc':[4.5, 18.0], 'sh':[-1.95, 12.0]},
+    'ylims': [3., 14.],
+    'text_loc_1': {'mc':[4.5, 10.0], 'sh':[-1.95, 12.0]},
+    'text_loc_2': {'mc':[4.5, 10.0], 'sh':[-1.95, 12.0]},
     'text_loc_3': {'mc':[4.5, 12.0], 'sh':[-1.95, 12.0]}
     }
 stf['V.ACE']    = {
     'label': 'Vsw [Km/s]',
-    'ylims': [350., 800.],
+    'ylims': [300., 600.],
     'text_loc_1': {'mc':[4.5, 500.0], 'sh':[-1.95, 520.0]},
     'text_loc_2': {'mc':[4.5, 600.0], 'sh':[-1.95, 600.0]},
-    'text_loc_3': {'mc':[4.5, 410.0], 'sh':[-1.95, 600.0]}
+    'text_loc_3': {'mc':[4.5, 410.0], 'sh':[-1.95, 500.0]}
     }
 stf['rmsBoB.ACE']    = {
     'label': 'rmsBoB [1]',
@@ -115,10 +113,10 @@ stf['rmsBoB.ACE']    = {
     }
 stf['rmsB.ACE']    = {
     'label': 'rmsB [nT]',
-    'ylims': [0.1, 4.0],
-    'text_loc_1': {'mc':[4.5, 1.0], 'sh':[-1.95, 1.3]},
-    'text_loc_2': {'mc':[4.5, 1.0], 'sh':[-1.95, 1.3]},
-    'text_loc_3': {'mc':[4.5, 1.0], 'sh':[-1.95, 1.3]}
+    'ylims': [0.1, 4.],
+    'text_loc_1': {'mc':[4.5, 1.0], 'sh':[-1.95, 1.0]},
+    'text_loc_2': {'mc':[4.5, 1.0], 'sh':[-1.95, 1.0]},
+    'text_loc_3': {'mc':[4.5, 0.8], 'sh':[-1.95, 1.0]}
     }
 stf['beta.ACE']    = {
     'label': 'beta [1]',
@@ -171,7 +169,7 @@ stf['CRs.Auger_BandScals']    = {
     }
 stf['CRs.Auger_BandMuons']    = {
     'label': 'GCRs @Auger-BandMuons [%]',
-    'ylims': [-1.0, 0.2],
+    'ylims': [-1.0, 0.4],
     'text_loc_1': {'mc':[4.5, -0.50], 'sh':[-1.95, -0.5]},
     'text_loc_2': {'mc':[4.5, -0.50], 'sh':[-1.95, -0.5]},
     'text_loc_3': {'mc':[4.5, -0.85], 'sh':[-1.95, -0.5]}
@@ -180,8 +178,8 @@ stf['CRs.Auger_BandMuons']    = {
 TEXT = {}
 
 print " input: "
-print " %s " % dir_inp_mc
-print " %s \n" % dir_inp_sh
+print " %s " % pa.left
+print " %s \n" % pa.right
 print " vlo, vhi: ", (vlo, vhi), '\n'
 
 for lmc, lsh in zip(fnro_mc, fnro_sh):
@@ -192,8 +190,8 @@ for lmc, lsh in zip(fnro_mc, fnro_sh):
     print " %s"%varname, '  Nfinal_mc:%d' % Nfinal_mc, 'Nfinal_sh:%d' % Nfinal_sh
     mc, sh  = gral(), gral()
 
-    fname_inp_mc = dir_inp_mc + '/' + fname_inp + '_%s.txt' % varname
-    fname_inp_sh = dir_inp_sh + '/' + fname_inp + '_%s.txt' % varname
+    fname_inp_sh = pa.left  + '/' + fname_inp + '_%s.txt' % varname
+    fname_inp_mc = pa.right + '/' + fname_inp + '_%s.txt' % varname
     mc.tnorm, mc.med, mc.avr, mc.std_err, mc.nValues = np.loadtxt(fname_inp_mc).T
     sh.tnorm, sh.med, sh.avr, sh.std_err, sh.nValues = np.loadtxt(fname_inp_sh).T
 
@@ -211,10 +209,10 @@ for lmc, lsh in zip(fnro_mc, fnro_sh):
 
     ylims       = stf[varname]['ylims'] #[4., 17.]
     ylabel      = stf[varname]['label'] #'B [nT]'
-    fname_fig   = dir_figs + '/fig_vlo.%3.1f_vhi.%3.1f_%s.png'%(vlo, vhi, varname)
+    fname_fig   = pa.plot + '/fig_vlo.%3.1f_vhi.%3.1f_%s.png'%(vlo, vhi, varname)
     makefig(mc, sh, TEXT, TEXT_LOC, ylims, ylabel, fname_fig)
 
 print "\n output en: "
-print " %s \n" % dir_figs
+print " %s \n" % pa.plot
 
 #EOF

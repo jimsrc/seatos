@@ -743,11 +743,11 @@ class events_mgr(object):
             for varname in VARS.keys():
                 dt      = dT*(1+nwndw[0]+nwndw[1])/nbin
                 t, var  = selecc_window_ii(
-                    nwndw=nwndw, #rango ploteo
-                    data=[self.t_utc, VARS[varname]['value']],
-                    tini=bd.tini[i],
-                    tend=bd.tend[i]
-                )
+                            nwndw=nwndw, #rango ploteo
+                            data=[self.t_utc, VARS[varname]['value']],
+                            tini=bd.tini[i],
+                            tend=bd.tend[i]
+                          )
 
                 #--- read average CR rates before shock/disturbance
                 if self.data_name in self.CR_observs:   # is it CR data?
@@ -885,8 +885,7 @@ class events_mgr(object):
                 read_flag = getattr(self, 'read_'+self.data_name)
                 print " ---> self.read_%s: " % name, read_flag
 
-            print " exiting.... "
-            raise SystemExit
+            raise SystemExit(' Exiting...')
 
     def load_data_ACE_o7o6(self):
         tb          = self.tb
