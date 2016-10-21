@@ -287,14 +287,17 @@ if pa.lock[0]:
 print lnm
 
 gral.data_name      = lnm[0] #'ACE' #'Auger_scals' #'McMurdo' #'ACE'
-emgr = sf.events_mgr(gral, FILTER, CUTS, bounds, nBin, fgap, tb, None, structure=pa.struct)
+emgr = sf.events_mgr(
+         gral, FILTER, CUTS, bounds, nBin, fgap, tb, 
+         None, structure=pa.struct, verbose=pa.verb
+       )
 LOW, MID1, MID2, TOP = 100., pa.Vsplit[0], pa.Vsplit[1], 3000.
 for dname in lnm:
     print " ---> dataset: "+dname
     #+++ global
     emgr.data_name = dname #'Auger_BandScals'
     emgr.FILTER['vsw_filter'] = False
-    emgr.run_all(pa.verb)
+    emgr.run_all()
     if (dname==pa.lock[1] and pa.lock[0]): 
         emgr.lock_IDs()
 

@@ -365,7 +365,7 @@ def nans(sh):
 
 
 class events_mgr(object):
-    def __init__(self, gral, FILTER, CUTS, bd, nBin, fgap, tb, z_exp, structure='mc'):
+    def __init__(self, gral, FILTER, CUTS, bd, nBin, fgap, tb, z_exp, structure='mc', verbose=True):
         """
         structure: can be 'sh.mc', 'sh.i', 'mc', 'i', refering to sheath-of-mc,
                    sheath-of-icme, mc, and icme, respectively. This is to
@@ -384,6 +384,7 @@ class events_mgr(object):
         self.dir_ascii  = gral.dirs['dir_ascii']
         self.gral       = gral
         self._dirs_     = gral.dirs
+        self.verbose    = verbose
 
         #self.f_sc       = netcdf_file(gral.fnames[gral.data_name], 'r')
         self.f_events   = netcdf_file(gral.fnames['table_richardson'], 'r')
@@ -418,7 +419,7 @@ class events_mgr(object):
                 resctricted only with theses locked id's.
         """
 
-    def run_all(self, verbose=True):
+    def run_all(self):
         #----- seleccion de eventos
         self.filter_events()
         print "\n ---> filtrado de eventos (n:%d): OK\n" % (self.n_SELECC)
@@ -426,7 +427,7 @@ class events_mgr(object):
         self.load_files_and_timeshift_ii()
         #----- rebineo y promedios
         self.rebine()
-        self.rebine_final(verbose)
+        self.rebine_final()
         #----- hacer ploteos
         self.make_plots()
         #----- archivos "stuff"
@@ -502,7 +503,7 @@ class events_mgr(object):
 
                 # rebinea usando 'dt' como el ancho de nuevo bineo
                 out       = adaptar_ii(nwndw, dT, nbin, dt, t, var, self.fgap)
-                enough    = out[0]   # `True` for data with less than 100*`fgap`% of gap
+                enough    = out[0] #`True` for data with less than 100*`fgap`% of gap
                 Enough[varname]      += [ enough ]
                 ADAP[nok-1][varname] = out[1]  # donde: out[1] = [tiempo, variable]
 
@@ -520,7 +521,7 @@ class events_mgr(object):
         self.out['nEnough'] = nEnough
         self.out['Enough']  = Enough
 
-    def rebine(self):
+    def rebine(self, collect_only=False):
         """
         rebineo de c/evento
         """
@@ -534,17 +535,19 @@ class events_mgr(object):
 
         #---- quiero una lista de los eventos-id q van a incluirse en c/promedio :-)
         IDs     = {}
-        Enough  = {}
-        nEnough = {}
-        self.__ADAP__       = ADAP    = []   # conjunto de varios 'adap' (uno x c/variable)
+        Enough, nEnough = {}, {}
+        self.__ADAP__ = ADAP    = []   # conjunto de varios 'adap' (uno x c/variable)
         for varname in VARS.keys():
             IDs[varname]        = []
             Enough[varname]     = []
-            nEnough[varname]    = 0     # contador
+            nEnough[varname]    = 0     # counter
 
         # recorremos los eventos:
         nok, nbad = 0, 0
         nnn     = 0     # nro de evento q pasan el filtro a-priori
+        if collect_only:
+            self.out  = {}
+            self.out['events_data'] = {} # bag to save data from events
 
         ok = np.zeros(n_icmes,dtype=np.bool) # all `False` by default
         for i in range(n_icmes):
@@ -560,7 +563,7 @@ class events_mgr(object):
         for i in range(n_icmes):
             #np.set_printoptions(4)         # nro de digitos a imprimir cuando use numpy.arrays
             if not (ok[i] & self.SELECC[i]):   #---FILTRO--- (*1)
-                print ccl.Rn, " id:%d ---> ok, SELECC: ", ok[i], self.SELECC[i], ccl.W
+                print ccl.Rn, " id:%d ---> ok, SELECC: "%i, ok[i], self.SELECC[i], ccl.W
                 nbad +=1
                 continue
 
@@ -570,6 +573,10 @@ class events_mgr(object):
             print ccl.Gn + " id:%d ---> dT/day:%g" % (i, dT) + ccl.W
             print self.tb.tshck[i]
             nok +=1
+            if collect_only:
+                # evdata is just a pointer
+                evdata = self.out['events_data']['id_%03d'%i] = {} 
+
             # recorremos las variables:
             for varname in VARS.keys():
                 dt      = dT*(1+nwndw[0]+nwndw[1])/nbin
@@ -579,6 +586,9 @@ class events_mgr(object):
                             tini=bd.tini[i],
                             tend=bd.tend[i]
                           )
+                if collect_only:
+                    evdata['t_days'] = t
+                    evdata[varname] = var
 
                 #--- read average CR rates before shock/disturbance
                 if self.data_name in self.CR_observs:   # is it CR data?
@@ -586,18 +596,18 @@ class events_mgr(object):
                     var = 100.*(var - rate_pre[i]) / rate_pre[i]
 
                 #--- rebinea usando 'dt' como el ancho de nuevo bineo
-                out       = adaptar_ii(
-                    nwndw = nwndw, 
-                    dT = dT, 
-                    n = nbin, 
-                    dt = dt, 
-                    t = t, 
-                    r = var, 
-                    fgap = self.fgap
-                )
-                enough    = out[0]       # True: data con menos de 100*'fgap'% de gap
+                out = adaptar_ii(
+                        nwndw = nwndw, 
+                        dT = dT, 
+                        n = nbin, 
+                        dt = dt, 
+                        t = t, 
+                        r = var, 
+                        fgap = self.fgap
+                      )
+                enough    = out[0]    # True: data con menos de 100*'fgap'% de gap
                 Enough[varname]         += [ enough ]
-                ADAP[nok-1][varname]    = out[1]  # donde: out[1] = [tiempo, variable]
+                ADAP[nok-1][varname]    = out[1] # out[1] = [tiempo, variable]
 
                 if enough:
                     IDs[varname]     += [i]
@@ -623,7 +633,7 @@ class events_mgr(object):
         self.restricted_IDs = IDs[varname]
         self.IDs_locked = True
 
-    def rebine_final(self, verbose=True):
+    def rebine_final(self):
         """
         rebineo de c/evento ... PARTE FINAL
         """
@@ -651,7 +661,7 @@ class events_mgr(object):
             self.rebined_data = {} # creamos el diccionario UNA sola vez
 
         for varname in VARS.keys():
-            if verbose:
+            if self.verbose:
                 print ccl.On + " -------> procesando: %s" % VARS[varname]['label']
                 print " nEnough/nok/(nok+nbad): %d/%d/%d " % (nEnough[varname], nok, nok+nbad) + ccl.W
             VAR_adap = zeros((nok, nbin))    # perfiles rebineados (*)
@@ -664,7 +674,7 @@ class events_mgr(object):
 
             # valores medios de esta variable para c/evento
             avrVAR_adap = mvs_for_each_event(VAR_adap, nbin, nwndw, Enough[varname])
-            if verbose: print " ---> (%s) avrVAR_adap[]: \n" % varname, avrVAR_adap
+            if self.verbose: print " ---> (%s) avrVAR_adap[]: \n" % varname, avrVAR_adap
 
             VAR_avrg        = zeros(nbin)
             VAR_avrgNorm    = zeros(nbin)
