@@ -433,94 +433,6 @@ class events_mgr(object):
         #----- archivos "stuff"
         self.build_params_file()
 
-    def collect_data(self):
-        """
-        collects data from filtered events
-        """
-        nvars   = self.nvars #len(VARS)
-        n_icmes = self.tb.n_icmes
-        bd      = self.bd
-        VARS    = self.VARS
-        nbin    = self.nBin['total']
-        nwndw   = [self.nBin['before'], self.nBin['after']]
-        day     = 86400.
-
-        #---- quiero una lista de los eventos-id q van a incluirse en c/promedio :-)
-        IDs     = {}
-        Enough, nEnough = {}, {}
-        self.__ADAP__ = ADAP    = []   # conjunto de varios 'adap' (uno x c/variable)
-        for varname in VARS.keys():
-            IDs[varname]        = []
-            Enough[varname]     = []
-            nEnough[varname]    = 0     # counter
-
-        # recorremos los eventos:
-        nok, nbad = 0, 0
-        nnn       = 0     # nro de evento q pasan el filtro a-priori
-        self.out  = {}
-        self.out['events_data'] = {} # bag to save data from events
-
-        ok = np.zeros(n_icmes,dtype=np.bool) # all `False` by default
-        for i in range(n_icmes):
-            try: #no todos los elementos de 'tend' son fechas (algunos eventos no tienen fecha definida)
-                # this 'i'-event must be contained in our data-base
-                ok[i]  =  date_to_utc(bd.tini[i]) >= self.t_utc[0] #True
-                ok[i]  &= date_to_utc(bd.tend[i]) <= self.t_utc[-1]
-                if self.IDs_locked:
-                    ok[i] &= i in self.restricted_IDs
-            except: # e.g. if `bd.{tini,tend}[i]` is NaN
-                ok[i] = False
-
-        for i in range(n_icmes):
-            #np.set_printoptions(4)  # nro de digitos para imprimir numpy.arrays
-            if not (ok[i] & self.SELECC[i]):   #---FILTRO--- (*1)
-                print ccl.Rn, " id:%d ---> ok, SELECC: "%i, ok[i], self.SELECC[i], ccl.W
-                nbad +=1
-                continue
-
-            dT = (bd.tend[i] - bd.tini[i]).total_seconds()/day  # [day]
-            ADAP += [ {} ] # agrego un diccionario a la lista
-            nnn += 1
-            print ccl.Gn + " id:%d ---> dT/day:%g" % (i, dT) + ccl.W
-            print self.tb.tshck[i]
-            nok +=1
-            evdata = self.out['events_data']['id_%03d'%i] = {} # evdata is just a pointer
-            # recorremos las variables:
-            for varname in VARS.keys():
-                dt      = dT*(1+nwndw[0]+nwndw[1])/nbin
-                t, var  = selecc_window_ii(
-                            nwndw, #rango ploteo
-                            [self.t_utc, VARS[varname]['value']],
-                            bd.tini[i],
-                            bd.tend[i]
-                          )
-                evdata['t_days'] = t
-                evdata[varname] = var
-
-                if self.data_name in self.CR_observs:   # is it CR data?
-                    rate_pre = getattr(self, 'rate_pre_'+self.data_name)
-                    var = 100.*(var - rate_pre[i]) / rate_pre[i]
-
-                # rebinea usando 'dt' como el ancho de nuevo bineo
-                out       = adaptar_ii(nwndw, dT, nbin, dt, t, var, self.fgap)
-                enough    = out[0] #`True` for data with less than 100*`fgap`% of gap
-                Enough[varname]      += [ enough ]
-                ADAP[nok-1][varname] = out[1]  # donde: out[1] = [tiempo, variable]
-
-                if enough:
-                    IDs[varname]     += [i]
-                    nEnough[varname] += 1
-
-
-        print " ----> len.ADAP: %d" % len(ADAP)
-        self.__nok__    = nok
-        self.__nbad__   = nbad
-        self.out['nok']     = nok
-        self.out['nbad']    = nbad
-        self.out['IDs']     = IDs
-        self.out['nEnough'] = nEnough
-        self.out['Enough']  = Enough
-
     def rebine(self, collect_only=False):
         """
         rebineo de c/evento
@@ -545,8 +457,8 @@ class events_mgr(object):
         # recorremos los eventos:
         nok, nbad = 0, 0
         nnn     = 0     # nro de evento q pasan el filtro a-priori
+        self.out  = {}
         if collect_only:
-            self.out  = {}
             self.out['events_data'] = {} # bag to save data from events
 
         ok = np.zeros(n_icmes,dtype=np.bool) # all `False` by default
@@ -616,7 +528,6 @@ class events_mgr(object):
         print " ----> len.ADAP: %d" % len(ADAP)
         self.__nok__    = nok
         self.__nbad__   = nbad
-        self.out = {}
         self.out['nok']     = nok
         self.out['nbad']    = nbad
         self.out['IDs']     = IDs

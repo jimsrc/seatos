@@ -126,10 +126,7 @@ day                 = 86400.
 gral.fnames = fnames = {}
 fnames[pa.inp_name]       = pa.input #'%s/data_ace/64sec_mag-swepam/ace.1998-2014.nc' % HOME
 fnames['McMurdo']   = '%s/actividad_solar/neutron_monitors/mcmurdo/mcmurdo_utc_correg.dat' % HOME
-#fnames['table_richardson']  = '../../../../data_317events_iii.nc'
-#fnames['table_richardson']  = '%s/ASOC_ICME-FD/icmes_richardson/data/data_317events_iii.nc' % HOME
 fnames['table_richardson']  = '%s/ASOC_ICME-FD/icmes_richardson/data/rich_events2_ace.nc' % HOME
-#fnames['Auger_BandMuons_avrs'] = '{PAO_PROCESS}/long_trends/code_figs/avr_histos_press_shape.ok_and_3pmt.ok.txt'.format(**os.environ)  # average histogram
 
 #---- directorios de salida
 gral.dirs =  dirs   = {}
@@ -199,14 +196,14 @@ else:
 gral.data_name      = pa.inp_name #'ACE'
 
 FILTER['vsw_filter']    = False
-emgr    = sf.events_mgr(gral, FILTER, CUTS, bounds, nBin, fgap, tb, None, structure=pa.struct)
+emgr    = sf.events_mgr(gral, FILTER, CUTS, bounds, nBin, fgap, tb, None, structure=pa.struct, verbose=True)
 
 #++++ limites
 emgr.FILTER['vsw_filter']    = True
 emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = pa.limits
 emgr.filter_events()
 emgr.load_files_and_timeshift_ii()
-emgr.collect_data()
+emgr.rebine(collect_only=True)
 
 # save to file
 #---- dest directory
@@ -219,7 +216,6 @@ else:
     dir_dst += '/woShiftCorr/events_data'
 if not(os.path.isdir(dir_dst)): os.system('mkdir -p '+dir_dst)
 #-------------------
-
 events  = emgr.out['events_data'].keys()
 n_evnts = len(events)
 nobs    = len(pa.obs)
