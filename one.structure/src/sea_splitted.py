@@ -174,6 +174,21 @@ help='name of dataset of which we\'ll lock the set of selected \
 action=str_to_other_ii,
 metavar=('BOOL','NAME'),
 )
+parser.add_argument(
+'-ts', '--tshift',
+action='store_true',
+default=False,
+help='to perform a time-shift to ACE data, so that the\
+time-stamps of data is consistent with Richardson\'s list of\
+ICME borders.'
+)
+parser.add_argument(
+'-v', '--verb',
+action='store_true',
+default=False,
+help='verbose mode.'
+)
+
 
 pa = parser.parse_args()
 
@@ -219,7 +234,7 @@ MCwant  = {
 } 
 FILTER                  = {}
 FILTER['Mcmultiple']    = False # True para incluir eventos multi-MC
-FILTER['CorrShift']     = False #True
+FILTER['CorrShift']     = pa.tshift #False #True
 FILTER['wang']          = True if pa.wang[0] else False #True #False #True
 FILTER['vsw_filter']    = False #True
 FILTER['z_filter_on']   = False
@@ -279,7 +294,7 @@ for dname in lnm:
     #+++ global
     emgr.data_name = dname #'Auger_BandScals'
     emgr.FILTER['vsw_filter'] = False
-    emgr.run_all()
+    emgr.run_all(pa.verb)
     if (dname==pa.lock[1] and pa.lock[0]): 
         emgr.lock_IDs()
 

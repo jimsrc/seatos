@@ -418,7 +418,7 @@ class events_mgr(object):
                 resctricted only with theses locked id's.
         """
 
-    def run_all(self):
+    def run_all(self, verbose=True):
         #----- seleccion de eventos
         self.filter_events()
         print "\n ---> filtrado de eventos (n:%d): OK\n" % (self.n_SELECC)
@@ -426,7 +426,7 @@ class events_mgr(object):
         self.load_files_and_timeshift_ii()
         #----- rebineo y promedios
         self.rebine()
-        self.rebine_final()
+        self.rebine_final(verbose)
         #----- hacer ploteos
         self.make_plots()
         #----- archivos "stuff"
@@ -623,7 +623,7 @@ class events_mgr(object):
         self.restricted_IDs = IDs[varname]
         self.IDs_locked = True
 
-    def rebine_final(self):
+    def rebine_final(self, verbose=True):
         """
         rebineo de c/evento ... PARTE FINAL
         """
@@ -651,8 +651,9 @@ class events_mgr(object):
             self.rebined_data = {} # creamos el diccionario UNA sola vez
 
         for varname in VARS.keys():
-            print ccl.On + " -------> procesando: %s" % VARS[varname]['label'] #+ "  (%d/%d)"%(j+1,nvars)
-            print " nEnough/nok/(nok+nbad): %d/%d/%d " % (nEnough[varname], nok, nok+nbad) + ccl.W
+            if verbose:
+                print ccl.On + " -------> procesando: %s" % VARS[varname]['label']
+                print " nEnough/nok/(nok+nbad): %d/%d/%d " % (nEnough[varname], nok, nok+nbad) + ccl.W
             VAR_adap = zeros((nok, nbin))    # perfiles rebineados (*)
             # (*): uno de estos por variable
             # recorro los 'nok' eventos q pasaron el filtro de arriba:
@@ -663,7 +664,7 @@ class events_mgr(object):
 
             # valores medios de esta variable para c/evento
             avrVAR_adap = mvs_for_each_event(VAR_adap, nbin, nwndw, Enough[varname])
-            print " ---> (%s) avrVAR_adap[]: \n" % varname, avrVAR_adap
+            if verbose: print " ---> (%s) avrVAR_adap[]: \n" % varname, avrVAR_adap
 
             VAR_avrg        = zeros(nbin)
             VAR_avrgNorm    = zeros(nbin)
