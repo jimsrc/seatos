@@ -73,6 +73,12 @@ default='{HOME}/data_ace/64sec_mag-swepam/ace.1998-2015.nc'.format(**os.environ)
 help='input filename of ACE data',
 )
 parser.add_argument(
+'-ace1sec', '--inp_ACE1sec',
+type=str,
+default='{HOME}/data_ace/64sec_mag-swepam/ace.1998-2015.nc'.format(**os.environ),
+help='input filename of ACE data',
+)
+parser.add_argument(
 '-murdo', '--inp_McMurdo',
 type=str,
 default='{HOME}/actividad_solar/neutron_monitors/mcmurdo/mcmurdo_utc_correg.dat'.format(**os.environ)
@@ -202,6 +208,7 @@ day                 = 86400.
 #---- cosas input
 gral.fnames = fnames = {}
 fnames['ACE']       = pa.inp_ACE #'%s/data_ace/64sec_mag-swepam/ace.1998-2015.nc' % HOME
+fnames['ACE1sec']   = pa.inp_ACE1sec
 fnames['McMurdo']   = pa.inp_McMurdo #'%s/actividad_solar/neutron_monitors/mcmurdo/mcmurdo_utc_correg.dat' % HOME
 fnames['Auger_scals']     = pa.inp_Auger_scals #'%s/data_auger/estudios_AoP/data/unir_con_presion/data_final_2006-2013.h5' % PAO
 #fnames['Auger_BandMuons'] = '%s/data_auger/data_histogramas/all.array.avrs/temp.corrected/shape.ok_and_3pmt.ok/15min/test_temp.corrected.nc' % PAO

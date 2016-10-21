@@ -9,6 +9,7 @@ import os, sys, h5py, argparse
 from shared.ShiftTimes import ShiftCorrection, ShiftDts
 import shared.console_colors as ccl
 from shared.shared_funcs import nans, My2DArray, selecc_window_ii
+import shared.shared_funcs as sf
 
 
 def calc_beta(Temp, Pcc, B):
@@ -188,21 +189,63 @@ class _read_auger_scals(object):
         }
         return t_utc[:n], VARS
 
+def get_all_bartels():
+    dates = {}
+    ok2read = False
+    i = 0
+    for line in open('./bartels.txt','r').readlines():
+        if line in ('','\n'): continue 
+
+        if line.startswith('Post L1 Insertion'): # cut here
+            ok2read = True
+            continue
+
+        if line.startswith(' *-Seconds'):
+            ok2read = False
+            continue
+
+        if ok2read:
+            print line.split()
+            mm,dd,yyyy = map(int,line.split()[1].split('/'))
+            dates[i] = {
+                'bartel'   : int(line.split()[0]),   # Bartels rotation number
+                'date'     : datetime(yyyy, mm, dd),
+                'ACEepoch' : float(line.split()[4]),
+            }
+            #print yyyy,mm,dd, dates[i]['ACEepoch']
+            i += 1
+
+    return dates
+
+def deduce_fnms(bartels, ini, end):
+    fnms = []
+    n = len(bartels)
+    for i in range(n-1):
+        date = bartels[i]['date']
+        date_next = bartels[i+1]['date']
+        if date>=ini: #and date<end:
+            bart = bartels[i]['bartel'] # bartel rotation number
+            fnms += ['mag_data_1sec_{bart}'.format(**locals())]
+            if date>end:
+                break ## FINISHED!
+
+    return fnms
 
 
-#------- data j -------
+
+
+#----------- data handlers -----------
 class _data_ACE(object):
     """
     to read the .nc file of ACE data, built from ASCII versions
     """
-    def __init__(self, fname_inp, tshift=False):
+    def __init__(self, **kws):
         """
         if tshift==True, we return shifted versions of
         the `tb` and `bd` in load() method.
         """
-        self.fname_inp  = fname_inp
-        self.tshift     = tshift
-        self.grab_block = selecc_window_ii # {function}
+        self.fname_inp  = kws['input']
+        self.tshift     = kws['tshift']
 
     def load(self, data_name, **kws):
         f_sc   = netcdf_file(self.fname_inp, 'r')
@@ -298,14 +341,15 @@ class _data_ACE(object):
         'VARS'  : VARS,
         }
 
+    def grab_block(self, vname=None, **kws):
+        return selecc_window_ii(**kws)
 
 class _data_Auger_BandMuons(object):
     """
     for muon band of Auger charge histograms
     """
-    def __init__(self, fname_inp, tshift=False):
-        self.fname_inp  = fname_inp
-        self.grab_block = selecc_window_ii # {function}
+    def __init__(self, **kws):
+        self.fname_inp  = kws['input']
 
     def load(self, data_name, **kws):
         """
@@ -335,14 +379,15 @@ class _data_Auger_BandMuons(object):
         'VARS'   : VARS,
         }
 
+    def grab_block(self, vname=None, **kws):
+        return selecc_window_ii(**kws)
 
 class _data_Auger_BandScals(object):
     """
     for muon band of Auger charge histograms
     """
-    def __init__(self, fname_inp, tshift=False):
-        self.fname_inp  = fname_inp
-        self.grab_block = selecc_window_ii # {function}
+    def __init__(self, **kws):
+        self.fname_inp  = kws['input']
 
     def load(self, data_name, **kws):
         """
@@ -372,12 +417,13 @@ class _data_Auger_BandScals(object):
         'VARS'   : VARS,
         }
 
+    def grab_block(self, vname=None, **kws):
+        return selecc_window_ii(**kws)
 
 class _data_ACE_o7o6(object):
-    def __init__(self, fname_inp, tshift=False):
-        self.fname_inp  = fname_inp
-        self.tshift     = tshift
-        self.grab_block = selecc_window_ii # {function}
+    def __init__(self, **kws):
+        self.fname_inp  = kws['input']
+        self.tshift     = kws['tshift']
 
     def load(self, data_name, **kws):
         tb          = self.tb
@@ -411,11 +457,12 @@ class _data_ACE_o7o6(object):
         'VARS'   : VARS,
         }
 
+    def grab_block(self, vname=None, **kws):
+        return selecc_window_ii(**kws)
 
 class _data_Auger_scals(object):
-    def __init__(self, fname_inp, tshift=False):
-        self.fname_inp  = fname_inp
-        self.grab_block = selecc_window_ii # {function}
+    def __init__(self, **kws):
+        self.fname_inp  = kws['input']
 
     def load(self, data_name, **kws):
         """
@@ -438,11 +485,13 @@ class _data_Auger_scals(object):
         'VARS'   : VARS,
         }
 
+    def grab_block(self, vname=None, **kws):
+        return selecc_window_ii(**kws)
+
 
 class _data_McMurdo(object):
-    def __init__(self, fname_inp, tshift=False):
-        self.fname_inp  = fname_inp
-        self.grab_block = selecc_window_ii # {function}
+    def __init__(self, **kws):
+        self.fname_inp  = kws['input']
 
     def load(self, data_name, **kws):
         fname_inp   = self.fname_inp
@@ -462,5 +511,68 @@ class _data_McMurdo(object):
         'VARS'   : VARS,
         }
 
+    def grab_block(self, vname=None, **kws):
+        return selecc_window_ii(**kws)
+
+#--- reader para ACE 1seg MAG data
+class _data_ACE1sec(object):
+    def __init__(object, *kws):
+        self.dir_inp = kws['input']
+
+    def load(self, **kws):
+        import cython_wrapper
+        self.cw = cython_wrapper
+
+        # contains: bartels rotation numbers, ACEepochs, adn datetimes.
+        self.bartels = get_all_bartels() # {dict}
+
+        self.dname = dname = kws['data_name']
+        VARS = {}
+        VARS['Bmag.'+dname] = {
+            'value' : None,
+            'lims'  : [5., 18.],
+            'label' : 'B [nT]'
+        }
+        VARS['rmsB.'+dname] = {
+            'value' : None, #self.calc_rmsB()
+            'lims'  : [0.01, 2.],
+            'label' : 'rms($\hat B$) [nT]'
+        }
+        return {
+        't_utc' : None,
+        'VARS'  : VARS,
+        }
+
+    def grab_block(self, vname=None, **kws):
+        # `kws['data']` not tiene sentido aqui
+        tini = kws['tini'] # {datetime}
+        tend = kws['tend'] # {datetime}
+       
+        # -- deduce fnm_ls
+        fnm_ls = deduce_fnms(self.bartels, tini, tend)
+
+        # -- deduce ace_ini, ace_end
+        ace_ini = sf.date2ACEepoch(tini)
+        ace_end = sf.date2ACEepoch(tend)
+
+        m = self.cw(fnm_ls)  # cython function
+        m.indexes_for_period(ace_ini, ace_end)
+        t_ace    = m.return_var('ACEepoch')
+        varname  = vname.replace('.'+self.dname,'') # remove '.ACE1sec'
+        var      = m.return_var(varname)
+
+        t_utc = np.zeros(t_ace.size)
+        for i in range(t_ace.size):
+            tmp      = sf.ACEepoch2date(t_ace[i])
+            t_utc[i] = sf.date2utc(tmp)
+
+        return selecc_window_ii(
+                data=[t_utc, var], 
+                **kws
+                )
+
+if __name__=='__main__':
+    ini, end = datetime(2005,1,1), datetime(2005,6,1)
+    bartels = get_all_bartels()
 
 #EOF

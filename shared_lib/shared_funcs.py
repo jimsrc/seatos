@@ -502,7 +502,8 @@ class events_mgr(object):
                             nwndw=nwndw, #rango ploteo
                             data=[self.t_utc, VARS[varname]['value']],
                             tini=bd.tini[i],
-                            tend=bd.tend[i]
+                            tend=bd.tend[i],
+                            vname=varname, # for ACE 1sec
                           )
                 if collect_only:
                     evdata['t_days'] = t
@@ -630,7 +631,7 @@ class events_mgr(object):
         if not( getattr(self, read_flag) ):
             attname = 'load_data_'+self.data_name
             dh = _data_handler(
-                    fname_inp=self.gral.fnames[self.data_name], 
+                    input=self.gral.fnames[self.data_name], 
                     tshift=self.FILTER['CorrShift']
                  )
 
@@ -1190,6 +1191,16 @@ class My2DArray(object):
     def __getattr__(self, attnm):
         return getattr(self.this, attnm)
 
+def ACEepoch2date(ace_epoch):
+    """
+    ace_epoch: seconds since 1/1/96
+    """
+    date = datetime(1996,1,1) + timedelta(seconds=ace_epoch)
+    return date
+
+def date2ACEepoch(date):
+    ace_o = datetime(1996,1,1)
+    return (date - ace_o).total_seconds()
 
 #+++++++++++++++++++++++++++++++++
 if __name__=='__main__':
