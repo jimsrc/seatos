@@ -393,7 +393,7 @@ class events_mgr(object):
         #--- put False to all possible data-flags (all CR detector-names must be included in 'self.CR_observs')
         self.names_ok   = ('Auger_BandMuons', 'Auger_BandScals',  'Auger_scals', 'McMurdo', 'ACE', 'ACE_o7o6')
         for name in self.names_ok:
-            read_flag   = 'read_'+self.data_name
+            read_flag   = 'read_'+name
             setattr(self, read_flag, False) # True: if files are already read
 
         #--- names of CR observatories
@@ -419,12 +419,12 @@ class events_mgr(object):
                 resctricted only with theses locked id's.
         """
 
-    def run_all(self):
+    def run_all(self, _data_handler):
         #----- seleccion de eventos
         self.filter_events()
         print "\n ---> filtrado de eventos (n:%d): OK\n" % (self.n_SELECC)
         #----- load data y los shiftimes "omni"
-        self.load_files_and_timeshift_ii()
+        self.load_files_and_timeshift_ii(_data_handler)
         #----- rebineo y promedios
         self.rebine()
         self.rebine_final()
@@ -473,7 +473,7 @@ class events_mgr(object):
                 ok[i] = False
 
         for i in range(n_icmes):
-            #np.set_printoptions(4)         # nro de digitos a imprimir cuando use numpy.arrays
+            #np.set_printoptions(4) # nro de digitos a imprimir al usar numpy.arrays
             if not (ok[i] & self.SELECC[i]):   #---FILTRO--- (*1)
                 print ccl.Rn, " id:%d ---> ok, SELECC: "%i, ok[i], self.SELECC[i], ccl.W
                 nbad +=1
@@ -492,7 +492,13 @@ class events_mgr(object):
             # recorremos las variables:
             for varname in VARS.keys():
                 dt      = dT*(1+nwndw[0]+nwndw[1])/nbin
-                t, var  = selecc_window_ii(
+                #t, var  = selecc_window_ii(
+                #            nwndw=nwndw, #rango ploteo
+                #            data=[self.t_utc, VARS[varname]['value']],
+                #            tini=bd.tini[i],
+                #            tend=bd.tend[i]
+                #          )
+                t, var  = self.grab_window(
                             nwndw=nwndw, #rango ploteo
                             data=[self.t_utc, VARS[varname]['value']],
                             tini=bd.tini[i],
@@ -611,93 +617,47 @@ class events_mgr(object):
         self.out['dVARS']    = stuff
         self.out['tnorm']    = tnorm #OUT['dVARS'][first_varname][2] # deberia ser =tnorm
 
-    def __getattr__(self, attname):
+    """def __getattr__(self, attname):
         if attname[:10]=='load_data_':
-            return self.attname
+            return self.attname"""
 
-    def load_files_and_timeshift_ii(self):
+    def load_files_and_timeshift_ii(self, _data_handler):
         read_flag = 'read_'+self.data_name # e.g. self.read_Auger
-        """
         if not(read_flag in self.__dict__.keys()): # do i know u?
-             setattr(self, read_flag, False) #True: if files are already read
-        """
+            setattr(self, read_flag, False) #True: if files are already read
+
         #--- read data and mark flag as read!
         if not( getattr(self, read_flag) ):
             attname = 'load_data_'+self.data_name
-            getattr(self, attname)()    # call method 'load_data_...()'
+            dh = _data_handler(
+                    fname_inp=self.gral.fnames[self.data_name], 
+                    tshift=self.FILTER['CorrShift']
+                 )
+
+            # point to the method that selects data from
+            # a given window
+            self.grab_window = dh.grab_block # {method}
+
+            # grab/point-to data from disk
+            #NOTE: if self.FILTER['CorrShift']==True, then `self.tb` and
+            # `self.bd` will be shifted!
+            out = dh.load(self.data_name, tb=self.tb, bd=self.bd)
+
+            # attribute data pointers to `self`
+            for nm, value in out.iteritems():
+                # set `t_utc` and `VAR` to `self`
+                setattr(self,nm,value)
+
+            self.nvars = len(self.VARS.keys())
+
+            # mark as read
             self.read_flag = True       # True: ya lei los archivos input
-            #setattr(self, read_flag, True) # True: if files are already read
 
         #--- check weird case
         assert self.data_name in self.names_ok,\
             "  ERROR: not on my list!: %s" % self.data_name+\
             "\n Must be one of these: %r" % [self.names_ok]
         
-    def load_data_ACE_o7o6(self):
-        from readers import _data_ACE_o7o6
-        d   = _data_ACE_o7o6(self.gral.fnames[self.data_name])
-        out = d.load(self.data_name)
-
-        for nm, value in out.iteritems():
-            # set `t_utc` and `VAR` to `self`
-            setattr(self,nm,value)
-        self.nvars  = len(VARS.keys())
-
-    def load_data_Auger_scals(self):
-        from readers import _data_Auger_scals
-        d   = _data_Auger_scals(self.gral.fnames[self.data_name])
-        out = d.load(self.data_name)
-
-        for nm, value in out.iteritems():
-            # set `t_utc` and `VAR` to `self`
-            setattr(self,nm,value)
-        self.nvars  = len(self.VARS.keys())
-
-    def load_data_Auger_BandMuons(self):
-        from readers import _data_Auger_BandMuons
-        d   = _data_Auger_BandMuons(self.gral.fnames[self.data_name])
-        out = d.load(self.data_name)
-
-        for nm, value in out.iteritems():
-            # set `t_utc` and `VAR` to `self`
-            setattr(self,nm,value)
-        self.nvars = len(self.VARS.keys())
-
-    def load_data_Auger_BandScals(self):
-        """
-        para leer la data de histogramas Auger, banda scalers
-        """
-        from readers import _data_Auger_BandMuons
-        d   = _data_Auger_BandMuons(self.gral.fnames[self.data_name])
-        out = d.load(self.data_name)
-
-        for nm, value in out.iteritems():
-            # set `t_utc` and `VAR` to `self`
-            setattr(self,nm,value)
-        self.nvars  = len(self.VARS.keys())
-
-    def load_data_McMurdo(self):
-        from readers import _data_McMurdo
-        d   = _data_McMurdo(self.gral.fnames[self.data_name])
-        out = d.load(self.data_name)
-
-        for nm, value in out.iteritems():
-            # set `t_utc` and `VAR` to `self`
-            setattr(self,nm,value)
-        self.nvars  = len(self.VARS.keys())
-
-    def load_data_ACE(self):
-        from readers import _data_ACE
-        d   = _data_ACE(self.gral.fnames[self.data_name], self.FILTER['CorrShift'])
-        out = d.load(self.data_name, tb=self.tb, bd=self.bd)
-        #NOTE: if self.FILTER['CorrShift']==True, then `self.tb` and
-        # `self.bd` will be shifted!
-        for nm, value in out.iteritems():
-            # set `t_utc` and `VAR` to `self`
-            setattr(self,nm,value)
-
-        self.nvars = len(self.VARS.keys())
-
     def make_plots(self):
         """
         #---- generar figuras y asciis de los perfiles promedio/mediana

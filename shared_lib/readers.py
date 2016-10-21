@@ -8,7 +8,7 @@ import os, sys, h5py, argparse
 #--- shared libs
 from shared.ShiftTimes import ShiftCorrection, ShiftDts
 import shared.console_colors as ccl
-from shared.shared_funcs import nans, My2DArray
+from shared.shared_funcs import nans, My2DArray, selecc_window_ii
 
 
 def calc_beta(Temp, Pcc, B):
@@ -190,7 +190,7 @@ class _read_auger_scals(object):
 
 
 
-#------- data parsers -------
+#------- data j -------
 class _data_ACE(object):
     """
     to read the .nc file of ACE data, built from ASCII versions
@@ -200,8 +200,9 @@ class _data_ACE(object):
         if tshift==True, we return shifted versions of
         the `tb` and `bd` in load() method.
         """
-        self.fname_inp = fname_inp
-        self.tshift    = tshift
+        self.fname_inp  = fname_inp
+        self.tshift     = tshift
+        self.grab_block = selecc_window_ii # {function}
 
     def load(self, data_name, **kws):
         f_sc   = netcdf_file(self.fname_inp, 'r')
@@ -304,10 +305,9 @@ class _data_Auger_BandMuons(object):
     """
     def __init__(self, fname_inp, tshift=False):
         self.fname_inp  = fname_inp
-        self.tshift     = tshift
+        self.grab_block = selecc_window_ii # {function}
 
-
-    def load(self, data_name):
+    def load(self, data_name, **kws):
         """
         para leer la data de histogramas Auger
         """
@@ -342,10 +342,9 @@ class _data_Auger_BandScals(object):
     """
     def __init__(self, fname_inp, tshift=False):
         self.fname_inp  = fname_inp
-        self.tshift     = tshift
+        self.grab_block = selecc_window_ii # {function}
 
-
-    def load(self, data_name):
+    def load(self, data_name, **kws):
         """
         para leer la data de histogramas Auger
         """
@@ -378,6 +377,7 @@ class _data_ACE_o7o6(object):
     def __init__(self, fname_inp, tshift=False):
         self.fname_inp  = fname_inp
         self.tshift     = tshift
+        self.grab_block = selecc_window_ii # {function}
 
     def load(self, data_name, **kws):
         tb          = self.tb
@@ -413,10 +413,11 @@ class _data_ACE_o7o6(object):
 
 
 class _data_Auger_scals(object):
-    def __init__(self, fname_inp):
+    def __init__(self, fname_inp, tshift=False):
         self.fname_inp  = fname_inp
+        self.grab_block = selecc_window_ii # {function}
 
-    def load(self, data_name):
+    def load(self, data_name, **kws):
         """
         solo cargamos Auger Scalers
         """
@@ -439,10 +440,11 @@ class _data_Auger_scals(object):
 
 
 class _data_McMurdo(object):
-    def __init__(self, fname_inp):
-        self.fname_inp = fname_inp
+    def __init__(self, fname_inp, tshift=False):
+        self.fname_inp  = fname_inp
+        self.grab_block = selecc_window_ii # {function}
 
-    def load(self, data_name):
+    def load(self, data_name, **kws):
         fname_inp   = self.fname_inp
         data_murdo  = np.loadtxt(fname_inp)
         t_utc       = t_utc = data_murdo[:,0]

@@ -292,23 +292,29 @@ emgr = sf.events_mgr(
          None, structure=pa.struct, verbose=pa.verb
        )
 LOW, MID1, MID2, TOP = 100., pa.Vsplit[0], pa.Vsplit[1], 3000.
+
+#--- import lib of the i/o classes for
+#    each `dname`
+from shared import readers
+
 for dname in lnm:
     print " ---> dataset: "+dname
+    data_handler = getattr(readers,'_data_'+dname)
     #+++ global
     emgr.data_name = dname #'Auger_BandScals'
     emgr.FILTER['vsw_filter'] = False
-    emgr.run_all()
+    emgr.run_all(data_handler)
     if (dname==pa.lock[1] and pa.lock[0]): 
         emgr.lock_IDs()
 
     #+++ split
     emgr.FILTER['vsw_filter'] = True
     emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = LOW, MID1 
-    emgr.run_all()
+    emgr.run_all(data_handler)
     emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID1, MID2 
-    emgr.run_all()
+    emgr.run_all(data_handler)
     emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = MID2, TOP 
-    emgr.run_all()
+    emgr.run_all(data_handler)
 
 print " ---> we processed:"
 for dname in lnm:
