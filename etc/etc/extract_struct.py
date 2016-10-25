@@ -23,6 +23,18 @@ default='ACE',
 help='name/flag of input data. Must be one of these: ACE, ACE_o7o6, Auger_BandMuons, Auger_BandScals, McMurdo.',
 )
 parser.add_argument(
+'-rich', '--rich_csv',
+type=str,
+default='{ASO}/icmes_richardson/RichardsonList_until.2016.csv'.format(**os.environ),
+help='.csv file for Richardson catalog of ICMEs',
+)
+parser.add_argument(
+'-avr', '--avr',
+type=str,
+default='{ASO}/icmes_richardson/data/rich_events2_ace.nc'.format(**os.environ),
+help='.csv file for Richardson catalog of ICMEs',
+)
+parser.add_argument(
 '-dd', '--dir_data',
 type=str,
 default='../ascii',
@@ -126,7 +138,7 @@ day                 = 86400.
 gral.fnames = fnames = {}
 fnames[pa.inp_name]       = pa.input #'%s/data_ace/64sec_mag-swepam/ace.1998-2014.nc' % HOME
 fnames['McMurdo']   = '%s/actividad_solar/neutron_monitors/mcmurdo/mcmurdo_utc_correg.dat' % HOME
-fnames['table_richardson']  = '%s/ASOC_ICME-FD/icmes_richardson/data/rich_events2_ace.nc' % HOME
+fnames['table_richardson']  = pa.avr # .nc file w/ average values
 
 #---- directorios de salida
 gral.dirs =  dirs   = {}
@@ -172,7 +184,7 @@ nBin['total']           = (1+nBin['before']+nBin['after'])*nBin['bins_per_utime'
 fgap                    = 0.2
 
 #--- bordes de estructura
-tb = sf.RichTable('{ASO}/icmes_richardson/RichardsonList_until.2016.csv'.format(**os.environ))
+tb = sf.RichTable(pa.rich_csv)
 tb.read()
 
 #--- bordes de estructura
@@ -192,6 +204,7 @@ elif pa.struct=='mc':
 else:
     raise SystemExit(' ---> wrong structure! : '+pa.struct)
 
+from shared import readers
 #+++++++++++++++++++++++++++++++++++++++++++++++++
 gral.data_name      = pa.inp_name #'ACE'
 
@@ -202,7 +215,10 @@ emgr    = sf.events_mgr(gral, FILTER, CUTS, bounds, nBin, fgap, tb, None, struct
 emgr.FILTER['vsw_filter']    = True
 emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = pa.limits
 emgr.filter_events()
-emgr.load_files_and_timeshift_ii()
+emgr.load_files_and_timeshift_ii(
+    _data_handler = getattr(readers,'_data_'+emgr.data_name),
+    obs_check = pa.obs
+)
 emgr.rebine(collect_only=True)
 
 # save to file
@@ -225,6 +241,7 @@ for id, i in zip(events, range(n_evnts)):
     ndata    = len(t)
     data_out = np.nan*np.ones((ndata, 1+nobs))
     data_out[:,0] = t
+    #import pdb; pdb.set_trace()
     for obs, io in zip(pa.obs, range(nobs)):
         data_out[:,io+1] = emgr.out['events_data'][id][obs+'.'+emgr.data_name]
 

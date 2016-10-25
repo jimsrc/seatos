@@ -1,14 +1,11 @@
 #!/usr/bin/env ipython
 # -*- coding: utf-8 -*- 
-from pylab import find, pause, figure, savefig, close
 from datetime import datetime, time, timedelta
 import numpy as np
 import console_colors as ccl
 from scipy.io.netcdf import netcdf_file
 from ShiftTimes import ShiftCorrection, ShiftDts
 import os, argparse
-import matplotlib.patches as patches
-import matplotlib.transforms as transforms
 import h5py
 from h5py import File as h5
 from numpy import (
@@ -16,6 +13,11 @@ from numpy import (
     isnan, min, max, zeros, ones, size, loadtxt
 )
 from os.path import isfile, isdir
+from pylab import find, pause
+if 'DISPLAY' in os.environ: # to avoid crash when running remotely
+    from pylab import figure, savefig, close
+    import matplotlib.patches as patches
+    import matplotlib.transforms as transforms
 
 #from read_NewTable import tshck, tini_icme, tend_icme, tini_mc, tend_mc, n_icmes, MCsig
 #from z_expansion_gulisano import z as z_exp
@@ -391,7 +393,7 @@ class events_mgr(object):
         print " -------> archivos input leidos!"
 
         #--- put False to all possible data-flags (all CR detector-names must be included in 'self.CR_observs')
-        self.names_ok   = ('Auger_BandMuons', 'Auger_BandScals',  'Auger_scals', 'McMurdo', 'ACE', 'ACE_o7o6')
+        self.names_ok   = ('Auger_BandMuons', 'Auger_BandScals',  'Auger_scals', 'McMurdo', 'ACE', 'ACE_o7o6', 'ACE1sec')
         for name in self.names_ok:
             read_flag   = 'read_'+name
             setattr(self, read_flag, False) # True: if files are already read
@@ -474,6 +476,7 @@ class events_mgr(object):
 
         for i in range(n_icmes):
             #np.set_printoptions(4) # nro de digitos a imprimir al usar numpy.arrays
+            #import pdb; pdb.set_trace()
             if not (ok[i] & self.SELECC[i]):   #---FILTRO--- (*1)
                 print ccl.Rn, " id:%d ---> ok, SELECC: "%i, ok[i], self.SELECC[i], ccl.W
                 nbad +=1
@@ -492,12 +495,6 @@ class events_mgr(object):
             # recorremos las variables:
             for varname in VARS.keys():
                 dt      = dT*(1+nwndw[0]+nwndw[1])/nbin
-                #t, var  = selecc_window_ii(
-                #            nwndw=nwndw, #rango ploteo
-                #            data=[self.t_utc, VARS[varname]['value']],
-                #            tini=bd.tini[i],
-                #            tend=bd.tend[i]
-                #          )
                 t, var  = self.grab_window(
                             nwndw=nwndw, #rango ploteo
                             data=[self.t_utc, VARS[varname]['value']],
@@ -505,6 +502,17 @@ class events_mgr(object):
                             tend=bd.tend[i],
                             vname=varname, # for ACE 1sec
                           )
+
+                if type(t)==type(var)==int and [t,var]==[-1,-1]:
+                    #TODO: watch for `nok` and `evdata`
+                    print " >>>>>>>>> ", i, varname
+                    Enough[varname] += [False]
+                    ADAP[nok-1][varname] = [None, None]
+                    if collect_only:
+                        evdata['t_days'] = []
+                        evdata[varname]  = []
+                    continue # error, no data for this `varname`
+
                 if collect_only:
                     evdata['t_days'] = t
                     evdata[varname] = var
@@ -529,9 +537,11 @@ class events_mgr(object):
                 ADAP[nok-1][varname]    = out[1] # out[1] = [tiempo, variable]
 
                 if enough:
+                    #import pdb; pdb.set_trace()
                     IDs[varname]     += [i]
                     nEnough[varname] += 1
 
+        #NOTE: `ADAP` points to `self.__ADAP__`
         print " ----> len.ADAP: %d" % len(ADAP)
         self.__nok__    = nok
         self.__nbad__   = nbad
@@ -569,10 +579,7 @@ class events_mgr(object):
         IDs     = self.out['IDs']
         nok     = self.out['nok']
         nbad    = self.out['nbad']
-
-        stuff       = {} #[]
-        #nok = len(ADAP)/nvars  # (*)
-        # (*) la dim de 'ADAP' es 'nvars' por el nro de eventos q pasaro el filtro en (*1)
+        stuff   = {} #[]
 
         # Hacemos un lugar para la data rebineada (posible uso post-analisis)
         if self.data_name==self.data_name_:
@@ -610,7 +617,8 @@ class events_mgr(object):
                 VAR_std[i] = np.std(VAR_adap.T[i,cond])    # std del mismo conjunto de datos
 
             first_varname = ADAP[0].keys()[0]
-            tnorm   = ADAP[0][first_varname][0] # tiempo del primer evento (0), usando la 1ra variable
+            #TODO: change the `20` for something general below.
+            tnorm   = ADAP[20][first_varname][0] # tiempo del primer evento (0), usando la 1ra variable #TODO: borrar el `20`!!
             stuff[varname] = [VAR_avrg, VAR_medi, VAR_std, ndata, avrVAR_adap]
             # NOTA: chekar q 'ADAP[j][varname][0]' sea igual para TODOS los
             #       eventos 'j', y para TODOS los 'varname'.
@@ -622,7 +630,7 @@ class events_mgr(object):
         if attname[:10]=='load_data_':
             return self.attname"""
 
-    def load_files_and_timeshift_ii(self, _data_handler):
+    def load_files_and_timeshift_ii(self, _data_handler, obs_check=None):
         read_flag = 'read_'+self.data_name # e.g. self.read_Auger
         if not(read_flag in self.__dict__.keys()): # do i know u?
             setattr(self, read_flag, False) #True: if files are already read
@@ -642,15 +650,21 @@ class events_mgr(object):
             # grab/point-to data from disk
             #NOTE: if self.FILTER['CorrShift']==True, then `self.tb` and
             # `self.bd` will be shifted!
-            out = dh.load(self.data_name, tb=self.tb, bd=self.bd)
+            out = dh.load(data_name=self.data_name, tb=self.tb, bd=self.bd)
 
             # attribute data pointers to `self`
             for nm, value in out.iteritems():
                 # set `t_utc` and `VAR` to `self`
                 setattr(self,nm,value)
+    
+            # check that we are grabbing observables of our 
+            # interest
+            if obs_check is not None:
+                for nm in self.VARS.keys():
+                    assert nm.replace('.'+self.data_name,'') in obs_check,\
+                        " %s is not in list %r"%(nm,obs_check)
 
             self.nvars = len(self.VARS.keys())
-
             # mark as read
             self.read_flag = True       # True: ya lei los archivos input
 
@@ -754,8 +768,8 @@ class events_mgr(object):
                 MCflag: %s \n\
                 WangFlag: %s' % (N_selec, N_final, nBin['bins_per_utime'], MCwant['alias'], WangFlag)
 
-            makefig(mediana, average, std_err, nValues, self.out['tnorm'], SUBTITLE,
-                    ylims, ylabel, fname_fig)
+            makefig(mediana, average, std_err, nValues, self.out['tnorm'], 
+                    SUBTITLE, ylims, ylabel, fname_fig)
 
             fdataout = '%s_%s.txt' % (FNAME_ASCII, varname) #self.VARS[i][1])
             dataout = np.array([self.out['tnorm'] , mediana, average, std_err, nValues])
@@ -932,7 +946,6 @@ class events_mgr(object):
             print " ---> i_dt: \n", i_dt
             raw_input()"""
             dRicmeCond   = (i_dR>=dR_lo) & (i_dR<dR_hi)
-
 
         #------- filtro total
         SELECC  = np.ones(tb.n_icmes, dtype=bool)

@@ -18,3 +18,14 @@ export SCLS=$AUGER_REPO/scl.build_final/test.h5
 ./sea_splitted.py -- --ace $ACE  --mcmurdo 0  --avr $AVR  --rich_csv $RICH_CSV --auger_hsts 0  --auger_scls 0  --dir_plot ./test  --dir_data ./test  --suffix _test_  --icme_flag 2  --struct mc  --wang 1 90.  --Vsplit 450. 550.
 ```
 Note that, you can use `0` for `--ace` and `--mcmurdo`, to avoid processing them.
+
+
+---
+# for hegea:
+```bash
+export RICH_CSV=./data/RichardsonList_until.2016.csv
+export AVR=./data/rich_events2_ace.nc
+export ACE=$HOME/data_ace/64sec_mag-swepam/ace.1998-2015.nc
+export ACE1sec=$HOME/data_ace/mag_data_1sec   # directory
+./sea_splitted.py -- -ace 0  -ace1sec $ACE1sec  -murdo 0  -avr $AVR --rich_csv $RICH_CSV -ahm 0  -ahs 0  -as 0  --dir_plot ./test2 --dir_data ./test2 --suffix _test_  --icme_flag 0.1.2.2H  --struct i
+```

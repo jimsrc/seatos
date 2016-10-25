@@ -205,7 +205,7 @@ def get_all_bartels():
             continue
 
         if ok2read:
-            print line.split()
+            #print line.split()
             mm,dd,yyyy = map(int,line.split()[1].split('/'))
             dates[i] = {
                 'bartel'   : int(line.split()[0]),   # Bartels rotation number
@@ -217,15 +217,15 @@ def get_all_bartels():
 
     return dates
 
-def deduce_fnms(bartels, ini, end):
+def deduce_fnms(bartels, ini, end, subdir=''):
     fnms = []
     n = len(bartels)
     for i in range(n-1):
         date = bartels[i]['date']
         date_next = bartels[i+1]['date']
-        if date>=ini: #and date<end:
+        if date_next>=ini: #and date<end:
             bart = bartels[i]['bartel'] # bartel rotation number
-            fnms += ['mag_data_1sec_{bart}'.format(**locals())]
+            fnms += [subdir+'/mag_data_1sec_{bart}.hdf'.format(**locals())]
             if date>end:
                 break ## FINISHED!
 
@@ -516,7 +516,7 @@ class _data_McMurdo(object):
 
 #--- reader para ACE 1seg MAG data
 class _data_ACE1sec(object):
-    def __init__(object, *kws):
+    def __init__(self, **kws):
         self.dir_inp = kws['input']
 
     def load(self, **kws):
@@ -525,6 +525,7 @@ class _data_ACE1sec(object):
 
         # contains: bartels rotation numbers, ACEepochs, adn datetimes.
         self.bartels = get_all_bartels() # {dict}
+        self.nbartels = len(self.bartels)
 
         self.dname = dname = kws['data_name']
         VARS = {}
@@ -533,39 +534,64 @@ class _data_ACE1sec(object):
             'lims'  : [5., 18.],
             'label' : 'B [nT]'
         }
-        VARS['rmsB.'+dname] = {
-            'value' : None, #self.calc_rmsB()
-            'lims'  : [0.01, 2.],
-            'label' : 'rms($\hat B$) [nT]'
-        }
+        #VARS['rmsB.'+dname] = {
+        #    'value' : None, #self.calc_rmsB()
+        #    'lims'  : [0.01, 2.],
+        #    'label' : 'rms($\hat B$) [nT]'
+        #}
         return {
-        't_utc' : None,
+        # this is the period for available data in our input directory
+        't_utc' : [871516800, 1468713600], # [utc sec]
         'VARS'  : VARS,
         }
 
     def grab_block(self, vname=None, **kws):
-        # `kws['data']` not tiene sentido aqui
-        tini = kws['tini'] # {datetime}
-        tend = kws['tend'] # {datetime}
+        # alias
+        OneDay = timedelta(days=1) # {timedelta}
+        # time extent of queried data, in terms of the 
+        # size of the structure
+        nbef, naft = kws['nwndw']
+
+        # range of requested data
+        tini = kws['tini'] - nbef*OneDay # {datetime}
+        tend = kws['tend'] + naft*OneDay # {datetime}
+
+        # if the bounds of the events are out of the
+        # boundaries of the available data, return error
+        if self.bartels[0]['date']>tini or \
+                self.bartels[self.nbartels-1]['date']<tend:
+            return -1, -1 # no data for this `vname`
        
         # -- deduce fnm_ls
-        fnm_ls = deduce_fnms(self.bartels, tini, tend)
+        subdir = '{HOME}/data_ace/mag_data_1sec'.format(**os.environ)
+        fnm_ls = deduce_fnms(self.bartels, tini, tend, subdir)
+        for fnm in fnm_ls:
+            print fnm
+            assert os.path.isfile(fnm)
 
         # -- deduce ace_ini, ace_end
         ace_ini = sf.date2ACEepoch(tini)
         ace_end = sf.date2ACEepoch(tend)
 
-        m = self.cw(fnm_ls)  # cython function
+        m = self.cw.mag_l2(fnm_ls)  # cython function
         m.indexes_for_period(ace_ini, ace_end)
-        t_ace    = m.return_var('ACEepoch')
+        #NOTE: make `copy()` to avoid memory overlapping? (maybe
+        # some weird numpy implementation)
+        t_ace    = m.return_var('ACEepoch').copy()
         varname  = vname.replace('.'+self.dname,'') # remove '.ACE1sec'
-        var      = m.return_var(varname)
+        var      = m.return_var(varname).copy()
+        #assert len(var)!=1 and var!=-1, ' ## wrong varname!' 
+        if type(var)==int: 
+            assert var!=-1, " ## error: wrong varname "
 
+        cc = var<-100.
+        var[cc] = np.nan # put NaN in flags
         t_utc = np.zeros(t_ace.size)
         for i in range(t_ace.size):
             tmp      = sf.ACEepoch2date(t_ace[i])
             t_utc[i] = sf.date2utc(tmp)
-
+        kws.pop('data') # because its 'data' does not make sense here, and
+                        # therefore we can replace it below.
         return selecc_window_ii(
                 data=[t_utc, var], 
                 **kws
