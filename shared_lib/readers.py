@@ -519,6 +519,7 @@ class _data_ACE1sec(object):
     def __init__(self, **kws):
         self.dir_inp = kws['input']
 
+    #@profile
     def load(self, **kws):
         import cython_wrapper
         self.cw = cython_wrapper
@@ -541,10 +542,13 @@ class _data_ACE1sec(object):
         #}
         return {
         # this is the period for available data in our input directory
-        't_utc' : [871516800, 1468713600], # [utc sec]
+        #'t_utc' : [883180800, 1468713600], # [utc sec]
+        't_utc' : [sf.date2utc(self.bartels[0]['date']), 
+                   sf.date2utc(self.bartels[self.nbartels-1]['date'])], # [utc sec]
         'VARS'  : VARS,
         }
-
+    
+    #@profile
     def grab_block(self, vname=None, **kws):
         # alias
         OneDay = timedelta(days=1) # {timedelta}
@@ -558,9 +562,23 @@ class _data_ACE1sec(object):
 
         # if the bounds of the events are out of the
         # boundaries of the available data, return error
-        if self.bartels[0]['date']>tini or \
-                self.bartels[self.nbartels-1]['date']<tend:
-            return -1, -1 # no data for this `vname`
+        assert self.bartels[0]['date']<=tini and \
+                self.bartels[self.nbartels-1]['date']>=tend,\
+            """
+            # no data for this `vname` in 
+            # this window!
+            --- window of available data:
+            ini: {d_ini}
+            end: {d_end}
+            --- window of requested data:
+            ini: {r_ini}
+            end: {r_end}
+            """.format(
+            r_ini = tini,
+            r_end = tend,
+            d_ini = self.bartels[0]['date'],
+            d_end = self.bartels[self.nbartels-1]['date'],
+            )
        
         # -- deduce fnm_ls
         subdir = '{HOME}/data_ace/mag_data_1sec'.format(**os.environ)
@@ -577,7 +595,7 @@ class _data_ACE1sec(object):
         m.indexes_for_period(ace_ini, ace_end)
         #NOTE: make `copy()` to avoid memory overlapping? (maybe
         # some weird numpy implementation)
-        t_ace    = m.return_var('ACEepoch').copy()
+        t_ace    = m.return_var('ACEepoch').copy() # [ACE epoch seconds]
         varname  = vname.replace('.'+self.dname,'') # remove '.ACE1sec'
         var      = m.return_var(varname).copy()
         #assert len(var)!=1 and var!=-1, ' ## wrong varname!' 
@@ -586,10 +604,7 @@ class _data_ACE1sec(object):
 
         cc = var<-100.
         var[cc] = np.nan # put NaN in flags
-        t_utc = np.zeros(t_ace.size)
-        for i in range(t_ace.size):
-            tmp      = sf.ACEepoch2date(t_ace[i])
-            t_utc[i] = sf.date2utc(tmp)
+        t_utc = t_ace + 820454400.0 # [utc sec]
         kws.pop('data') # because its 'data' does not make sense here, and
                         # therefore we can replace it below.
         return selecc_window_ii(

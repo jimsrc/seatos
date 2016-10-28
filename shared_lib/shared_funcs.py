@@ -141,7 +141,7 @@ def adaptar(nwndw, dT, n, dt, t, r):
         rr[i]   = mean(r[cond])
     return [tt/dT, rr]          # tiempo normalizado x la duracion de la sheath
 
-
+#@profile
 def adaptar_ii(nwndw, dT, n, dt, t, r, fgap):
     tt      = zeros(n)
     rr      = zeros(n)
@@ -170,7 +170,7 @@ def adaptar_ii(nwndw, dT, n, dt, t, r, fgap):
 
     return enough, [tt/dT, rr]          # tiempo normalizado x la duracion de la sheath/mc/etc
 
-
+#@profile
 def selecc_window_ii(nwndw, data, tini, tend):
     time = data[0]       #[s] utc sec
     y    = data[1]
@@ -384,15 +384,15 @@ def grab_time_domain(adap, check=False):
     if found:
         # we found a valid time domain (`tarr`)
         if check:
-            # assume time array is 'np.float64'
-            eps64 = np.finfo(np.float64).eps
+            # assume time array is 'np.float32'
+            eps32 = np.finfo(np.float32).eps
             for i in range(na):
                 for name in adap[i].keys():
                     tarr_ = adap[i][name][0]
                     if tarr_ is not None:
                         # they differ at most in its
                         # numerical epsilon
-                        ok = (tarr_-tarr<=10.*eps64)
+                        ok = (tarr_-tarr<=eps32)
                         assert ok.prod(),\
                         " we have more than 1 valid time domain!!:\n%r\n\n%r"%(
                         tarr_, tarr)
@@ -478,6 +478,7 @@ class events_mgr(object):
         #----- archivos "stuff"
         self.build_params_file()
 
+    #@profile
     def rebine(self, collect_only=False):
         """
         rebineo de c/evento
@@ -545,7 +546,7 @@ class events_mgr(object):
                             tend=bd.tend[i],
                             vname=varname, # for ACE 1sec
                           )
-
+                """
                 if type(t)==type(var)==int and [t,var]==[-1,-1]:
                     #TODO: watch for `nok` and `evdata`
                     print " >>>>>>>>> ", i, varname
@@ -555,7 +556,7 @@ class events_mgr(object):
                         evdata['t_days'] = []
                         evdata[varname]  = []
                     continue # error, no data for this `varname`
-
+                """
                 if collect_only:
                     evdata['t_days'] = t
                     evdata[varname] = var
@@ -1130,6 +1131,9 @@ def date2utc(date):
     date_utc = datetime(1970, 1, 1, 0, 0, 0, 0)
     utcsec = (date - date_utc).total_seconds() # [utc sec]
     return utcsec
+
+def ACEepoch2utc(AceEpoch):
+    return AceEpoch + 820454400.0
 
 class arg_to_datetime(argparse.Action):
     """
