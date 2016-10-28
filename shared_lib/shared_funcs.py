@@ -13,9 +13,8 @@ from numpy import (
     isnan, min, max, zeros, ones, size, loadtxt
 )
 from os.path import isfile, isdir
-from pylab import find, pause
 if 'DISPLAY' in os.environ: # to avoid crash when running remotely
-    from pylab import figure, savefig, close
+    from pylab import figure, savefig, close, find, pause
     import matplotlib.patches as patches
     import matplotlib.transforms as transforms
 
@@ -363,7 +362,51 @@ class boundaries:
 def nans(sh):
     return np.nan*np.ones(sh)
 
-        
+
+def grab_time_domain(adap, check=False):
+    """
+    Search for a valid time domain for 
+    this `varname` and return.
+    If `check`==True, it checks that all time domains
+    are the same (for all `varname`s) unless a difference
+    of 10 times the numerical epsilon.
+    """
+    na = len(adap)
+    # grab all posible time domains
+    found = False
+    for i in range(na):
+        for name in adap[i].keys():
+            if not(found):
+                tarr = adap[i][name][0]
+                if tarr is not None:
+                    found = True
+
+    if found:
+        # we found a valid time domain (`tarr`)
+        if check:
+            # assume time array is 'np.float64'
+            eps64 = np.finfo(np.float64).eps
+            for i in range(na):
+                for name in adap[i].keys():
+                    tarr_ = adap[i][name][0]
+                    if tarr_ is not None:
+                        # they differ at most in its
+                        # numerical epsilon
+                        ok = (tarr_-tarr<=10.*eps64)
+                        assert ok.prod(),\
+                        " we have more than 1 valid time domain!!:\n%r\n\n%r"%(
+                        tarr_, tarr)
+        return tarr
+
+    #--- didn't find any valid time domain
+    try:
+        # hung in debug mode
+        import pdb; pdb.set_trace()
+    except ImportError:
+        # ok, get out!
+        raise SystemExit(
+            'shut! none are valid time domains:\n %r'%t_array
+            )
 
 
 class events_mgr(object):
@@ -599,7 +642,8 @@ class events_mgr(object):
 
             # valores medios de esta variable para c/evento
             avrVAR_adap = mvs_for_each_event(VAR_adap, nbin, nwndw, Enough[varname])
-            if self.verbose: print " ---> (%s) avrVAR_adap[]: \n" % varname, avrVAR_adap
+            if self.verbose: 
+                print " ---> (%s) avrVAR_adap[]: \n" % varname, avrVAR_adap
 
             VAR_avrg        = zeros(nbin)
             VAR_avrgNorm    = zeros(nbin)
@@ -616,15 +660,13 @@ class events_mgr(object):
                 VAR_medi[i] = np.median(VAR_adap.T[i,cond])# mediana entre los valores q no tienen flag
                 VAR_std[i] = np.std(VAR_adap.T[i,cond])    # std del mismo conjunto de datos
 
-            first_varname = ADAP[0].keys()[0]
-            #TODO: change the `20` for something general below.
-            tnorm   = ADAP[20][first_varname][0] # tiempo del primer evento (0), usando la 1ra variable #TODO: borrar el `20`!!
+            #tnorm          = grab_time_domain(ADAP, varname)
             stuff[varname] = [VAR_avrg, VAR_medi, VAR_std, ndata, avrVAR_adap]
             # NOTA: chekar q 'ADAP[j][varname][0]' sea igual para TODOS los
             #       eventos 'j', y para TODOS los 'varname'.
 
         self.out['dVARS']    = stuff
-        self.out['tnorm']    = tnorm #OUT['dVARS'][first_varname][2] # deberia ser =tnorm
+        self.out['tnorm']    = grab_time_domain(ADAP, check=True)
 
     """def __getattr__(self, attname):
         if attname[:10]=='load_data_':

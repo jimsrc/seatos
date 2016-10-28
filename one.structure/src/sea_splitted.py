@@ -309,7 +309,7 @@ for dname in lnm:
     data_handler = getattr(readers,'_data_'+dname)
     #+++ global
     emgr.data_name = dname #'Auger_BandScals'
-    emgr.FILTER['vsw_filter'] = False
+    emgr.FILTER['vsw_filter'] = False 
     emgr.run_all(data_handler)
     if (dname==pa.lock[1] and pa.lock[0]): 
         emgr.lock_IDs()
