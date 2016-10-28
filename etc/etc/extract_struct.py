@@ -50,7 +50,7 @@ parser.add_argument(
 '-lim', '--limits',
 type=float,
 nargs=2,
-default=[550.,3000.],
+default=[None,None], # no filter by default
 help='limits for the values of the Vsw (SW speed), to define\
  a filter of events. Recommended partition: 100, 450, 550, 3000.'
 )
@@ -212,7 +212,7 @@ FILTER['vsw_filter']    = False
 emgr    = sf.events_mgr(gral, FILTER, CUTS, bounds, nBin, fgap, tb, None, structure=pa.struct, verbose=True)
 
 #++++ limites
-emgr.FILTER['vsw_filter']    = True
+emgr.FILTER['vsw_filter'] = False if pa.limits==[None,None] else True
 emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = pa.limits
 emgr.filter_events()
 emgr.load_files_and_timeshift_ii(
