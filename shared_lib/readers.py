@@ -240,12 +240,7 @@ class _data_ACE(object):
     to read the .nc file of ACE data, built from ASCII versions
     """
     def __init__(self, **kws):
-        """
-        if tshift==True, we return shifted versions of
-        the `tb` and `bd` in load() method.
-        """
         self.fname_inp  = kws['input']
-        self.tshift     = kws['tshift']
 
     def load(self, data_name, **kws):
         f_sc   = netcdf_file(self.fname_inp, 'r')
@@ -256,21 +251,6 @@ class _data_ACE(object):
         tb = kws['tb']  # datetimes of borders of all structures
         bd = kws['bd']  # borders of the structures we will use
 
-        #++++++++++ CORRECTION OF BORDERS ++++++++++
-        # IMPORTANTE:
-        # Solo valido para los "63 eventos" (MCflag='2', y visibles en ACE)
-        # NOTA: dan saltos de shock mas marcados con True.
-        # TODO: make a copy/deepcopy of `tb` and `bd`, so that we don't 
-        # bother the rest of data_names (i.e. Auger_scals, Auger_BandMuons, 
-        # etc.)
-        if self.tshift:
-            ShiftCorrection(ShiftDts, tb.tshck)
-            ShiftCorrection(ShiftDts, tb.tini_icme)
-            ShiftCorrection(ShiftDts, tb.tend_icme)
-            ShiftCorrection(ShiftDts, tb.tini_mc)
-            ShiftCorrection(ShiftDts, tb.tend_mc)
-            ShiftCorrection(ShiftDts, bd.tini)
-            ShiftCorrection(ShiftDts, bd.tend)
 
         #+++++++++++++++++++++++++++++++++++++++++++
         B       = f_sc.variables['Bmag'].data.copy()
@@ -334,7 +314,8 @@ class _data_ACE(object):
 
         """
         NOTE: `bd` and `tb` have been shifted if
-        `selg.tshift`==True.
+        `self.FITLER['CorrShift']`==True in the 
+        events_mgr() class.
         """
         return {
         't_utc' : t_utc,
@@ -423,7 +404,6 @@ class _data_Auger_BandScals(object):
 class _data_ACE_o7o6(object):
     def __init__(self, **kws):
         self.fname_inp  = kws['input']
-        self.tshift     = kws['tshift']
 
     def load(self, data_name, **kws):
         tb          = self.tb
@@ -435,15 +415,10 @@ class _data_ACE_o7o6(object):
         t_utc   = utc_from_omni(self.f_sc)
         print " Ready."
 
-        #++++++++++++++++++++ CORRECCION DE BORDES +++++++++++++++++++++++++++
-        # IMPORTANTE:
-        # El shift es necesario, pero ya lo hice en la corrida del
-        # primer 'self.data_name' (i.e. `_data_ACE()`). Si lo hago aqui, 
-        # estaria haciendo doble shift.
-        #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        #++++++++++++++++++++++++++++++++++++++++++++++++
         o7o6    = self.f_sc.variables['O7toO6'].data.copy()
         print " -------> variables leidas!"
-        #------------------------------------ VARIABLES
+        #----------------------- VARIABLES
         self.t_utc  = t_utc
         self.VARS = VARS = {}
         # variable, nombre archivo, limite vertical, ylabel

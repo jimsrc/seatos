@@ -463,6 +463,21 @@ class events_mgr(object):
                 fixed/locked, so that later analysis is
                 resctricted only with theses locked id's.
         """
+        #++++++++++ CORRECTION OF BORDERS ++++++++++
+        # IMPORTANTE:
+        # Solo valido para los "63 eventos" (MCflag='2', y visibles en ACE)
+        # NOTA: dan saltos de shock mas marcados con True.
+        # TODO: make a copy/deepcopy of `tb` and `bd`, so that we don't 
+        # bother the rest of data_names (i.e. Auger_scals, Auger_BandMuons, 
+        # etc.)
+        if FILTER['CorrShift']:
+            ShiftCorrection(ShiftDts, tb.tshck)
+            ShiftCorrection(ShiftDts, tb.tini_icme)
+            ShiftCorrection(ShiftDts, tb.tend_icme)
+            ShiftCorrection(ShiftDts, tb.tini_mc)
+            ShiftCorrection(ShiftDts, tb.tend_mc)
+            ShiftCorrection(ShiftDts, bd.tini)
+            ShiftCorrection(ShiftDts, bd.tend)
 
     def run_all(self, _data_handler):
         #----- seleccion de eventos
@@ -661,7 +676,6 @@ class events_mgr(object):
                 VAR_medi[i] = np.median(VAR_adap.T[i,cond])# mediana entre los valores q no tienen flag
                 VAR_std[i] = np.std(VAR_adap.T[i,cond])    # std del mismo conjunto de datos
 
-            #tnorm          = grab_time_domain(ADAP, varname)
             stuff[varname] = [VAR_avrg, VAR_medi, VAR_std, ndata, avrVAR_adap]
             # NOTA: chekar q 'ADAP[j][varname][0]' sea igual para TODOS los
             #       eventos 'j', y para TODOS los 'varname'.
@@ -683,7 +697,6 @@ class events_mgr(object):
             attname = 'load_data_'+self.data_name
             dh = _data_handler(
                     input=self.gral.fnames[self.data_name], 
-                    tshift=self.FILTER['CorrShift']
                  )
 
             # point to the method that selects data from

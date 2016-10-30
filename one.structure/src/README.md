@@ -28,4 +28,6 @@ export AVR=./data/rich_events2_ace.nc
 export ACE=$HOME/data_ace/64sec_mag-swepam/ace.1998-2015.nc
 export ACE1sec=$HOME/data_ace/mag_data_1sec   # directory
 ./sea_splitted.py -- -ace 0  -ace1sec $ACE1sec  -murdo 0  -avr $AVR --rich_csv $RICH_CSV -ahm 0  -ahs 0  -as 0  --dir_plot ./test2 --dir_data ./test2 --suffix _test_  --icme_flag 0.1.2.2H  --struct i
+# to reproduce A&A figs, but now using ACE1sec `data_name`:
+./sea_splitted.py -- -ace $ACE  -ace1sec $ACE1sec  -murdo 0  -avr $AVR --rich_csv $RICH_CSV -ahm 0  -ahs 0  -as 0  --dir_plot ./mc_ace --dir_data ./mc_ace --suffix _sh.mc_  --icme_flag 2  --struct sh.mc  --tshift  --Vsplit 450. 550.  --wang 1 90.
 ```
