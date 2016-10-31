@@ -10,6 +10,9 @@
 *BCKP*
 *bckp*
 
+# cython modules
+*.so
+
 mcs/ascii
 #mcs/plots
 #mcs/src/plots
