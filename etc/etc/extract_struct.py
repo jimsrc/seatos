@@ -88,18 +88,6 @@ and '2H' for MCs by Huttunen etal05.
 To specify several flags, separe by dots (e.g. '0.1.2H').
 """
 )
-#parser.add_argument(
-#'-i', '--ini',
-#type=str,
-#default='shock',
-#help='name of leading border. Use any of these: shock, ini_mc, end_mc, ini_icme, end_icme.',
-#)
-#parser.add_argument(
-#'-e', '--end',
-#type=str,
-#default='ini_icme',
-#help='name of trailing border. Use any of these: shock, ini_mc, end_mc, ini_icme, end_icme.',
-#)
 parser.add_argument(
 '-ba', '--BefAft',
 type=int,
@@ -148,12 +136,6 @@ dirs['suffix']      = '_test_Vmc_'    # sufijo para el directorio donde guardare
 
 
 #------- seleccionamos MCs con label-de-catalogo (lepping=2, etc)
-#MCwant  = {'flags':     ('0', '1', '2', '2H'),
-#           'alias':     '0.1.2.2H'}       # para "flagear" el nombre/ruta de las figuras
-#MCwant  = {'flags':     ('1', '2', '2H'),
-#           'alias':     '1.2.2H'}         # para "flagear" el nombre/ruta de las figuras
-#MCwant  = {'flags':     ('2', '2H'),
-#           'alias':     '2.2H'}           # para "flagear" el nombre/ruta de las figuras
 MCwant  = {'flags':     pa.icme_flag.split('.'), #('2',),
            'alias':     pa.icme_flag } #'2'}            # para "flagear" el nombre/ruta de las figuras
 

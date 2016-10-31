@@ -20,6 +20,7 @@ if 'DISPLAY' in os.environ: # to avoid crash when running remotely
 
 #from read_NewTable import tshck, tini_icme, tend_icme, tini_mc, tend_mc, n_icmes, MCsig
 #from z_expansion_gulisano import z as z_exp
+_ERROR_ = ccl.Rn+' ### ERROR ###: '+ccl.W
 
 def flags2nan(VAR, FLAG):
         cond            = VAR < FLAG
@@ -630,8 +631,6 @@ class events_mgr(object):
         nwndw   = [self.nBin['before'], self.nBin['after']]
         day     = 86400.
         ## salidas del 'self.rebine()'
-        #Enough  = self.__Enough__
-        #nEnough = self.__nEnough__
         ADAP    = self.__ADAP__
         Enough  = self.out['Enough']
         nEnough = self.out['nEnough']
@@ -688,6 +687,18 @@ class events_mgr(object):
             return self.attname"""
 
     def load_files_and_timeshift_ii(self, _data_handler, obs_check=None):
+        """
+        INPUT
+        -----
+        * _data_handler:
+        class that handles the i/o of the database related to 'data_name'.
+
+        * obs_check: 
+        if not None, is a list of strings related to the names of
+        the observables of our interest. The idea is to make
+        sure that we are asking for variables that are included
+        in our database `self.VARS`.
+        """
         read_flag = 'read_'+self.data_name # e.g. self.read_Auger
         if not(read_flag in self.__dict__.keys()): # do i know u?
             setattr(self, read_flag, False) #True: if files are already read
@@ -716,9 +727,10 @@ class events_mgr(object):
             # check that we are grabbing observables of our 
             # interest
             if obs_check is not None:
-                for nm in self.VARS.keys():
-                    assert nm.replace('.'+self.data_name,'') in obs_check,\
-                        " %s is not in list %r"%(nm,obs_check)
+                for nm in obs_check:
+                    nm_ = nm+'.'+self.data_name
+                    assert nm_ in self.VARS.keys(),\
+                    " %s is not database list: %r"%(nm_, self.VARS.keys())
 
             self.nvars = len(self.VARS.keys())
             # mark as read
@@ -726,7 +738,7 @@ class events_mgr(object):
 
         #--- check weird case
         assert self.data_name in self.names_ok,\
-            "  ERROR: not on my list!: %s" % self.data_name+\
+            _ERROR_+" not on my list!: %s" % self.data_name+\
             "\n Must be one of these: %r" % [self.names_ok]
         
     def make_plots(self):
