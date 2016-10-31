@@ -205,7 +205,7 @@ def get_all_bartels():
             continue
 
         if ok2read:
-            print line.split()
+            #print line.split()
             mm,dd,yyyy = map(int,line.split()[1].split('/'))
             dates[i] = {
                 'bartel'   : int(line.split()[0]),   # Bartels rotation number
@@ -217,15 +217,15 @@ def get_all_bartels():
 
     return dates
 
-def deduce_fnms(bartels, ini, end):
+def deduce_fnms(bartels, ini, end, subdir=''):
     fnms = []
     n = len(bartels)
     for i in range(n-1):
         date = bartels[i]['date']
         date_next = bartels[i+1]['date']
-        if date>=ini: #and date<end:
+        if date_next>=ini: #and date<end:
             bart = bartels[i]['bartel'] # bartel rotation number
-            fnms += ['mag_data_1sec_{bart}'.format(**locals())]
+            fnms += [subdir+'/mag_data_1sec_{bart}.hdf'.format(**locals())]
             if date>end:
                 break ## FINISHED!
 
@@ -240,12 +240,7 @@ class _data_ACE(object):
     to read the .nc file of ACE data, built from ASCII versions
     """
     def __init__(self, **kws):
-        """
-        if tshift==True, we return shifted versions of
-        the `tb` and `bd` in load() method.
-        """
         self.fname_inp  = kws['input']
-        self.tshift     = kws['tshift']
 
     def load(self, data_name, **kws):
         f_sc   = netcdf_file(self.fname_inp, 'r')
@@ -256,21 +251,6 @@ class _data_ACE(object):
         tb = kws['tb']  # datetimes of borders of all structures
         bd = kws['bd']  # borders of the structures we will use
 
-        #++++++++++ CORRECTION OF BORDERS ++++++++++
-        # IMPORTANTE:
-        # Solo valido para los "63 eventos" (MCflag='2', y visibles en ACE)
-        # NOTA: dan saltos de shock mas marcados con True.
-        # TODO: make a copy/deepcopy of `tb` and `bd`, so that we don't 
-        # bother the rest of data_names (i.e. Auger_scals, Auger_BandMuons, 
-        # etc.)
-        if self.tshift:
-            ShiftCorrection(ShiftDts, tb.tshck)
-            ShiftCorrection(ShiftDts, tb.tini_icme)
-            ShiftCorrection(ShiftDts, tb.tend_icme)
-            ShiftCorrection(ShiftDts, tb.tini_mc)
-            ShiftCorrection(ShiftDts, tb.tend_mc)
-            ShiftCorrection(ShiftDts, bd.tini)
-            ShiftCorrection(ShiftDts, bd.tend)
 
         #+++++++++++++++++++++++++++++++++++++++++++
         B       = f_sc.variables['Bmag'].data.copy()
@@ -334,7 +314,8 @@ class _data_ACE(object):
 
         """
         NOTE: `bd` and `tb` have been shifted if
-        `selg.tshift`==True.
+        `self.FITLER['CorrShift']`==True in the 
+        events_mgr() class.
         """
         return {
         't_utc' : t_utc,
@@ -423,7 +404,6 @@ class _data_Auger_BandScals(object):
 class _data_ACE_o7o6(object):
     def __init__(self, **kws):
         self.fname_inp  = kws['input']
-        self.tshift     = kws['tshift']
 
     def load(self, data_name, **kws):
         tb          = self.tb
@@ -435,15 +415,10 @@ class _data_ACE_o7o6(object):
         t_utc   = utc_from_omni(self.f_sc)
         print " Ready."
 
-        #++++++++++++++++++++ CORRECCION DE BORDES +++++++++++++++++++++++++++
-        # IMPORTANTE:
-        # El shift es necesario, pero ya lo hice en la corrida del
-        # primer 'self.data_name' (i.e. `_data_ACE()`). Si lo hago aqui, 
-        # estaria haciendo doble shift.
-        #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        #++++++++++++++++++++++++++++++++++++++++++++++++
         o7o6    = self.f_sc.variables['O7toO6'].data.copy()
         print " -------> variables leidas!"
-        #------------------------------------ VARIABLES
+        #----------------------- VARIABLES
         self.t_utc  = t_utc
         self.VARS = VARS = {}
         # variable, nombre archivo, limite vertical, ylabel
@@ -516,15 +491,17 @@ class _data_McMurdo(object):
 
 #--- reader para ACE 1seg MAG data
 class _data_ACE1sec(object):
-    def __init__(object, *kws):
+    def __init__(self, **kws):
         self.dir_inp = kws['input']
 
+    #@profile
     def load(self, **kws):
         import cython_wrapper
         self.cw = cython_wrapper
 
         # contains: bartels rotation numbers, ACEepochs, adn datetimes.
         self.bartels = get_all_bartels() # {dict}
+        self.nbartels = len(self.bartels)
 
         self.dname = dname = kws['data_name']
         VARS = {}
@@ -533,39 +510,78 @@ class _data_ACE1sec(object):
             'lims'  : [5., 18.],
             'label' : 'B [nT]'
         }
-        VARS['rmsB.'+dname] = {
-            'value' : None, #self.calc_rmsB()
-            'lims'  : [0.01, 2.],
-            'label' : 'rms($\hat B$) [nT]'
-        }
+        #VARS['rmsB.'+dname] = {
+        #    'value' : None, #self.calc_rmsB()
+        #    'lims'  : [0.01, 2.],
+        #    'label' : 'rms($\hat B$) [nT]'
+        #}
         return {
-        't_utc' : None,
+        # this is the period for available data in our input directory
+        #'t_utc' : [883180800, 1468713600], # [utc sec]
+        't_utc' : [sf.date2utc(self.bartels[0]['date']), 
+                   sf.date2utc(self.bartels[self.nbartels-1]['date'])], # [utc sec]
         'VARS'  : VARS,
         }
-
+    
+    #@profile
     def grab_block(self, vname=None, **kws):
-        # `kws['data']` not tiene sentido aqui
-        tini = kws['tini'] # {datetime}
-        tend = kws['tend'] # {datetime}
+        # alias
+        OneDay = timedelta(days=1) # {timedelta}
+        # time extent of queried data, in terms of the 
+        # size of the structure
+        nbef, naft = kws['nwndw']
+
+        # range of requested data
+        tini = kws['tini'] - nbef*OneDay # {datetime}
+        tend = kws['tend'] + naft*OneDay # {datetime}
+
+        # if the bounds of the events are out of the
+        # boundaries of the available data, return error
+        assert self.bartels[0]['date']<=tini and \
+                self.bartels[self.nbartels-1]['date']>=tend,\
+            """
+            # no data for this `vname` in 
+            # this window!
+            --- window of available data:
+            ini: {d_ini}
+            end: {d_end}
+            --- window of requested data:
+            ini: {r_ini}
+            end: {r_end}
+            """.format(
+            r_ini = tini,
+            r_end = tend,
+            d_ini = self.bartels[0]['date'],
+            d_end = self.bartels[self.nbartels-1]['date'],
+            )
        
         # -- deduce fnm_ls
-        fnm_ls = deduce_fnms(self.bartels, tini, tend)
+        subdir = '{HOME}/data_ace/mag_data_1sec'.format(**os.environ)
+        fnm_ls = deduce_fnms(self.bartels, tini, tend, subdir)
+        for fnm in fnm_ls:
+            print fnm
+            assert os.path.isfile(fnm)
 
         # -- deduce ace_ini, ace_end
         ace_ini = sf.date2ACEepoch(tini)
         ace_end = sf.date2ACEepoch(tend)
 
-        m = self.cw(fnm_ls)  # cython function
+        m = self.cw.mag_l2(fnm_ls)  # cython function
         m.indexes_for_period(ace_ini, ace_end)
-        t_ace    = m.return_var('ACEepoch')
+        #NOTE: make `copy()` to avoid memory overlapping? (maybe
+        # some weird numpy implementation)
+        t_ace    = m.return_var('ACEepoch').copy() # [ACE epoch seconds]
         varname  = vname.replace('.'+self.dname,'') # remove '.ACE1sec'
-        var      = m.return_var(varname)
+        var      = m.return_var(varname).copy()
+        #assert len(var)!=1 and var!=-1, ' ## wrong varname!' 
+        if type(var)==int: 
+            assert var!=-1, " ## error: wrong varname "
 
-        t_utc = np.zeros(t_ace.size)
-        for i in range(t_ace.size):
-            tmp      = sf.ACEepoch2date(t_ace[i])
-            t_utc[i] = sf.date2utc(tmp)
-
+        cc = var<-100.
+        var[cc] = np.nan # put NaN in flags
+        t_utc = t_ace + 820454400.0 # [utc sec]
+        kws.pop('data') # because its 'data' does not make sense here, and
+                        # therefore we can replace it below.
         return selecc_window_ii(
                 data=[t_utc, var], 
                 **kws

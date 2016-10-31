@@ -1,14 +1,11 @@
 #!/usr/bin/env ipython
 # -*- coding: utf-8 -*- 
-from pylab import find, pause, figure, savefig, close
 from datetime import datetime, time, timedelta
 import numpy as np
 import console_colors as ccl
 from scipy.io.netcdf import netcdf_file
 from ShiftTimes import ShiftCorrection, ShiftDts
 import os, argparse
-import matplotlib.patches as patches
-import matplotlib.transforms as transforms
 import h5py
 from h5py import File as h5
 from numpy import (
@@ -16,9 +13,14 @@ from numpy import (
     isnan, min, max, zeros, ones, size, loadtxt
 )
 from os.path import isfile, isdir
+if 'DISPLAY' in os.environ: # to avoid crash when running remotely
+    from pylab import figure, savefig, close, find, pause
+    import matplotlib.patches as patches
+    import matplotlib.transforms as transforms
 
 #from read_NewTable import tshck, tini_icme, tend_icme, tini_mc, tend_mc, n_icmes, MCsig
 #from z_expansion_gulisano import z as z_exp
+_ERROR_ = ccl.Rn+' ### ERROR ###: '+ccl.W
 
 def flags2nan(VAR, FLAG):
         cond            = VAR < FLAG
@@ -140,7 +142,7 @@ def adaptar(nwndw, dT, n, dt, t, r):
         rr[i]   = mean(r[cond])
     return [tt/dT, rr]          # tiempo normalizado x la duracion de la sheath
 
-
+#@profile
 def adaptar_ii(nwndw, dT, n, dt, t, r, fgap):
     tt      = zeros(n)
     rr      = zeros(n)
@@ -169,7 +171,7 @@ def adaptar_ii(nwndw, dT, n, dt, t, r, fgap):
 
     return enough, [tt/dT, rr]          # tiempo normalizado x la duracion de la sheath/mc/etc
 
-
+#@profile
 def selecc_window_ii(nwndw, data, tini, tend):
     time = data[0]       #[s] utc sec
     y    = data[1]
@@ -361,7 +363,51 @@ class boundaries:
 def nans(sh):
     return np.nan*np.ones(sh)
 
-        
+
+def grab_time_domain(adap, check=False):
+    """
+    Search for a valid time domain for 
+    this `varname` and return.
+    If `check`==True, it checks that all time domains
+    are the same (for all `varname`s) unless a difference
+    of 10 times the numerical epsilon.
+    """
+    na = len(adap)
+    # grab all posible time domains
+    found = False
+    for i in range(na):
+        for name in adap[i].keys():
+            if not(found):
+                tarr = adap[i][name][0]
+                if tarr is not None:
+                    found = True
+
+    if found:
+        # we found a valid time domain (`tarr`)
+        if check:
+            # assume time array is 'np.float32'
+            eps32 = np.finfo(np.float32).eps
+            for i in range(na):
+                for name in adap[i].keys():
+                    tarr_ = adap[i][name][0]
+                    if tarr_ is not None:
+                        # they differ at most in its
+                        # numerical epsilon
+                        ok = (tarr_-tarr<=eps32)
+                        assert ok.prod(),\
+                        " we have more than 1 valid time domain!!:\n%r\n\n%r"%(
+                        tarr_, tarr)
+        return tarr
+
+    #--- didn't find any valid time domain
+    try:
+        # hung in debug mode
+        import pdb; pdb.set_trace()
+    except ImportError:
+        # ok, get out!
+        raise SystemExit(
+            'shut! none are valid time domains:\n %r'%t_array
+            )
 
 
 class events_mgr(object):
@@ -391,7 +437,7 @@ class events_mgr(object):
         print " -------> archivos input leidos!"
 
         #--- put False to all possible data-flags (all CR detector-names must be included in 'self.CR_observs')
-        self.names_ok   = ('Auger_BandMuons', 'Auger_BandScals',  'Auger_scals', 'McMurdo', 'ACE', 'ACE_o7o6')
+        self.names_ok   = ('Auger_BandMuons', 'Auger_BandScals',  'Auger_scals', 'McMurdo', 'ACE', 'ACE_o7o6', 'ACE1sec')
         for name in self.names_ok:
             read_flag   = 'read_'+name
             setattr(self, read_flag, False) # True: if files are already read
@@ -418,6 +464,21 @@ class events_mgr(object):
                 fixed/locked, so that later analysis is
                 resctricted only with theses locked id's.
         """
+        #++++++++++ CORRECTION OF BORDERS ++++++++++
+        # IMPORTANTE:
+        # Solo valido para los "63 eventos" (MCflag='2', y visibles en ACE)
+        # NOTA: dan saltos de shock mas marcados con True.
+        # TODO: make a copy/deepcopy of `tb` and `bd`, so that we don't 
+        # bother the rest of data_names (i.e. Auger_scals, Auger_BandMuons, 
+        # etc.)
+        if FILTER['CorrShift']:
+            ShiftCorrection(ShiftDts, tb.tshck)
+            ShiftCorrection(ShiftDts, tb.tini_icme)
+            ShiftCorrection(ShiftDts, tb.tend_icme)
+            ShiftCorrection(ShiftDts, tb.tini_mc)
+            ShiftCorrection(ShiftDts, tb.tend_mc)
+            ShiftCorrection(ShiftDts, bd.tini)
+            ShiftCorrection(ShiftDts, bd.tend)
 
     def run_all(self, _data_handler):
         #----- seleccion de eventos
@@ -433,6 +494,7 @@ class events_mgr(object):
         #----- archivos "stuff"
         self.build_params_file()
 
+    #@profile
     def rebine(self, collect_only=False):
         """
         rebineo de c/evento
@@ -474,6 +536,7 @@ class events_mgr(object):
 
         for i in range(n_icmes):
             #np.set_printoptions(4) # nro de digitos a imprimir al usar numpy.arrays
+            #import pdb; pdb.set_trace()
             if not (ok[i] & self.SELECC[i]):   #---FILTRO--- (*1)
                 print ccl.Rn, " id:%d ---> ok, SELECC: "%i, ok[i], self.SELECC[i], ccl.W
                 nbad +=1
@@ -492,12 +555,6 @@ class events_mgr(object):
             # recorremos las variables:
             for varname in VARS.keys():
                 dt      = dT*(1+nwndw[0]+nwndw[1])/nbin
-                #t, var  = selecc_window_ii(
-                #            nwndw=nwndw, #rango ploteo
-                #            data=[self.t_utc, VARS[varname]['value']],
-                #            tini=bd.tini[i],
-                #            tend=bd.tend[i]
-                #          )
                 t, var  = self.grab_window(
                             nwndw=nwndw, #rango ploteo
                             data=[self.t_utc, VARS[varname]['value']],
@@ -505,6 +562,17 @@ class events_mgr(object):
                             tend=bd.tend[i],
                             vname=varname, # for ACE 1sec
                           )
+                """
+                if type(t)==type(var)==int and [t,var]==[-1,-1]:
+                    #TODO: watch for `nok` and `evdata`
+                    print " >>>>>>>>> ", i, varname
+                    Enough[varname] += [False]
+                    ADAP[nok-1][varname] = [None, None]
+                    if collect_only:
+                        evdata['t_days'] = []
+                        evdata[varname]  = []
+                    continue # error, no data for this `varname`
+                """
                 if collect_only:
                     evdata['t_days'] = t
                     evdata[varname] = var
@@ -529,9 +597,11 @@ class events_mgr(object):
                 ADAP[nok-1][varname]    = out[1] # out[1] = [tiempo, variable]
 
                 if enough:
+                    #import pdb; pdb.set_trace()
                     IDs[varname]     += [i]
                     nEnough[varname] += 1
 
+        #NOTE: `ADAP` points to `self.__ADAP__`
         print " ----> len.ADAP: %d" % len(ADAP)
         self.__nok__    = nok
         self.__nbad__   = nbad
@@ -561,18 +631,13 @@ class events_mgr(object):
         nwndw   = [self.nBin['before'], self.nBin['after']]
         day     = 86400.
         ## salidas del 'self.rebine()'
-        #Enough  = self.__Enough__
-        #nEnough = self.__nEnough__
         ADAP    = self.__ADAP__
         Enough  = self.out['Enough']
         nEnough = self.out['nEnough']
         IDs     = self.out['IDs']
         nok     = self.out['nok']
         nbad    = self.out['nbad']
-
-        stuff       = {} #[]
-        #nok = len(ADAP)/nvars  # (*)
-        # (*) la dim de 'ADAP' es 'nvars' por el nro de eventos q pasaro el filtro en (*1)
+        stuff   = {} #[]
 
         # Hacemos un lugar para la data rebineada (posible uso post-analisis)
         if self.data_name==self.data_name_:
@@ -592,7 +657,8 @@ class events_mgr(object):
 
             # valores medios de esta variable para c/evento
             avrVAR_adap = mvs_for_each_event(VAR_adap, nbin, nwndw, Enough[varname])
-            if self.verbose: print " ---> (%s) avrVAR_adap[]: \n" % varname, avrVAR_adap
+            if self.verbose: 
+                print " ---> (%s) avrVAR_adap[]: \n" % varname, avrVAR_adap
 
             VAR_avrg        = zeros(nbin)
             VAR_avrgNorm    = zeros(nbin)
@@ -609,20 +675,30 @@ class events_mgr(object):
                 VAR_medi[i] = np.median(VAR_adap.T[i,cond])# mediana entre los valores q no tienen flag
                 VAR_std[i] = np.std(VAR_adap.T[i,cond])    # std del mismo conjunto de datos
 
-            first_varname = ADAP[0].keys()[0]
-            tnorm   = ADAP[0][first_varname][0] # tiempo del primer evento (0), usando la 1ra variable
             stuff[varname] = [VAR_avrg, VAR_medi, VAR_std, ndata, avrVAR_adap]
             # NOTA: chekar q 'ADAP[j][varname][0]' sea igual para TODOS los
             #       eventos 'j', y para TODOS los 'varname'.
 
         self.out['dVARS']    = stuff
-        self.out['tnorm']    = tnorm #OUT['dVARS'][first_varname][2] # deberia ser =tnorm
+        self.out['tnorm']    = grab_time_domain(ADAP, check=True)
 
     """def __getattr__(self, attname):
         if attname[:10]=='load_data_':
             return self.attname"""
 
-    def load_files_and_timeshift_ii(self, _data_handler):
+    def load_files_and_timeshift_ii(self, _data_handler, obs_check=None):
+        """
+        INPUT
+        -----
+        * _data_handler:
+        class that handles the i/o of the database related to 'data_name'.
+
+        * obs_check: 
+        if not None, is a list of strings related to the names of
+        the observables of our interest. The idea is to make
+        sure that we are asking for variables that are included
+        in our database `self.VARS`.
+        """
         read_flag = 'read_'+self.data_name # e.g. self.read_Auger
         if not(read_flag in self.__dict__.keys()): # do i know u?
             setattr(self, read_flag, False) #True: if files are already read
@@ -632,7 +708,6 @@ class events_mgr(object):
             attname = 'load_data_'+self.data_name
             dh = _data_handler(
                     input=self.gral.fnames[self.data_name], 
-                    tshift=self.FILTER['CorrShift']
                  )
 
             # point to the method that selects data from
@@ -642,21 +717,28 @@ class events_mgr(object):
             # grab/point-to data from disk
             #NOTE: if self.FILTER['CorrShift']==True, then `self.tb` and
             # `self.bd` will be shifted!
-            out = dh.load(self.data_name, tb=self.tb, bd=self.bd)
+            out = dh.load(data_name=self.data_name, tb=self.tb, bd=self.bd)
 
             # attribute data pointers to `self`
             for nm, value in out.iteritems():
                 # set `t_utc` and `VAR` to `self`
                 setattr(self,nm,value)
+    
+            # check that we are grabbing observables of our 
+            # interest
+            if obs_check is not None:
+                for nm in obs_check:
+                    nm_ = nm+'.'+self.data_name
+                    assert nm_ in self.VARS.keys(),\
+                    " %s is not database list: %r"%(nm_, self.VARS.keys())
 
             self.nvars = len(self.VARS.keys())
-
             # mark as read
             self.read_flag = True       # True: ya lei los archivos input
 
         #--- check weird case
         assert self.data_name in self.names_ok,\
-            "  ERROR: not on my list!: %s" % self.data_name+\
+            _ERROR_+" not on my list!: %s" % self.data_name+\
             "\n Must be one of these: %r" % [self.names_ok]
         
     def make_plots(self):
@@ -754,8 +836,8 @@ class events_mgr(object):
                 MCflag: %s \n\
                 WangFlag: %s' % (N_selec, N_final, nBin['bins_per_utime'], MCwant['alias'], WangFlag)
 
-            makefig(mediana, average, std_err, nValues, self.out['tnorm'], SUBTITLE,
-                    ylims, ylabel, fname_fig)
+            makefig(mediana, average, std_err, nValues, self.out['tnorm'], 
+                    SUBTITLE, ylims, ylabel, fname_fig)
 
             fdataout = '%s_%s.txt' % (FNAME_ASCII, varname) #self.VARS[i][1])
             dataout = np.array([self.out['tnorm'] , mediana, average, std_err, nValues])
@@ -933,7 +1015,6 @@ class events_mgr(object):
             raw_input()"""
             dRicmeCond   = (i_dR>=dR_lo) & (i_dR<dR_hi)
 
-
         #------- filtro total
         SELECC  = np.ones(tb.n_icmes, dtype=bool)
         SELECC  &= BETW1998_2006    # nos mantenemos en este periodo de anios
@@ -1075,6 +1156,9 @@ def date2utc(date):
     date_utc = datetime(1970, 1, 1, 0, 0, 0, 0)
     utcsec = (date - date_utc).total_seconds() # [utc sec]
     return utcsec
+
+def ACEepoch2utc(AceEpoch):
+    return AceEpoch + 820454400.0
 
 class arg_to_datetime(argparse.Action):
     """

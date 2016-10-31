@@ -23,6 +23,18 @@ default='ACE',
 help='name/flag of input data. Must be one of these: ACE, ACE_o7o6, Auger_BandMuons, Auger_BandScals, McMurdo.',
 )
 parser.add_argument(
+'-rich', '--rich_csv',
+type=str,
+default='{ASO}/icmes_richardson/RichardsonList_until.2016.csv'.format(**os.environ),
+help='.csv file for Richardson catalog of ICMEs',
+)
+parser.add_argument(
+'-avr', '--avr',
+type=str,
+default='{ASO}/icmes_richardson/data/rich_events2_ace.nc'.format(**os.environ),
+help='.csv file for Richardson catalog of ICMEs',
+)
+parser.add_argument(
 '-dd', '--dir_data',
 type=str,
 default='../ascii',
@@ -38,7 +50,7 @@ parser.add_argument(
 '-lim', '--limits',
 type=float,
 nargs=2,
-default=[550.,3000.],
+default=[None,None], # no filter by default
 help='limits for the values of the Vsw (SW speed), to define\
  a filter of events. Recommended partition: 100, 450, 550, 3000.'
 )
@@ -76,18 +88,6 @@ and '2H' for MCs by Huttunen etal05.
 To specify several flags, separe by dots (e.g. '0.1.2H').
 """
 )
-#parser.add_argument(
-#'-i', '--ini',
-#type=str,
-#default='shock',
-#help='name of leading border. Use any of these: shock, ini_mc, end_mc, ini_icme, end_icme.',
-#)
-#parser.add_argument(
-#'-e', '--end',
-#type=str,
-#default='ini_icme',
-#help='name of trailing border. Use any of these: shock, ini_mc, end_mc, ini_icme, end_icme.',
-#)
 parser.add_argument(
 '-ba', '--BefAft',
 type=int,
@@ -126,7 +126,7 @@ day                 = 86400.
 gral.fnames = fnames = {}
 fnames[pa.inp_name]       = pa.input #'%s/data_ace/64sec_mag-swepam/ace.1998-2014.nc' % HOME
 fnames['McMurdo']   = '%s/actividad_solar/neutron_monitors/mcmurdo/mcmurdo_utc_correg.dat' % HOME
-fnames['table_richardson']  = '%s/ASOC_ICME-FD/icmes_richardson/data/rich_events2_ace.nc' % HOME
+fnames['table_richardson']  = pa.avr # .nc file w/ average values
 
 #---- directorios de salida
 gral.dirs =  dirs   = {}
@@ -136,12 +136,6 @@ dirs['suffix']      = '_test_Vmc_'    # sufijo para el directorio donde guardare
 
 
 #------- seleccionamos MCs con label-de-catalogo (lepping=2, etc)
-#MCwant  = {'flags':     ('0', '1', '2', '2H'),
-#           'alias':     '0.1.2.2H'}       # para "flagear" el nombre/ruta de las figuras
-#MCwant  = {'flags':     ('1', '2', '2H'),
-#           'alias':     '1.2.2H'}         # para "flagear" el nombre/ruta de las figuras
-#MCwant  = {'flags':     ('2', '2H'),
-#           'alias':     '2.2H'}           # para "flagear" el nombre/ruta de las figuras
 MCwant  = {'flags':     pa.icme_flag.split('.'), #('2',),
            'alias':     pa.icme_flag } #'2'}            # para "flagear" el nombre/ruta de las figuras
 
@@ -172,7 +166,7 @@ nBin['total']           = (1+nBin['before']+nBin['after'])*nBin['bins_per_utime'
 fgap                    = 0.2
 
 #--- bordes de estructura
-tb = sf.RichTable('{ASO}/icmes_richardson/RichardsonList_until.2016.csv'.format(**os.environ))
+tb = sf.RichTable(pa.rich_csv)
 tb.read()
 
 #--- bordes de estructura
@@ -192,6 +186,7 @@ elif pa.struct=='mc':
 else:
     raise SystemExit(' ---> wrong structure! : '+pa.struct)
 
+from shared import readers
 #+++++++++++++++++++++++++++++++++++++++++++++++++
 gral.data_name      = pa.inp_name #'ACE'
 
@@ -199,10 +194,13 @@ FILTER['vsw_filter']    = False
 emgr    = sf.events_mgr(gral, FILTER, CUTS, bounds, nBin, fgap, tb, None, structure=pa.struct, verbose=True)
 
 #++++ limites
-emgr.FILTER['vsw_filter']    = True
+emgr.FILTER['vsw_filter'] = False if pa.limits==[None,None] else True
 emgr.CUTS['v_lo'], emgr.CUTS['v_hi'] = pa.limits
 emgr.filter_events()
-emgr.load_files_and_timeshift_ii()
+emgr.load_files_and_timeshift_ii(
+    _data_handler = getattr(readers,'_data_'+emgr.data_name),
+    obs_check = pa.obs
+)
 emgr.rebine(collect_only=True)
 
 # save to file
@@ -225,6 +223,7 @@ for id, i in zip(events, range(n_evnts)):
     ndata    = len(t)
     data_out = np.nan*np.ones((ndata, 1+nobs))
     data_out[:,0] = t
+    #import pdb; pdb.set_trace()
     for obs, io in zip(pa.obs, range(nobs)):
         data_out[:,io+1] = emgr.out['events_data'][id][obs+'.'+emgr.data_name]
 

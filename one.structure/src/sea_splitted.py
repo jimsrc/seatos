@@ -22,7 +22,7 @@ IMPORTANT:
 import sys, os, argparse
 import shared.shared_funcs as sf 
 #------------------------------
-from shared.ShiftTimes import *
+#from shared.ShiftTimes import *
 import numpy as np
 import shared.console_colors as ccl
 
@@ -268,8 +268,8 @@ fgap                    = 0.2
 #--- bordes de estructura
 bounds      = boundaries()
 if pa.struct=='sh.i':
-    bounds.tini = tb.tshck      #tb.tini_mc #tb.tshck 
-    bounds.tend = tb.tini_icme    #tb.tend_mc #tb.tini_mc
+    bounds.tini = tb.tshck      
+    bounds.tend = tb.tini_icme  
 elif pa.struct=='sh.mc':
     bounds.tini = tb.tshck
     bounds.tend = tb.tini_mc
@@ -281,6 +281,8 @@ elif pa.struct=='mc':
     bounds.tend = tb.tend_mc
 else:
     raise SystemExit(' ---> wrong structure! : '+pa.struct)
+from copy import deepcopy
+bounds = deepcopy(bounds)
 
 #--- list of data-sets that have an input-filename !='0'
 lnm = [nm[4:] for nm in dir(pa) if (nm.startswith('inp_') & (getattr(pa,nm)!='0') )]
@@ -309,7 +311,7 @@ for dname in lnm:
     data_handler = getattr(readers,'_data_'+dname)
     #+++ global
     emgr.data_name = dname #'Auger_BandScals'
-    emgr.FILTER['vsw_filter'] = False
+    emgr.FILTER['vsw_filter'] = False 
     emgr.run_all(data_handler)
     if (dname==pa.lock[1] and pa.lock[0]): 
         emgr.lock_IDs()
