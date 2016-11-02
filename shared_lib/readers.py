@@ -226,12 +226,61 @@ def deduce_fnms(bartels, ini, end, subdir=''):
         if date_next>=ini: #and date<end:
             bart = bartels[i]['bartel'] # bartel rotation number
             fnms += [subdir+'/mag_data_1sec_{bart}.hdf'.format(**locals())]
-            if date>end:
+            if date_next>end:
                 break ## FINISHED!
 
     return fnms
 
+def calc_rmsB(t_inp, B, width=3600., fgap=0.2, res_o=60):
+    """
+    * t
+    time in seconds.
+    * B
+    vector [Bx,By,Bz]
+    * width: 
+    time size in seconds, of the width on which
+    we'll calculate the rms.
+    * fgap:
+    fraction of gaps that we'll tolerate.
+    * res_o:
+    output time resolution. Note that processing 1sec data
+    one by one, y VERY expensive; so an alternative approach
+    that we are using here, is to process one data point
+    every 60 points (i.e. with 1min cadence). NOTE: the
+    `width` must be INTEGER && divisible by `res_o`!!
+    """
+    # to convert numpy warnings to errors
+    #np.seterr(all='raise')
+    t = t_inp.copy() # don't touch input data!
+    c1 = t<t[0]  + 0.5*width
+    c2 = t>t[-1] - 0.5*width
+    # initial/final indexes on which we'll work
+    ini, end = c1.nonzero()[0][-1], c2.nonzero()[0][0]
+    # index list
+    t_indexes = np.arange(ini+1, end, res_o)
+    # buffer
+    rmsB = np.zeros(t_indexes.size, dtype=B.dtype)
+    tnew = np.zeros(t_indexes.size, dtype=np.float64)
+    # half the size of width in number of index units
+    w2 = int(0.5*width)
+    for i, i_ in zip(t_indexes, range(t_indexes.size)):
+        tnew[i_] = t[i]
+        ts_  = slice(i-w2,i+w2+1) # time slice
+        ccg  = ~np.isnan(B[ts_,0]) # False for gap values
+        # time indexes having good data, in our `ts_` window
+        ti   = ts_.start + ccg.nonzero()[0]  # {numpy.array} one-dimensional
+        # too many gaps
+        if (~ccg).nonzero()[0].size > (fgap*2*w2):
+            rmsB[i_] = np.nan
+            continue
 
+        #NOTE: a.std() is equivalent to np.sqrt(((a - a.mean())**2).sum()/a.size)
+        ms  = (np.square(B[ti,:] - np.mean(B[ti,:], axis=0))).sum()
+        ms /= 1.*ti.size
+
+        rmsB[i_]  = np.sqrt(ms)
+
+    return tnew, rmsB
 
 
 #----------- data handlers -----------
@@ -491,6 +540,15 @@ class _data_McMurdo(object):
 
 #--- reader para ACE 1seg MAG data
 class _data_ACE1sec(object):
+    """
+    the parameters below are for the processing of deduced 
+    observables, such as "rmsB".
+    They are used in `self.grab_block()`.
+    """
+    width   = 3600. # time width of running windows
+    fgap    = 0.2   # gap-fraction to tolerate
+    res_o   = 60    # output resolution
+
     def __init__(self, **kws):
         self.dir_inp = kws['input']
 
@@ -505,16 +563,20 @@ class _data_ACE1sec(object):
 
         self.dname = dname = kws['data_name']
         VARS = {}
+        """
+        the keys if `VARS` will be used to iterate on the
+        possible values of `vname` in `self.grab_block()`.
+        """
         VARS['Bmag.'+dname] = {
             'value' : None,
             'lims'  : [5., 18.],
-            'label' : 'B [nT]'
+            'label' : 'B [nT]',
         }
-        #VARS['rmsB.'+dname] = {
-        #    'value' : None, #self.calc_rmsB()
-        #    'lims'  : [0.01, 2.],
-        #    'label' : 'rms($\hat B$) [nT]'
-        #}
+        VARS['rmsB.'+dname] = {
+            'value' : None,
+            'lims'  : [0.01, 2.],
+            'label' : 'rms($\hat B$) [nT]'
+        }
         return {
         # this is the period for available data in our input directory
         #'t_utc' : [883180800, 1468713600], # [utc sec]
@@ -572,14 +634,36 @@ class _data_ACE1sec(object):
         # some weird numpy implementation)
         t_ace    = m.return_var('ACEepoch').copy() # [ACE epoch seconds]
         varname  = vname.replace('.'+self.dname,'') # remove '.ACE1sec'
-        var      = m.return_var(varname).copy()
+        if varname=='rmsB':
+            # deduced quantity
+            Bx   = m.return_var('Bgse_x').copy()
+            By   = m.return_var('Bgse_y').copy()
+            Bz   = m.return_var('Bgse_z').copy()
+            cc   = Bx<-900. # True for gaps
+            # fill gaps with NaNs
+            Bx[cc], By[cc], Bz[cc] = np.nan, np.nan, np.nan
+            t_out, var = calc_rmsB(
+                    t_ace, 
+                    B = np.array([Bx,By,Bz]).T, 
+                    width = self.width, 
+                    fgap  = self.fgap,
+                    res_o = self.res_o,
+                  )
+            """
+            NOTE: `t_out` is supposed to have a time resolution
+                  of `res_o`. This can be tested by printing:
+                  >>> print np.unique(t_out[1:]-t_out[:-1])
+            """
+        else:
+            var      = m.return_var(varname).copy()
+            t_out    = t_ace
         #assert len(var)!=1 and var!=-1, ' ## wrong varname!' 
         if type(var)==int: 
             assert var!=-1, " ## error: wrong varname "
 
         cc = var<-100.
         var[cc] = np.nan # put NaN in flags
-        t_utc = t_ace + 820454400.0 # [utc sec]
+        t_utc = t_out + 820454400.0 # [utc sec] ACEepoch -> UTC-sec
         kws.pop('data') # because its 'data' does not make sense here, and
                         # therefore we can replace it below.
         return selecc_window_ii(
