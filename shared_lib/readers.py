@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 from scipy.io.netcdf import netcdf_file
 import numpy as np
+from numpy.linalg import norm
 from datetime import datetime, timedelta
 from h5py import File as h5
 import os, sys, h5py, argparse
@@ -234,12 +235,13 @@ def deduce_fnms(bartels, ini, end, subdir=''):
 def calc_rmsB(t_inp, B, width=3600., fgap=0.2, res_o=60):
     """
     * t
-    time in seconds.
+    time in seconds (be UTC-sec, GPS-sec, ACEepoch-sec, etc, 
+    doesn't matter).
     * B
-    vector [Bx,By,Bz]
+    vector such that, Bx=B[:,0], By=B[:,1], and Bz=B[:,2].
     * width: 
     time size in seconds, of the width on which
-    we'll calculate the rms.
+    we'll calculate the rmsB.
     * fgap:
     fraction of gaps that we'll tolerate.
     * res_o:
@@ -247,7 +249,7 @@ def calc_rmsB(t_inp, B, width=3600., fgap=0.2, res_o=60):
     one by one, y VERY expensive; so an alternative approach
     that we are using here, is to process one data point
     every 60 points (i.e. with 1min cadence). NOTE: the
-    `width` must be INTEGER && divisible by `res_o`!!
+    `width` must be INTEGER!!
     """
     # to convert numpy warnings to errors
     #np.seterr(all='raise')
@@ -258,9 +260,11 @@ def calc_rmsB(t_inp, B, width=3600., fgap=0.2, res_o=60):
     ini, end = c1.nonzero()[0][-1], c2.nonzero()[0][0]
     # index list
     t_indexes = np.arange(ini+1, end, res_o)
-    # buffer
-    rmsB = np.zeros(t_indexes.size, dtype=B.dtype)
-    tnew = np.zeros(t_indexes.size, dtype=np.float64)
+    # outputs
+    rmsB      = np.zeros(t_indexes.size, dtype=B.dtype)
+    rmsB_para = np.zeros(t_indexes.size, dtype=B.dtype)
+    rmsB_perp = np.zeros(t_indexes.size, dtype=B.dtype)
+    tnew      = np.zeros(t_indexes.size, dtype=np.float64)
     # half the size of width in number of index units
     w2 = int(0.5*width)
     for i, i_ in zip(t_indexes, range(t_indexes.size)):
@@ -275,12 +279,33 @@ def calc_rmsB(t_inp, B, width=3600., fgap=0.2, res_o=60):
             continue
 
         #NOTE: a.std() is equivalent to np.sqrt(((a - a.mean())**2).sum()/a.size)
-        ms  = (np.square(B[ti,:] - np.mean(B[ti,:], axis=0))).sum()
+        Bo  = np.mean(B[ti,:], axis=0) # local Bo in the window `width`
+        dB  = B[ti,:] - Bo             # deviation of `B` from `Bo`
+        # parallel component of `dB` on `Bo`
+        dB_para = np.dot(dB, Bo/norm(Bo)) 
+        # perp component is `dB` minus the parallel part
+        """
+        NOTE: np.outer() is the "outer product" of two vectors, so that
+        dB_para[0]*Bo/norm(Bo) is the parallel component of `dB` in 
+        vector form (recall that `Bo` has a (3,) shape).
+        Then:
+        >>> dB[j,:] - np.outer(dB_para, Bo/norm(Bo))[j,:]
+        is the perpendicular component of `dB` for the time
+        index `j`.
+        """
+        # rmsB
+        dB_perp = dB - np.outer(dB_para, Bo/norm(Bo))
+        ms  = (np.square(dB)).sum()
         ms /= 1.*ti.size
-
         rmsB[i_]  = np.sqrt(ms)
+        # rmsB (parallel)
+        ms  = np.square(dB_para).sum()/(1.*ti.size)
+        rmsB_para[i_] = np.sqrt(ms)
+        # rmsB (perpendicular)
+        ms  = np.square(dB_perp).sum()/(1.*ti.size)
+        rmsB_perp[i_] = np.sqrt(ms)
 
-    return tnew, rmsB
+    return tnew, rmsB, rmsB_para, rmsB_perp
 
 
 #----------- data handlers -----------
@@ -545,12 +570,13 @@ class _data_ACE1sec(object):
     observables, such as "rmsB".
     They are used in `self.grab_block()`.
     """
-    width   = 3600. # time width of running windows
-    fgap    = 0.2   # gap-fraction to tolerate
-    res_o   = 60    # output resolution
+    width   = 3600. # [sec] time width of rmsB-calculation
+    fgap    = 0.2   # [1] gap-fraction to tolerate
+    res_o   = 60    # [sec] output resolution
 
     def __init__(self, **kws):
         self.dir_inp = kws['input']
+        self.now = None
 
     #@profile
     def load(self, **kws):
@@ -574,8 +600,14 @@ class _data_ACE1sec(object):
         }
         VARS['rmsB.'+dname] = {
             'value' : None,
-            'lims'  : [0.01, 2.],
-            'label' : 'rms($\hat B$) [nT]'
+            'lims'  : [0.9, 11.],
+            'label' : 'rms($\hat B$) [nT]',
+        }
+        VARS['rmsB_ratio.'+dname] = {
+            'value' : None,
+            'lims'  : [0.9, 11.],
+            'label' : '$\delta B^2_{{\perp}} / \delta B^2_{{\parallel}}$'+\
+                    '  ($\Delta t:$ {dt:2.1f} hr)'.format(dt=self.width/3600.),
         }
         return {
         # this is the period for available data in our input directory
@@ -634,7 +666,12 @@ class _data_ACE1sec(object):
         # some weird numpy implementation)
         t_ace    = m.return_var('ACEepoch').copy() # [ACE epoch seconds]
         varname  = vname.replace('.'+self.dname,'') # remove '.ACE1sec'
-        if varname=='rmsB':
+
+        if varname.startswith('rmsB') and self.now!=(tini,tend):
+            """
+            only do the rms calculation if we didn't 
+            for this period (tini,tend) already!
+            """
             # deduced quantity
             Bx   = m.return_var('Bgse_x').copy()
             By   = m.return_var('Bgse_y').copy()
@@ -642,18 +679,28 @@ class _data_ACE1sec(object):
             cc   = Bx<-900. # True for gaps
             # fill gaps with NaNs
             Bx[cc], By[cc], Bz[cc] = np.nan, np.nan, np.nan
-            t_out, var = calc_rmsB(
-                    t_ace, 
-                    B = np.array([Bx,By,Bz]).T, 
-                    width = self.width, 
-                    fgap  = self.fgap,
-                    res_o = self.res_o,
-                  )
+            self.t_out, self.rmsB, self.rmsB_para, self.rmsB_perp = calc_rmsB(
+                t_inp = t_ace, 
+                B     = np.array([Bx,By,Bz]).T, 
+                width = self.width, 
+                fgap  = self.fgap,
+                res_o = self.res_o,
+            )
             """
             NOTE: `t_out` is supposed to have a time resolution
                   of `res_o`. This can be tested by printing:
                   >>> print np.unique(t_out[1:]-t_out[:-1])
             """
+            # to avoid doing the calculation for the 
+            # next rms quantity, in this same period (tini,tend).
+            self.now      = (tini, tend)
+
+        if varname=='rmsB':
+            t_out = self.t_out
+            var   = self.rmsB
+        elif varname=='rmsB_ratio':
+            t_out = self.t_out
+            var   = self.rmsB_perp/self.rmsB_para
         else:
             var      = m.return_var(varname).copy()
             t_out    = t_ace
@@ -661,9 +708,9 @@ class _data_ACE1sec(object):
         if type(var)==int: 
             assert var!=-1, " ## error: wrong varname "
 
-        cc = var<-100.
+        cc      = var<-100.
         var[cc] = np.nan # put NaN in flags
-        t_utc = t_out + 820454400.0 # [utc sec] ACEepoch -> UTC-sec
+        t_utc   = t_out + 820454400.0 # [utc sec] ACEepoch -> UTC-sec
         kws.pop('data') # because its 'data' does not make sense here, and
                         # therefore we can replace it below.
         return selecc_window_ii(
