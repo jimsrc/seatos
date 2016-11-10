@@ -221,16 +221,8 @@ n_evnts = len(events)
 nobs    = len(pa.obs)
 
 for id, i in zip(events, range(n_evnts)):
-    t        = emgr.out['events_data'][id]['t_days']
-    ndata    = len(t)
-    data_out = np.nan*np.ones((ndata, 1+nobs))
-    data_out[:,0] = t
-    #import pdb; pdb.set_trace()
-    for obs, io in zip(pa.obs, range(nobs)):
-        data_out[:,io+1] = emgr.out['events_data'][id][obs+'.'+emgr.data_name]
-
     myid = int(id[3:])
-    fname_out = '%s/event.data_vlo.%04d_vhi.%04d_id.%03d.txt' % (dir_dst, emgr.CUTS['v_lo'], emgr.CUTS['v_hi'], myid)
+    #--- construct header/footer
     dtsh = emgr.dt_sh[myid]  # [days] sheath duration
     dtmc = emgr.dt_mc[myid]  # [days] MC duration
     dt   = (bounds.tend[myid]-bounds.tini[myid]).total_seconds()/86400.
@@ -247,7 +239,12 @@ for id, i in zip(events, range(n_evnts)):
         struct=pa.struct,
         date=emgr.bd.tend[myid].strftime('%d %B %Y %H:%M'),
     )
-    np.savetxt(fname_out,data_out,header=HEADER,footer=FOOTER,fmt='%g')
+    #--- get the data
+    for obs, io in zip(pa.obs, range(nobs)):
+        buffer = emgr.out['events_data'][id][obs+'.'+emgr.data_name] # [dummy1]
+        data_out = np.array([buffer.time, buffer.data]).T
+        fname_out = '%s/event.data_%s_vlo.%04d_vhi.%04d_id.%03d.txt' % (dir_dst, obs+'.'+emgr.data_name, emgr.CUTS['v_lo'], emgr.CUTS['v_hi'], myid)
+        np.savetxt(fname_out,data_out,header=HEADER,footer=FOOTER,fmt='%g')
 
 print " --> saved in: "+dir_dst
 

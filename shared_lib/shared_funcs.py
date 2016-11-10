@@ -346,10 +346,36 @@ def check_redundancy(fname, name):
     else:
         return False
 
-
 class general:
     def __init__(self):
         self.name = 'name'
+
+class dummy1:
+    def __init__(self,):
+        pass
+
+class dummy2 (object):
+    """
+    can be used:
+    >>> dd = dummy2()
+    >>> dd['name'] = [3,4,5]
+    >>> dd['name2'].time = [0,1,2,3,4]
+    """
+    def __init__(self):
+        self.this = {}
+
+    def __getitem__(self, idx):
+        if not idx in self.this.keys():
+            self.this[idx] = dummy1()
+        return self.this[idx]
+
+    def set(self, name, attname, value):
+        if not name in self.this.keys():
+            self.this[name] = dummy1()
+        setattr(self.this[name], attname, value)
+
+    def keys(self,):
+        return self.this.keys()
 
 
 class boundaries:
@@ -536,7 +562,6 @@ class events_mgr(object):
 
         for i in range(n_icmes):
             #np.set_printoptions(4) # nro de digitos a imprimir al usar numpy.arrays
-            #import pdb; pdb.set_trace()
             if not (ok[i] & self.SELECC[i]):   #---FILTRO--- (*1)
                 print ccl.Rn, " id:%d ---> ok, SELECC: "%i, ok[i], self.SELECC[i], ccl.W
                 nbad +=1
@@ -550,7 +575,7 @@ class events_mgr(object):
             nok +=1
             if collect_only:
                 # evdata is just a pointer
-                evdata = self.out['events_data']['id_%03d'%i] = {} 
+                evdata = self.out['events_data']['id_%03d'%i] = dummy2() #{} 
 
             # recorremos las variables:
             for varname in VARS.keys():
@@ -562,20 +587,9 @@ class events_mgr(object):
                             tend=bd.tend[i],
                             vname=varname, # for ACE 1sec
                           )
-                """
-                if type(t)==type(var)==int and [t,var]==[-1,-1]:
-                    #TODO: watch for `nok` and `evdata`
-                    print " >>>>>>>>> ", i, varname
-                    Enough[varname] += [False]
-                    ADAP[nok-1][varname] = [None, None]
-                    if collect_only:
-                        evdata['t_days'] = []
-                        evdata[varname]  = []
-                    continue # error, no data for this `varname`
-                """
                 if collect_only:
-                    evdata['t_days'] = t
-                    evdata[varname] = var
+                    evdata.set(varname, 'time', t)
+                    evdata.set(varname, 'data', var)
 
                 #--- read average CR rates before shock/disturbance
                 if self.data_name in self.CR_observs:   # is it CR data?
@@ -584,14 +598,14 @@ class events_mgr(object):
 
                 #--- rebinea usando 'dt' como el ancho de nuevo bineo
                 out = adaptar_ii(
-                        nwndw = nwndw, 
-                        dT = dT, 
-                        n = nbin, 
-                        dt = dt, 
-                        t = t, 
-                        r = var, 
-                        fgap = self.fgap
-                      )
+                    nwndw = nwndw, 
+                    dT = dT, 
+                    n = nbin, 
+                    dt = dt, 
+                    t = t, 
+                    r = var, 
+                    fgap = self.fgap
+                )
                 enough    = out[0]    # True: data con menos de 100*'fgap'% de gap
                 Enough[varname]         += [ enough ]
                 ADAP[nok-1][varname]    = out[1] # out[1] = [tiempo, variable]

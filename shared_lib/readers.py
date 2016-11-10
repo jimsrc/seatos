@@ -600,12 +600,12 @@ class _data_ACE1sec(object):
         }
         VARS['rmsB.'+dname] = {
             'value' : None,
-            'lims'  : [0.9, 11.],
+            'lims'  : [0.5, 11.],
             'label' : 'rms($\hat B$) [nT]',
         }
         VARS['rmsB_ratio.'+dname] = {
             'value' : None,
-            'lims'  : [0.9, 11.],
+            'lims'  : [0.5, 50.],
             'label' : '$\delta B^2_{{\perp}} / \delta B^2_{{\parallel}}$'+\
                     '  ($\Delta t:$ {dt:2.1f} hr)'.format(dt=self.width/3600.),
         }
@@ -650,7 +650,7 @@ class _data_ACE1sec(object):
             )
        
         # -- deduce fnm_ls
-        subdir = '{HOME}/data_ace/mag_data_1sec'.format(**os.environ)
+        subdir = '/media/hdd_extern_hegea/data_ace/mag_data_1sec'.format(**os.environ)
         fnm_ls = deduce_fnms(self.bartels, tini, tend, subdir)
         for fnm in fnm_ls:
             print fnm
@@ -700,7 +700,7 @@ class _data_ACE1sec(object):
             var   = self.rmsB
         elif varname=='rmsB_ratio':
             t_out = self.t_out
-            var   = self.rmsB_perp/self.rmsB_para
+            var   = np.square(self.rmsB_perp/self.rmsB_para)
         else:
             var      = m.return_var(varname).copy()
             t_out    = t_ace
