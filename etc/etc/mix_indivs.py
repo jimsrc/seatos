@@ -153,6 +153,7 @@ for obs in pa.obs:
             ri[id].ini = meta['ini']
 
 
+tfac = 24. # '1' to show in days
 #--- ratio of (right-width)/(left-ratio)
 opt = {
 'ms'  : 3,
@@ -162,6 +163,10 @@ opt = {
 for obs in pa.obs:
     le, ri = buff[obs].le, buff[obs].ri
     for id in buff[obs].le.keys():
+        dt_left = buff[obs].le[id].dt
+        dt_right = buff[obs].ri[id].dt
+        # x-limits for plot
+        xlim = -dt_left, dt_left+2.*dt_right
         # new fig
         fig   = figure(1, figsize=(6,4))
         ax    = fig.add_subplot(111)
@@ -169,23 +174,31 @@ for obs in pa.obs:
                     ax.transData, ax.transAxes)
         #--- left
         t, data = le[id].t, le[id].data
-        dt_left = buff[obs].le[id].dt
         # only plot what is BEFORE 'left' structure ends
         cc = t<=dt_left
-        ax.plot(t[cc], data[cc], '-ob', **opt)
+        _max_le = np.nanmax(data[(cc)&(t>xlim[0])])
+        ax.plot(tfac*t[cc], data[cc], '-ok', **opt)
         #--- right
         t, data = ri[id].t, ri[id].data
         # only plot what is AFTER 'right' structure begins
         cc = t>=dt_left
-        ax.plot(t[cc], data[cc], '-or', **opt)
+        _max_ri = np.nanmax(data[(cc)&(t<xlim[1])])
+        ax.plot(tfac*t[cc], data[cc], '-ok', **opt)
         #--- shade for left
-        rect1 = patches.Rectangle((0., 0.), width=dt_left, height=1,
+        rect1 = patches.Rectangle((0., 0.), width=tfac*dt_left, height=1,
             transform=trans, color='orange',
             alpha=0.3)
         ax.add_patch(rect1)
+        #--- shade for right
+        rect1 = patches.Rectangle((tfac*dt_left, 0.), width=tfac*dt_right, height=1,
+            transform=trans, color='blue',
+            alpha=0.3)
+        ax.add_patch(rect1)
         #--- deco
+        ax.set_xlim(tfac*xlim[0], tfac*xlim[1])
+        ax.set_ylim(top=np.max([_max_le,_max_ri]))
         ax.grid(True)
-        ax.set_xlabel('days since shock')
+        ax.set_xlabel('days since shock\n(%s)'%le[id].ini)
         ax.set_ylabel(obs+' '+buff[obs].units)
         #--- save
         fname_fig = pa.plot+'/test_%03d.png'%id
