@@ -231,7 +231,7 @@ def averages_and_std_ii(nwndw,
         return [nok, nbad, tnorm, VAR_avrg, VAR_medi, VAR_std, ndata]
 
 
-def mvs_for_each_event(VAR_adap, nbin, nwndw, Enough):
+def mvs_for_each_event(VAR_adap, nbin, nwndw, Enough, verbose=False):
     nok         = size(VAR_adap, axis=0)
     mvs         = zeros(nok)            # valores medios por cada evento
     binsPerTimeUnit = nbin/(1+nwndw[0]+nwndw[1])    # nro de bines por u. de tiempo
@@ -241,9 +241,9 @@ def mvs_for_each_event(VAR_adap, nbin, nwndw, Enough):
         cc  = ~isnan(aux)                   # pick good-data only
         #if len(find(cc))>1:
         if Enough[i]:       # solo imprimo los q tienen *suficiente data*
-            print ccl.G
-            print "id %d/%d: "%(i+1, nok), aux[cc]
-            print ccl.W
+            if verbose:
+                print ccl.G + "id %d/%d: %r"%(i+1, nok, aux[cc]) + ccl.W
+
             mvs[i] = mean(aux[cc])
         else:
             mvs[i] = nan
@@ -282,6 +282,11 @@ def calc_beta(Temp, Pcc, B):
 
 
 def thetacond(ThetaThres, ThetaSh):
+    """
+    Set a lower threshold for shock orientation, using Wang's
+    catalog of shocks.
+    NOTE: Near 180Â means very close to the nose!
+    """
     if ThetaThres<=0.:
         print ccl.Rn + ' ----> BAD WANG FILTER!!: ThetaThres<=0.'
         print ' ----> Saliendo...' + ccl.Rn
@@ -581,12 +586,12 @@ class events_mgr(object):
             for varname in VARS.keys():
                 dt      = dT*(1+nwndw[0]+nwndw[1])/nbin
                 t, var  = self.grab_window(
-                            nwndw=nwndw, #rango ploteo
-                            data=[self.t_utc, VARS[varname]['value']],
-                            tini=bd.tini[i],
-                            tend=bd.tend[i],
-                            vname=varname, # for ACE 1sec
-                          )
+                    nwndw=nwndw, #rango ploteo
+                    data=[self.t_utc, VARS[varname]['value']],
+                    tini=bd.tini[i],
+                    tend=bd.tend[i],
+                    vname=varname, # for ACE 1sec
+                )
                 if collect_only:
                     evdata.set(varname, 'time', t)
                     evdata.set(varname, 'data', var)
@@ -670,7 +675,7 @@ class events_mgr(object):
             self.rebined_data[varname] = VAR_adap
 
             # valores medios de esta variable para c/evento
-            avrVAR_adap = mvs_for_each_event(VAR_adap, nbin, nwndw, Enough[varname])
+            avrVAR_adap = mvs_for_each_event(VAR_adap, nbin, nwndw, Enough[varname], self.verbose)
             if self.verbose: 
                 print " ---> (%s) avrVAR_adap[]: \n" % varname, avrVAR_adap
 
@@ -993,7 +998,7 @@ class events_mgr(object):
         #------- orientacion del shock (catalogo Wang)
         if FILTER['wang']:
             ThetaThres  = self.CUTS['ThetaThres']
-            ThetaCond   = thetacond(ThetaThres, ThetaSh)
+            ThetaCond   = thetacond(ThetaThres, ThetaSh) # set lower threshold
 
         #------- duration of sheaths
         self.dt_mc      = diff_dates(tb.tend_mc, tb.tini_mc)/day     # [day]

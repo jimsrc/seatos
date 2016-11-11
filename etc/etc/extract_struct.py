@@ -109,6 +109,18 @@ help='alias name of structure to analyze.\
  Options are "sh.mc", "sh.i", "mc", "i" for sheath-of-mc, \
  sheath-of-icme, mc, and icme respectively.',
 )
+parser.add_argument(
+'-wang', '--wang',
+type=float,
+default=None,
+help="""
+If not used, ignores Wang's catalog. Otherwise, set a lower 
+threshold value to filter events according to its shock orientation, 
+using Wang's catalog.
+NOTE: the orientation is 180 degrees close to the nose!
+""",
+metavar=('THRESHOLD',),
+)
 
 
 pa = parser.parse_args()
@@ -142,7 +154,7 @@ MCwant  = {'flags':     pa.icme_flag.split('.'), #('2',),
 FILTER                  = {}
 FILTER['Mcmultiple']    = False # True para incluir eventos multi-MC
 FILTER['CorrShift']     = pa.tshift #True
-FILTER['wang']          = False #False #True
+FILTER['wang']          = pa.wang if pa.wang is not None else False #False/True
 FILTER['vsw_filter']    = True
 FILTER['z_filter_on']   = False
 FILTER['MCwant']        = MCwant
