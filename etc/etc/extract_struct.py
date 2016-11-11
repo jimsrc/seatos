@@ -238,10 +238,6 @@ for id, i in zip(events, range(n_evnts)):
     dtsh = emgr.dt_sh[myid]  # [days] sheath duration
     dtmc = emgr.dt_mc[myid]  # [days] MC duration
     dt   = (bounds.tend[myid]-bounds.tini[myid]).total_seconds()/86400.
-    FOOTER=''+\
-    'dt [days]: %g\n' % dt +\
-    'dt_sheath [days]: %g\n' % dtsh +\
-    'dt_MC [days]: %g' % dtmc
     HEADER=''+\
     'ini ({struct}) : {date}'.format(
         struct=pa.struct,
@@ -251,6 +247,10 @@ for id, i in zip(events, range(n_evnts)):
         struct=pa.struct,
         date=emgr.bd.tend[myid].strftime('%d %B %Y %H:%M'),
     )
+    FOOTER=''+\
+    'dt [days]: %g\n' % dt +\
+    'dt_sheath [days]: %g\n' % dtsh +\
+    'dt_MC [days]: %g' % dtmc
     #--- get the data
     for obs, io in zip(pa.obs, range(nobs)):
         buffer = emgr.out['events_data'][id][obs+'.'+emgr.data_name] # [dummy1]
