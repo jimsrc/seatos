@@ -10,8 +10,10 @@
 *BCKP*
 *bckp*
 
-# cython modules
+# compiled cython
 *.so
+# line profile
+*.lprof
 
 mcs/ascii
 #mcs/plots

@@ -51,9 +51,9 @@ pa = parser.parse_args()
 nbefore, nafter = 2, 4
 fgap            = 0.2
 
-MCwant          = '0.1.2.2H' #'2'  #'2' #'2.2H'
+MCwant          = '2' #'0.1.2.2H' #'2'  #'2' #'2.2H'
 CorrShift       = False #True #False #True
-WangFlag        = 'NaN' #'90.0' #'NaN' #'130.0'  #'90.0'
+WangFlag        = '90.0' #'90.0' #'NaN' #'130.0'  #'90.0'
 vsw_filter      = False #False #True
 z_filter_on     = False
 B_filter        = False #False #True
@@ -90,6 +90,27 @@ fnro_mc = open(fname_inp_nro_mc, 'r')
 fnro_sh = open(fname_inp_nro_sh, 'r')
 
 stf = {}
+stf['Bmag.ACE1sec']    = {
+    'label': 'B [nT]',
+    'ylims': [5., 27.],
+    'text_loc_1': {'mc':[4.5, 10.0], 'sh':[-1.95, 12.0]},
+    'text_loc_2': {'mc':[4.5, 10.0], 'sh':[-1.95, 12.0]},
+    'text_loc_3': {'mc':[4.5, 12.0], 'sh':[-1.95, 12.0]}
+    }
+stf['rmsB.ACE1sec']    = {
+    'label': 'rmsB [nT]',
+    'ylims': [0.9, 20.],
+    'text_loc_1': {'mc':[4.5, 10.0], 'sh':[-1.95, 12.0]},
+    'text_loc_2': {'mc':[4.5, 10.0], 'sh':[-1.95, 12.0]},
+    'text_loc_3': {'mc':[4.5, 12.0], 'sh':[-1.95, 12.0]}
+    }
+stf['rmsB_ratio.ACE1sec']    = {
+    'label' : '$\delta B^2_{{\perp}} / \delta B^2_{{\parallel}}$',
+    'ylims': [0.8, 100.],
+    'text_loc_1': {'mc':[4.5, 2.0], 'sh':[-1.95, 2.0]},
+    'text_loc_2': {'mc':[4.5, 2.0], 'sh':[-1.95, 2.0]},
+    'text_loc_3': {'mc':[4.5, 2.0], 'sh':[-1.95, 2.0]}
+    }
 stf['B.ACE']    = {
     'label': 'B [T]',
     'ylims': [3., 14.],
@@ -196,8 +217,8 @@ for lmc, lsh in zip(fnro_mc, fnro_sh):
     sh.tnorm, sh.med, sh.avr, sh.std_err, sh.nValues = np.loadtxt(fname_inp_sh).T
 
     # nro de datos con mas del 80% non-gap data
-    TEXT['mc']  = 'events: %d'  % Nfinal_mc
-    TEXT['sh']  = 'events: %d'  % Nfinal_sh
+    TEXT['mc']  = ' N: %d'  % Nfinal_mc
+    TEXT['sh']  = ' N: %d'  % Nfinal_sh
     if(vlo==LOW):
         TEXT_LOC    = stf[varname]['text_loc_1'] #1.7, 12.0
     elif(vlo==MID1): # 450.0):

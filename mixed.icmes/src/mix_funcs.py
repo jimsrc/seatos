@@ -70,7 +70,9 @@ def makefig(mc, sh, TEXT, TEXT_LOC, YLIMS, YLAB, fname_fig):
     ax.set_ylabel(YLAB, fontsize=27)
 
     # if `varname` has any of these strings, plot in log-scale.
-    if any([(nm in varname) for nm in ('beta','Temp', 'rmsB', 'rmsBoB')]):
+    #import pdb; pdb.set_trace()
+    if any([(nm in varname) for nm in \
+        ('beta','Temp', 'rmsB', 'rmsBoB', 'ratio')]):
         ax.set_yscale('log')
     else:
         ax.set_yscale('linear')
