@@ -172,7 +172,7 @@ print " nvars: ", nvars
 
 i=2
 #fig = figure(1, figsize=(12, 15))
-f   = plt.figure(1, figsize=(9, 5.8))
+f   = plt.figure(1, figsize=(7, 5.8))
 nr  = 1         # scale for row size
 gs  = GridSpec(nrows=3*nr, ncols=2*3)
 gs.update(left=0.1, right=0.98, hspace=0.13, wspace=0.15)
@@ -208,8 +208,8 @@ for i in range(3):
         sh.tnorm, sh.med, sh.avr, sh.std_err, sh.nValues = np.loadtxt(fname_inp_sh).T
 
         # nro de datos con mas del 80% non-gap data
-        TEXT['mc']  = 'events: %d'  % Nfinal_mc
-        TEXT['sh']  = 'events: %d'  % Nfinal_sh
+        TEXT['mc']  = ' N: %d'  % Nfinal_mc
+        TEXT['sh']  = ' N: %d'  % Nfinal_sh
         if(vlo[i]==100.0):
             TEXT_LOC    = stf[varname]['text_loc_1'] #1.7, 12.0
         elif(vlo[i]==450.0):
