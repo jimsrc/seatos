@@ -231,7 +231,7 @@ def averages_and_std_ii(nwndw,
         return [nok, nbad, tnorm, VAR_avrg, VAR_medi, VAR_std, ndata]
 
 
-def mvs_for_each_event(VAR_adap, nbin, nwndw, Enough):
+def mvs_for_each_event(VAR_adap, nbin, nwndw, Enough, verbose=False):
     nok         = size(VAR_adap, axis=0)
     mvs         = zeros(nok)            # valores medios por cada evento
     binsPerTimeUnit = nbin/(1+nwndw[0]+nwndw[1])    # nro de bines por u. de tiempo
@@ -241,9 +241,9 @@ def mvs_for_each_event(VAR_adap, nbin, nwndw, Enough):
         cc  = ~isnan(aux)                   # pick good-data only
         #if len(find(cc))>1:
         if Enough[i]:       # solo imprimo los q tienen *suficiente data*
-            print ccl.G
-            print "id %d/%d: "%(i+1, nok), aux[cc]
-            print ccl.W
+            if verbose:
+                print ccl.G + "id %d/%d: %r"%(i+1, nok, aux[cc]) + ccl.W
+
             mvs[i] = mean(aux[cc])
         else:
             mvs[i] = nan
@@ -282,6 +282,11 @@ def calc_beta(Temp, Pcc, B):
 
 
 def thetacond(ThetaThres, ThetaSh):
+    """
+    Set a lower threshold for shock orientation, using Wang's
+    catalog of shocks.
+    NOTE: Near 180Â means very close to the nose!
+    """
     if ThetaThres<=0.:
         print ccl.Rn + ' ----> BAD WANG FILTER!!: ThetaThres<=0.'
         print ' ----> Saliendo...' + ccl.Rn
@@ -346,10 +351,36 @@ def check_redundancy(fname, name):
     else:
         return False
 
-
 class general:
     def __init__(self):
         self.name = 'name'
+
+class dummy1:
+    def __init__(self,):
+        pass
+
+class dummy2 (object):
+    """
+    can be used:
+    >>> dd = dummy2()
+    >>> dd['name'] = [3,4,5]
+    >>> dd['name2'].time = [0,1,2,3,4]
+    """
+    def __init__(self):
+        self.this = {}
+
+    def __getitem__(self, idx):
+        if not idx in self.this.keys():
+            self.this[idx] = dummy1()
+        return self.this[idx]
+
+    def set(self, name, attname, value):
+        if not name in self.this.keys():
+            self.this[name] = dummy1()
+        setattr(self.this[name], attname, value)
+
+    def keys(self,):
+        return self.this.keys()
 
 
 class boundaries:
@@ -536,7 +567,6 @@ class events_mgr(object):
 
         for i in range(n_icmes):
             #np.set_printoptions(4) # nro de digitos a imprimir al usar numpy.arrays
-            #import pdb; pdb.set_trace()
             if not (ok[i] & self.SELECC[i]):   #---FILTRO--- (*1)
                 print ccl.Rn, " id:%d ---> ok, SELECC: "%i, ok[i], self.SELECC[i], ccl.W
                 nbad +=1
@@ -550,32 +580,21 @@ class events_mgr(object):
             nok +=1
             if collect_only:
                 # evdata is just a pointer
-                evdata = self.out['events_data']['id_%03d'%i] = {} 
+                evdata = self.out['events_data']['id_%03d'%i] = dummy2() #{} 
 
             # recorremos las variables:
             for varname in VARS.keys():
                 dt      = dT*(1+nwndw[0]+nwndw[1])/nbin
                 t, var  = self.grab_window(
-                            nwndw=nwndw, #rango ploteo
-                            data=[self.t_utc, VARS[varname]['value']],
-                            tini=bd.tini[i],
-                            tend=bd.tend[i],
-                            vname=varname, # for ACE 1sec
-                          )
-                """
-                if type(t)==type(var)==int and [t,var]==[-1,-1]:
-                    #TODO: watch for `nok` and `evdata`
-                    print " >>>>>>>>> ", i, varname
-                    Enough[varname] += [False]
-                    ADAP[nok-1][varname] = [None, None]
-                    if collect_only:
-                        evdata['t_days'] = []
-                        evdata[varname]  = []
-                    continue # error, no data for this `varname`
-                """
+                    nwndw=nwndw, #rango ploteo
+                    data=[self.t_utc, VARS[varname]['value']],
+                    tini=bd.tini[i],
+                    tend=bd.tend[i],
+                    vname=varname, # for ACE 1sec
+                )
                 if collect_only:
-                    evdata['t_days'] = t
-                    evdata[varname] = var
+                    evdata.set(varname, 'time', t)
+                    evdata.set(varname, 'data', var)
 
                 #--- read average CR rates before shock/disturbance
                 if self.data_name in self.CR_observs:   # is it CR data?
@@ -584,14 +603,14 @@ class events_mgr(object):
 
                 #--- rebinea usando 'dt' como el ancho de nuevo bineo
                 out = adaptar_ii(
-                        nwndw = nwndw, 
-                        dT = dT, 
-                        n = nbin, 
-                        dt = dt, 
-                        t = t, 
-                        r = var, 
-                        fgap = self.fgap
-                      )
+                    nwndw = nwndw, 
+                    dT = dT, 
+                    n = nbin, 
+                    dt = dt, 
+                    t = t, 
+                    r = var, 
+                    fgap = self.fgap
+                )
                 enough    = out[0]    # True: data con menos de 100*'fgap'% de gap
                 Enough[varname]         += [ enough ]
                 ADAP[nok-1][varname]    = out[1] # out[1] = [tiempo, variable]
@@ -656,7 +675,7 @@ class events_mgr(object):
             self.rebined_data[varname] = VAR_adap
 
             # valores medios de esta variable para c/evento
-            avrVAR_adap = mvs_for_each_event(VAR_adap, nbin, nwndw, Enough[varname])
+            avrVAR_adap = mvs_for_each_event(VAR_adap, nbin, nwndw, Enough[varname], self.verbose)
             if self.verbose: 
                 print " ---> (%s) avrVAR_adap[]: \n" % varname, avrVAR_adap
 
@@ -979,7 +998,7 @@ class events_mgr(object):
         #------- orientacion del shock (catalogo Wang)
         if FILTER['wang']:
             ThetaThres  = self.CUTS['ThetaThres']
-            ThetaCond   = thetacond(ThetaThres, ThetaSh)
+            ThetaCond   = thetacond(ThetaThres, ThetaSh) # set lower threshold
 
         #------- duration of sheaths
         self.dt_mc      = diff_dates(tb.tend_mc, tb.tini_mc)/day     # [day]

@@ -109,6 +109,18 @@ help='alias name of structure to analyze.\
  Options are "sh.mc", "sh.i", "mc", "i" for sheath-of-mc, \
  sheath-of-icme, mc, and icme respectively.',
 )
+parser.add_argument(
+'-wang', '--wang',
+type=float,
+default=None,
+help="""
+If not used, ignores Wang's catalog. Otherwise, set a lower 
+threshold value to filter events according to its shock orientation, 
+using Wang's catalog.
+NOTE: the orientation is 180 degrees close to the nose!
+""",
+metavar=('THRESHOLD',),
+)
 
 
 pa = parser.parse_args()
@@ -142,7 +154,7 @@ MCwant  = {'flags':     pa.icme_flag.split('.'), #('2',),
 FILTER                  = {}
 FILTER['Mcmultiple']    = False # True para incluir eventos multi-MC
 FILTER['CorrShift']     = pa.tshift #True
-FILTER['wang']          = False #False #True
+FILTER['wang']          = pa.wang if pa.wang is not None else False #False/True
 FILTER['vsw_filter']    = True
 FILTER['z_filter_on']   = False
 FILTER['MCwant']        = MCwant
@@ -185,6 +197,8 @@ elif pa.struct=='mc':
     bounds.tend = tb.tend_mc
 else:
     raise SystemExit(' ---> wrong structure! : '+pa.struct)
+from copy import deepcopy
+bounds = deepcopy(bounds)
 
 from shared import readers
 #+++++++++++++++++++++++++++++++++++++++++++++++++
@@ -205,8 +219,8 @@ emgr.rebine(collect_only=True)
 
 # save to file
 #---- dest directory
-assert os.path.isdir(pa.dir_data), \
-    " ## ERROR ## --> doesn't exist: "+pa.dir_data
+#assert os.path.isdir(pa.dir_data), \
+#    " ## ERROR ## --> doesn't exist: "+pa.dir_data
 dir_dst = '%s/MCflag%s' % (pa.dir_data, FILTER['MCwant']['alias'])
 if FILTER['CorrShift']:
     dir_dst += '/wShiftCorr/events_data'
@@ -219,23 +233,11 @@ n_evnts = len(events)
 nobs    = len(pa.obs)
 
 for id, i in zip(events, range(n_evnts)):
-    t        = emgr.out['events_data'][id]['t_days']
-    ndata    = len(t)
-    data_out = np.nan*np.ones((ndata, 1+nobs))
-    data_out[:,0] = t
-    #import pdb; pdb.set_trace()
-    for obs, io in zip(pa.obs, range(nobs)):
-        data_out[:,io+1] = emgr.out['events_data'][id][obs+'.'+emgr.data_name]
-
     myid = int(id[3:])
-    fname_out = '%s/event.data_vlo.%04d_vhi.%04d_id.%03d.txt' % (dir_dst, emgr.CUTS['v_lo'], emgr.CUTS['v_hi'], myid)
+    #--- construct header/footer
     dtsh = emgr.dt_sh[myid]  # [days] sheath duration
     dtmc = emgr.dt_mc[myid]  # [days] MC duration
     dt   = (bounds.tend[myid]-bounds.tini[myid]).total_seconds()/86400.
-    FOOTER=''+\
-    'dt [days]: %g\n' % dt +\
-    'dt_sheath [days]: %g\n' % dtsh +\
-    'dt_MC [days]: %g' % dtmc
     HEADER=''+\
     'ini ({struct}) : {date}'.format(
         struct=pa.struct,
@@ -245,7 +247,16 @@ for id, i in zip(events, range(n_evnts)):
         struct=pa.struct,
         date=emgr.bd.tend[myid].strftime('%d %B %Y %H:%M'),
     )
-    np.savetxt(fname_out,data_out,header=HEADER,footer=FOOTER,fmt='%g')
+    FOOTER=''+\
+    'dt [days]: %g\n' % dt +\
+    'dt_sheath [days]: %g\n' % dtsh +\
+    'dt_MC [days]: %g' % dtmc
+    #--- get the data
+    for obs, io in zip(pa.obs, range(nobs)):
+        buffer = emgr.out['events_data'][id][obs+'.'+emgr.data_name] # [dummy1]
+        data_out = np.array([buffer.time, buffer.data]).T
+        fname_out = '%s/event.data_%s_vlo.%04d_vhi.%04d_id.%03d.txt' % (dir_dst, obs+'.'+emgr.data_name, emgr.CUTS['v_lo'], emgr.CUTS['v_hi'], myid)
+        np.savetxt(fname_out,data_out,header=HEADER,footer=FOOTER,fmt='%g')
 
 print " --> saved in: "+dir_dst
 
