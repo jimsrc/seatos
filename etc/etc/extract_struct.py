@@ -219,8 +219,8 @@ emgr.rebine(collect_only=True)
 
 # save to file
 #---- dest directory
-assert os.path.isdir(pa.dir_data), \
-    " ## ERROR ## --> doesn't exist: "+pa.dir_data
+#assert os.path.isdir(pa.dir_data), \
+#    " ## ERROR ## --> doesn't exist: "+pa.dir_data
 dir_dst = '%s/MCflag%s' % (pa.dir_data, FILTER['MCwant']['alias'])
 if FILTER['CorrShift']:
     dir_dst += '/wShiftCorr/events_data'

@@ -107,8 +107,8 @@ for obs in pa.obs:
     assert n_left>0 and n_right>0,\
     """
     we have no files in left-dir (N:{n_left}) or 
-    right-dir (N:{n_right}).
-    """.format(n_left=n_left, n_right=n_right)
+    right-dir (N:{n_right}), with the pattern '*_{pattern}_*.txt'
+    """.format(n_left=n_left, n_right=n_right, pattern=obs)
     #assert len(fnm_ls)==1,\
     #"""
     #There must be ONLY ONE file in '{dir}' for
@@ -121,6 +121,8 @@ for obs in pa.obs:
     #)
 
 
+#--- all IDs of events w/ some data
+id_events = []
 #--- grab data from left & right :-)
 buff = sf.dummy2()
 for obs in pa.obs:
@@ -141,6 +143,7 @@ for obs in pa.obs:
             # event id
             ind_id = fnm_left.split('/')[-1].rfind('id.')+3
             id = int(fnm_left.split('/')[-1][ind_id:ind_id+3]) # [int]
+            if id not in id_events: id_events.append(id) # collect
             # get data
             le[id].t, le[id].data = np.loadtxt(fnm_left, unpack=True)
             ri[id].t, ri[id].data = np.loadtxt(fnm_right, unpack=True)
@@ -152,38 +155,60 @@ for obs in pa.obs:
             ri[id].dt  = meta['dt']
             ri[id].ini = meta['ini']
 
+print "--> finished i/o"
 
+
+
+nr  = 1         # scale for row size
 tfac = 24. # '1' to show in days
+nobs  = len(pa.obs)
 #--- ratio of (right-width)/(left-ratio)
 opt = {
 'ms'  : 3,
 'mec' : 'none',
 }
-#--- build figs
-for obs in pa.obs:
-    le, ri = buff[obs].le, buff[obs].ri
-    for id in buff[obs].le.keys():
-        dt_left = buff[obs].le[id].dt
-        dt_right = buff[obs].ri[id].dt
-        # x-limits for plot
-        xlim = -dt_left, dt_left+2.*dt_right
-        # new fig
-        fig   = figure(1, figsize=(6,4))
-        ax    = fig.add_subplot(111)
+for id in id_events:
+    ok = True
+    # this event-id must have data in ALL observables
+    for obs in pa.obs:
+        ok &= id in buff[obs].le.keys() and id in buff[obs].ri.keys()
+        ok &= ~np.isnan(np.nanmean(buff[obs].le[id].data)) # any valid data?
+        ok &= ~np.isnan(np.nanmean(buff[obs].ri[id].data)) # any valid data?
+
+    if not ok:
+        continue # next event-id
+
+    dt_left = buff[obs].le[id].dt
+    dt_right = buff[obs].ri[id].dt
+    # x-limits for plot
+    xlim = -dt_left, dt_left+2.*dt_right
+    # new fig
+    #fig   = figure(1, figsize=(6,4))
+    fig   = plt.figure(1, figsize=(9, 10))
+    gs  = GridSpec(nrows=6*nr, ncols=2)
+    gs.update(left=0.1, right=0.98, hspace=0.13, wspace=0.15)
+    print id
+    for obs, io in zip(pa.obs, range(nobs)):
+        le, ri = buff[obs].le[id], buff[obs].ri[id]
+        #ax    = fig.add_subplot(nobs, 1, io+1)
+        ax      = plt.subplot(gs[io*nr:(io+1)*nr, 0:2])
         trans = transforms.blended_transform_factory(
-                    ax.transData, ax.transAxes)
+            ax.transData, ax.transAxes)
         #--- left
-        t, data = le[id].t, le[id].data
+        t, data = le.t, le.data
         # only plot what is BEFORE 'left' structure ends
         cc = t<=dt_left
         _max_le = np.nanmax(data[(cc)&(t>xlim[0])])
+        _min_le = np.nanmin(data[(cc)&(t>xlim[0])])
         ax.plot(tfac*t[cc], data[cc], '-ok', **opt)
         #--- right
-        t, data = ri[id].t, ri[id].data
+        t, data = ri.t, ri.data
         # only plot what is AFTER 'right' structure begins
         cc = t>=dt_left
         _max_ri = np.nanmax(data[(cc)&(t<xlim[1])])
+        _min_ri = np.nanmin(data[(cc)&(t<xlim[1])])
         ax.plot(tfac*t[cc], data[cc], '-ok', **opt)
+
         #--- shade for left
         rect1 = patches.Rectangle((0., 0.), width=tfac*dt_left, height=1,
             transform=trans, color='orange',
@@ -194,23 +219,29 @@ for obs in pa.obs:
             transform=trans, color='blue',
             alpha=0.3)
         ax.add_patch(rect1)
+
         #--- deco
-        ax.set_xlim(tfac*xlim[0], tfac*xlim[1])
+        ax.set_xlim(np.min([tfac*xlim[0],-tfac*1.]), tfac*xlim[1])
         ax.set_ylim(top=np.max([_max_le,_max_ri]))
         ax.grid(True)
-        ax.set_xlabel('days since shock\n(%s)'%le[id].ini)
-        ax.set_ylabel(obs+' '+buff[obs].units)
-        #--- save
-        fname_fig = pa.plot+'/test_%03d.png'%id
-        fig.savefig(fname_fig, dpi=100, bbox_inches='tight')
-        close(fig)
+        ax.set_ylabel(obs.split('.')[0]+' '+buff[obs].units)
+        # ticks & labels x
+        if io+1==nobs: #n==nvars-1:
+            #ax.set_xlabel('time normalized to\nsheath/MC passage [1]', fontsize=11)
+            ax.set_xlabel('days since shock\n(%s)'%le.ini)
+        else:
+            ax.set_xlabel('')
+            #ax.get_xaxis().set_ticks([])
+            ax.xaxis.set_ticklabels([])
 
+        if obs.split('.')[0] in ('rmsB','rmsB_ratio','beta'):
+            #import pdb; pdb.set_trace()
+            ax.set_ylim(bottom=np.max([1e-3,np.min([_min_le,_min_ri])]))
+            ax.set_yscale('log')
 
-"""
-#fig = figure(1, figsize=(12, 15))
-f   = plt.figure(1, figsize=(9, 10))
-nr  = 1         # scale for row size
-gs  = GridSpec(nrows=6*nr, ncols=2*3)
-gs.update(left=0.1, right=0.98, hspace=0.13, wspace=0.15)
-"""
+    #--- save
+    fname_fig = pa.plot+'/test_%03d.png'%id
+    fig.savefig(fname_fig, dpi=100, bbox_inches='tight')
+    close(fig)
+
 #EOF
