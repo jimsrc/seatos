@@ -4,7 +4,8 @@ export RIGHT=$MEAN_PROFILES_ACE/one.structure/src/out.auger/MCflag0.1.2.2H/woShi
 
 group=low
 OUT=./out.auger_${group}
-./splitted.py -- --left $LEFT  --right $RIGHT  --plot $OUT  --group $group
+lims='375. 450.'
+./splitted.py -- --left $LEFT  --right $RIGHT  --plot $OUT  --lim $lims
 
 
 #EOF

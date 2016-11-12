@@ -16,12 +16,6 @@ parser = argparse.ArgumentParser(
 formatter_class=argparse.ArgumentDefaultsHelpFormatter
 )
 parser.add_argument(
-'-g', '--group',
-type=str,
-default='low',
-help='name of the sub-group of events. Can be low, mid, and high.',
-)
-parser.add_argument(
 '-right', '--right',
 type=str,
 default='../../icmes/ascii3',
@@ -39,7 +33,7 @@ type=str,
 default='../plots3'
 )
 parser.add_argument(
-'-Vs', '--Vsplit',
+'-lim', '--lim',
 type=float,
 nargs=2,
 default=None, # no split by default
@@ -51,29 +45,33 @@ include values of velocity splitting.
 """,
 metavar=('Vsw1','Vsw2'),
 )
+parser.add_argument(
+'-ftext', '--ftext',
+action='store_true',
+default=False,
+help='if not used, we put the number of events in the title.\
+Otherwise, we use the text-positions hardcoded in the script.',
+)
 pa = parser.parse_args()
 
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 os.system('mkdir -p '+pa.plot)
 
 #--- limites se seleccion
-if pa.Vsplit is not None:
-    LOW, MID1, MID2, TOP = 100.0, pa.Vsplit[0], pa.Vsplit[1], 3000.0
-    if pa.group=='low':
-        vlo, vhi        = LOW, MID1     # rango de velocidad Vmc
-    elif pa.group=='mid':
-        vlo, vhi        = MID1, MID2     # rango de velocidad Vmc
-    elif pa.group=='high':
-        vlo, vhi        = MID2, TOP     # rango de velocidad Vmc
-    else:
-        raise SystemExit(" --> wrong group name!\n Exiting...")
+if pa.lim is not None:
+    vlo, vhi = pa.lim
 
 
 #--- find our file 'n.events_...txt'
-str_vsplit = '_' if pa.Vsplit is None else '_vlo.%3.1f.vhi.%3.1f_'%(pa.Vsplit[0], pa.Vsplit[1])
+str_vsplit = '_' if pa.lim is None else '_vlo.%3.1f.vhi.%3.1f'%(pa.lim[0], pa.lim[1])
 pattern    = 'n.events_*%s.txt' % (str_vsplit)
 fnm_ls_le = glob(pa.left+'/'+pattern)
-assert len(fnm_ls_le)==1 # we should only have ONE!
+# we should only have ONE!
+assert len(fnm_ls_le)==1,\
+    """
+    --> we have:\n %r\n
+    --> we requested:\n %s
+    """%(fnm_ls_le, pa.left+'/'+pattern)
 # this files have the variable-names and the number 
 # of filtered-in events
 fnro_mc = open(pa.right+'/'+fnm_ls_le[0].split('/')[-1], 'r')
@@ -192,7 +190,6 @@ TEXT = {}
 print " input: "
 print " %s " % pa.left
 print " %s \n" % pa.right
-#print " vlo, vhi: ", (vlo, vhi), '\n'
 
 for lmc, lsh in zip(fnro_mc, fnro_sh):
     l_mc    = lmc.split()
@@ -203,7 +200,7 @@ for lmc, lsh in zip(fnro_mc, fnro_sh):
     mc, sh  = gral(), gral()
 
     #--- filename pattern 
-    str_vsplit = '_' if pa.Vsplit is None else '_vlo.%3.1f.vhi.%3.1f_'%(pa.Vsplit[0], pa.Vsplit[1])
+    str_vsplit = '_' if pa.lim is None else '_vlo.%3.1f.vhi.%3.1f'%(pa.lim[0], pa.lim[1])
     pattern    = 'MC*%s_%s.txt' % (str_vsplit, varname)
     fnm_ls_le  = glob(pa.left+'/'+pattern)
     assert len(fnm_ls_le)==1
@@ -219,7 +216,8 @@ for lmc, lsh in zip(fnro_mc, fnro_sh):
     # nro de datos con mas del 80% non-gap data
     TEXT['mc']  = ' N: %d'  % Nfinal_mc
     TEXT['sh']  = ' N: %d'  % Nfinal_sh
-    if pa.Vsplit is not None:
+    #--- position of text
+    if pa.ftext:
         if(vlo==LOW):
             TEXT_LOC    = stf[varname]['text_loc_1'] #1.7, 12.0
         elif(vlo==MID1): # 450.0):
@@ -229,12 +227,12 @@ for lmc, lsh in zip(fnro_mc, fnro_sh):
         else:
             print " ----> ERROR con 'v_lo'!"
     else:
-        TEXT_LOC = stf[varname]['text_loc_2'] # use the mid case
+        TEXT_LOC = None
 
     ylims       = stf[varname]['ylims'] #[4., 17.]
     ylabel      = stf[varname]['label'] #'B [nT]'
     fname_fig   = pa.plot + '/fig%s_%s.png'%(str_vsplit, varname)
-    makefig(mc, sh, TEXT, TEXT_LOC, ylims, ylabel, fname_fig)
+    makefig(mc, sh, TEXT, ylims, ylabel, fname_fig, pa.ftext, TEXT_LOC)
 
 
 print "\n output en: "
