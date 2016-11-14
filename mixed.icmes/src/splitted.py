@@ -8,17 +8,12 @@ import matplotlib.patches as patches
 import matplotlib.transforms as transforms
 from mix_funcs import gral, makefig
 from os.path import isdir, isfile
+from glob import glob
 
 
 #--- retrieve args
 parser = argparse.ArgumentParser(
 formatter_class=argparse.ArgumentDefaultsHelpFormatter
-)
-parser.add_argument(
-'-g', '--group',
-type=str,
-default='low',
-help='name of the sub-group of events. Can be low, mid, and high.',
 )
 parser.add_argument(
 '-right', '--right',
@@ -38,56 +33,50 @@ type=str,
 default='../plots3'
 )
 parser.add_argument(
-'-Vs', '--Vsplit',
+'-lim', '--lim',
 type=float,
 nargs=2,
-default=[375.,450.],
-help='SW speed values to describe the input partition of \
-the sample in three sub-groups of events.',
+default=None, # no split by default
+help="""
+SW speed values to describe the input partition of 
+the sample in three sub-groups of events.
+Is not specified, we asume that input filenames don't 
+include values of velocity splitting.
+""",
+metavar=('Vsw1','Vsw2'),
+)
+parser.add_argument(
+'-ftext', '--ftext',
+action='store_true',
+default=False,
+help='if not used, we put the number of events in the title.\
+Otherwise, we use the text-positions hardcoded in the script.',
 )
 pa = parser.parse_args()
 
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-nbefore, nafter = 2, 4
-fgap            = 0.2
-
-MCwant          = '2' #'0.1.2.2H' #'2'  #'2' #'2.2H'
-CorrShift       = False #True #False #True
-WangFlag        = '90.0' #'90.0' #'NaN' #'130.0'  #'90.0'
-vsw_filter      = False #False #True
-z_filter_on     = False
-B_filter        = False #False #True
-filter_dRicme   = False #False #True
-
-#------- nombre generico de archivos
-FNAME   = 'MCflag%s_%dbefore.%dafter_fgap%1.1f' % (MCwant, nbefore, nafter, fgap)
-FNAME   += '_Wang%s' % (WangFlag) 
-
-#------------ directorios de las nubes y sheaths
-if CorrShift:
-    prexShift = 'wShiftCorr'
-else:
-    prexShift = 'woShiftCorr'
-
 os.system('mkdir -p '+pa.plot)
 
 #--- limites se seleccion
-LOW, MID1, MID2, TOP = 100.0, pa.Vsplit[0], pa.Vsplit[1], 3000.0
-if pa.group=='low':
-    vlo, vhi        = LOW, MID1     # rango de velocidad Vmc
-elif pa.group=='mid':
-    vlo, vhi        = MID1, MID2     # rango de velocidad Vmc
-elif pa.group=='high':
-    vlo, vhi        = MID2, TOP     # rango de velocidad Vmc
-else:
-    print " --> wrong group name!\n Exiting..."
-    raise SystemExit
+if pa.lim is not None:
+    vlo, vhi = pa.lim
 
-fname_inp       = '%s_vlo.%3.1f.vhi.%3.1f' % (FNAME, vlo, vhi)
-fname_inp_nro_sh   = pa.left  + '/n.events_' + fname_inp + '.txt'
-fname_inp_nro_mc   = pa.right + '/n.events_' + fname_inp + '.txt'
-fnro_mc = open(fname_inp_nro_mc, 'r')
-fnro_sh = open(fname_inp_nro_sh, 'r')
+
+#--- find our file 'n.events_...txt'
+str_vsplit = '_' if pa.lim is None else '_vlo.%3.1f.vhi.%3.1f'%(pa.lim[0], pa.lim[1])
+pattern    = 'n.events_*%s.txt' % (str_vsplit)
+fnm_ls_le = glob(pa.left+'/'+pattern)
+# we should only have ONE!
+assert len(fnm_ls_le)==1,\
+    """
+    --> we have:\n %r\n
+    --> we requested:\n %s
+    """%(fnm_ls_le, pa.left+'/'+pattern)
+# this files have the variable-names and the number 
+# of filtered-in events
+fnro_mc = open(pa.right+'/'+fnm_ls_le[0].split('/')[-1], 'r')
+fnro_sh = open(pa.left +'/'+fnm_ls_le[0].split('/')[-1], 'r')
+
 
 stf = {}
 stf['Bmag.ACE1sec']    = {
@@ -201,7 +190,6 @@ TEXT = {}
 print " input: "
 print " %s " % pa.left
 print " %s \n" % pa.right
-print " vlo, vhi: ", (vlo, vhi), '\n'
 
 for lmc, lsh in zip(fnro_mc, fnro_sh):
     l_mc    = lmc.split()
@@ -211,27 +199,41 @@ for lmc, lsh in zip(fnro_mc, fnro_sh):
     print " %s"%varname, '  Nfinal_mc:%d' % Nfinal_mc, 'Nfinal_sh:%d' % Nfinal_sh
     mc, sh  = gral(), gral()
 
-    fname_inp_sh = pa.left  + '/' + fname_inp + '_%s.txt' % varname
-    fname_inp_mc = pa.right + '/' + fname_inp + '_%s.txt' % varname
+    #--- filename pattern 
+    str_vsplit = '_' if pa.lim is None else '_vlo.%3.1f.vhi.%3.1f'%(pa.lim[0], pa.lim[1])
+    pattern    = 'MC*%s_%s.txt' % (str_vsplit, varname)
+    fnm_ls_le  = glob(pa.left+'/'+pattern)
+    assert len(fnm_ls_le)==1
+    basename = fnm_ls_le[0].split('/')[-1]
+
+    #--- read data
+    fname_inp_sh = pa.left +'/'+basename
+    fname_inp_mc = pa.right+'/'+basename
     mc.tnorm, mc.med, mc.avr, mc.std_err, mc.nValues = np.loadtxt(fname_inp_mc).T
     sh.tnorm, sh.med, sh.avr, sh.std_err, sh.nValues = np.loadtxt(fname_inp_sh).T
 
+    #--- text on figure
     # nro de datos con mas del 80% non-gap data
     TEXT['mc']  = ' N: %d'  % Nfinal_mc
     TEXT['sh']  = ' N: %d'  % Nfinal_sh
-    if(vlo==LOW):
-        TEXT_LOC    = stf[varname]['text_loc_1'] #1.7, 12.0
-    elif(vlo==MID1): # 450.0):
-        TEXT_LOC    = stf[varname]['text_loc_2'] #1.7, 12.0
-    elif(vlo==MID2): # 550.0):
-        TEXT_LOC    = stf[varname]['text_loc_3'] #1.7, 12.0
+    #--- position of text
+    if pa.ftext:
+        if(vlo==LOW):
+            TEXT_LOC    = stf[varname]['text_loc_1'] #1.7, 12.0
+        elif(vlo==MID1): # 450.0):
+            TEXT_LOC    = stf[varname]['text_loc_2'] #1.7, 12.0
+        elif(vlo==MID2): # 550.0):
+            TEXT_LOC    = stf[varname]['text_loc_3'] #1.7, 12.0
+        else:
+            print " ----> ERROR con 'v_lo'!"
     else:
-        print " ----> ERROR con 'v_lo'!"
+        TEXT_LOC = None
 
     ylims       = stf[varname]['ylims'] #[4., 17.]
     ylabel      = stf[varname]['label'] #'B [nT]'
-    fname_fig   = pa.plot + '/fig_vlo.%3.1f_vhi.%3.1f_%s.png'%(vlo, vhi, varname)
-    makefig(mc, sh, TEXT, TEXT_LOC, ylims, ylabel, fname_fig)
+    fname_fig   = pa.plot + '/fig%s_%s.png'%(str_vsplit, varname)
+    makefig(mc, sh, TEXT, ylims, ylabel, fname_fig, pa.ftext, TEXT_LOC)
+
 
 print "\n output en: "
 print " %s \n" % pa.plot

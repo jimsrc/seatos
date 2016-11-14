@@ -13,7 +13,16 @@ class gral:
         self.name='name'
 
 
-def makefig(mc, sh, TEXT, TEXT_LOC, YLIMS, YLAB, fname_fig):
+def makefig(mc, sh, TEXT, YLIMS, YLAB, fname_fig, ftext=False, TEXT_LOC=None):
+    """
+    - ftext{bool}:
+    if False, we put the text in the title. Otherwise, we put
+    the text inside the figure, using `TEXT_LOC`{dict} as positions
+    - TEXT_LOC{dict}:
+    coordinates for the text inside the figure. The `TEXT_LOC['sh']`{2-tuple} are
+    the positions for the left part, and `TEXT_LOC['mc']`{2-tuple} for the right
+    part.
+    """
     fmc,fsh = 3.0, 1.0      # escaleos temporales
     fig     = figure(1, figsize=(13, 6))
     ax      = fig.add_subplot(111)
@@ -25,8 +34,9 @@ def makefig(mc, sh, TEXT, TEXT_LOC, YLIMS, YLAB, fname_fig):
         mc.avr      /= 1.0e4; sh.avr      /= 1.0e4
         mc.std_err  /= 1.0e4; sh.std_err  /= 1.0e4
         YLIMS[0]    /= 1.0e4; YLIMS[1] /= 1.0e4
-        TEXT_LOC['mc'][1] /= 1.0e4
-        TEXT_LOC['sh'][1] /= 1.0e4
+        if ftext:
+            TEXT_LOC['mc'][1] /= 1.0e4
+            TEXT_LOC['sh'][1] /= 1.0e4
 
     # curvas del mc
     time = fsh+fmc*mc.tnorm
@@ -64,8 +74,14 @@ def makefig(mc, sh, TEXT, TEXT_LOC, YLIMS, YLAB, fname_fig):
     ax.grid()
     ax.set_xlim(-2.0, 7.0)
     ax.set_ylim(YLIMS)
-    ax.text(TEXT_LOC['mc'][0], TEXT_LOC['mc'][1], TEXT['mc'], fontsize=22)
-    ax.text(TEXT_LOC['sh'][0], TEXT_LOC['sh'][1], TEXT['sh'], fontsize=22)
+    if ftext:
+        ax.text(TEXT_LOC['mc'][0], TEXT_LOC['mc'][1], TEXT['mc'], fontsize=22)
+        ax.text(TEXT_LOC['sh'][0], TEXT_LOC['sh'][1], TEXT['sh'], fontsize=22)
+    else:
+        ax.set_title(
+            'left:  '+TEXT['sh']+'\n'
+            'right: '+TEXT['mc']
+        )
     ax.set_xlabel('time normalized to sheath/MC passage [1]', fontsize=25)
     ax.set_ylabel(YLAB, fontsize=27)
 

@@ -194,8 +194,13 @@ action='store_true',
 default=False,
 help='verbose mode.'
 )
-
-
+parser.add_argument(
+'-fgap', '--fgap',
+type=float,
+default=0.2, # always, except for Auger scalers
+help='gap fraction to tolerate (i.e. won\'t tolerate more gaps \
+than a fraction `fgap`)',
+)
 pa = parser.parse_args()
 
 class boundaries:
@@ -263,7 +268,7 @@ nBin['before']          = 2
 nBin['after']           = 4
 nBin['bins_per_utime']  = 50    # bins por unidad de tiempo
 nBin['total']           = (1+nBin['before']+nBin['after'])*nBin['bins_per_utime']
-fgap                    = 0.2
+fgap                    = pa.fgap #0.5
 
 #--- bordes de estructura
 bounds      = boundaries()

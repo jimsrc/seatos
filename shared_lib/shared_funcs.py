@@ -822,6 +822,9 @@ class events_mgr(object):
         if self.FILTER['z_filter_on']:      FNAMEs += '_zlo.%2.2f.zhi.%2.2f' % (z_lo, z_hi)
         if self.FILTER['B_filter']:         FNAMEs += '_Blo.%2.2f.Bhi.%2.2f' % (B_lo, B_hi)
         if self.FILTER['filter_dR.icme']:   FNAMEs += '_dRlo.%2.2f.dRhi.%2.2f' % (dR_lo, dR_hi)
+        if not self.FILTER['vsw_filter']:
+            FNAMEs += '_' # flag for post-processing, indicating
+                          # there was no splitting
 
         FNAME_ASCII = '%s/%s' % (DIR_ASCII, FNAMEs)
         FNAME_FIGS  = '%s/%s' % (DIR_FIGS, FNAMEs)
