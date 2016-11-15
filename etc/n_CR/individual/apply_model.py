@@ -73,18 +73,18 @@ parser.add_argument(
 '-lim', '--lim',
 nargs=2,
 type=float,
-default=[100.0, 375.0],
+default=[None, None],
 help='lower & higher threshold values associated to\
-    input filenames.',
+    input filenames (e.g. 100. 375.).',
 metavar=('Vmin','Vmax'),
 )
 #---BEGIN: seeds for fitting
 seeds_default = {
-'tau'   : [4.8, 5.0, 2],
-'q'     : [-2.0, -1.9, 2],
-'off'   : [0.15, 0.20, 2],
-'bp'    : [-0.15, -0.13, 2],
-'bo'    : [8.5, 9.0, 2],
+'tau'   : [3.0, 3.5, 2],     # recovery term
+'q'     : [-1.6, -1.5, 2],   # termino rmsB
+'off'   : [0.15, 0.151, 2],   # offset
+'bp'    : [-0.14, -0.12, 3], # B term
+'bo'    : [8.5, 9.0, 2],     # Bo in pre-shock region
 }
 for seed_nm, seed_default in seeds_default.iteritems():
     #--- config all seed command-line arguments
@@ -103,16 +103,10 @@ pa = parser.parse_args()
 
 dir_inp_sh      = pa.left #'{dir}/sheaths.icmes/ascii/MCflag0.1.2.2H/woShiftCorr/_auger_/' .format(dir=env['MEAN_PROFILES_ACE'])
 dir_inp_mc      = pa.right #'{dir}/icmes/ascii/MCflag0.1.2.2H/woShiftCorr/_auger_/' .format(dir=env['MEAN_PROFILES_ACE'])
-#dir_inp_sh      = '{dir}/sheaths/ascii/MCflag2/wShiftCorr/_test_Vmc_' .format(dir=env['MEAN_PROFILES_ACE'])
-#dir_inp_mc      = '{dir}/mcs/ascii/MCflag2/wShiftCorr/_test_Vmc_' .format(dir=env['MEAN_PROFILES_ACE'])
-fname_inp_part  = pa.prefix #'MCflag0.1.2.2H_2before.4after_fgap0.2_WangNaN' # '_vlo.100.0.vhi.375.0_CRs.Auger_BandScals.txt'
-#fname_inp_part  = 'MCflag2_2before.4after_fgap0.2_Wang90.0'
 
-#CRstr           = 'CRs.Auger_BandScals'
-#CRstr           = 'CRs.Auger_BandMuons'
 CRstr           = pa.suffix #'CRs.Auger_scals'
-mgr             = fd.mgr_data(dir_inp_sh, dir_inp_mc, fname_inp_part)
-sh, mc, cr      = mgr.run(vlo=pa.lim[0], vhi=pa.lim[1], CRstr=CRstr)
+mgr             = fd.mgr_data(dir_inp_sh, dir_inp_mc, pa.prefix)
+sh, mc, cr      = mgr.run(vlo=pa.lim[0], vhi=pa.lim[1], CRstr=pa.suffix)
 #sh, mc, cr      = mgr.run(vlo=375.0, vhi=450.0, CRstr=CRstr)
 #sh, mc, cr      = mgr.run(vlo=450.0, vhi=3000.0, CRstr=CRstr)
 
@@ -120,8 +114,10 @@ sh, mc, cr      = mgr.run(vlo=pa.lim[0], vhi=pa.lim[1], CRstr=CRstr)
 if pa.fig=='':
     raise SystemExit(' --> must specify filename or directory!')
 elif pa.fig[-1]=='/':
-    fname_fig = pa.fig + 'nCR_vlo.{lo:4.1f}.vhi.{hi:4.1f}\
-        _{name}.png'.format(lo=mgr.vlo, hi=mgr.vhi, name=CRstr)
+    fname_fig  = pa.fig + 'nCR' +\
+    '_' if pa.lim==[None,None] else\
+    '_vlo.{lo:4.1f}.vhi.{hi:4.1f}'.format(lo=mgr.vlo,hi=mgr.vhi) +\
+    '_%s.png' % pa.suffix
 else:
     fname_fig = pa.fig
 #++++++++++++++++++++++++++++++++++++++++++++++++++++

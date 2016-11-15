@@ -25,12 +25,22 @@ class mgr_data():
         fname_inp_part  = self.fname_inp_part
         sh, mc, cr      = gral(), gral(), gral()
         cr.sh, cr.mc    = gral(), gral()
-        fname_inp       = fname_inp_part+'_vlo.%4.1f.vhi.%4.1f'%(vlo, vhi)
+        if (vlo,vhi)!=(None,None):
+            fname_inp = fname_inp_part+'_vlo.%4.1f.vhi.%4.1f'%(vlo, vhi)
+        else:
+            fname_inp = fname_inp_part+'_'
         self.vlo, self.vhi = vlo, vhi
 
         #--- rmsB
         fname_sh = dir_inp_sh + '/%s_rmsB.ACE.txt' % fname_inp
         fname_mc = dir_inp_mc + '/%s_rmsB.ACE.txt' % fname_inp
+        print """
+         > inputs: 
+         %s
+         %s
+        """%(fname_sh.split('/')[-1], fname_mc.split('/')[-1])
+
+
         sh.data = np.loadtxt(fname_sh).T
         mc.data = np.loadtxt(fname_mc).T
         sh.t, sh.rmsB    = sh.data[0], sh.data[2]
@@ -39,6 +49,12 @@ class mgr_data():
         #--- B
         fname_sh = dir_inp_sh + '/%s_B.ACE.txt' % fname_inp
         fname_mc = dir_inp_mc + '/%s_B.ACE.txt' % fname_inp
+        print """
+         > inputs: 
+         %s
+         %s
+        """%(fname_sh.split('/')[-1], fname_mc.split('/')[-1])
+
         sh.data = np.loadtxt(fname_sh).T
         mc.data = np.loadtxt(fname_mc).T
         sh.t, sh.B    = sh.data[0], sh.data[2]
@@ -47,6 +63,11 @@ class mgr_data():
         #++++++++++++++++++++++++++++++++++++++++++++++++++++
         fname_sh = dir_inp_sh + '/{fnm}_{CRs}.txt'.format(fnm=fname_inp, CRs=CRstr)
         fname_mc = dir_inp_mc + '/{fnm}_{CRs}.txt'.format(fnm=fname_inp, CRs=CRstr)
+        print """
+         > inputs: 
+         %s
+         %s
+        """%(fname_sh.split('/')[-1], fname_mc.split('/')[-1])
 
         cr.sh.data = np.loadtxt(fname_sh).T
         cr.mc.data = np.loadtxt(fname_mc).T
