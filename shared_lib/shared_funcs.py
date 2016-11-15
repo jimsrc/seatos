@@ -331,6 +331,94 @@ def makefig(medVAR, avrVAR, stdVAR, nVAR, tnorm,
     close()
 
 
+def makefig_ii(mc, sh, YLIMS, YLAB, fname_fig, ftext=False, TEXT=None, TEXT_LOC=None):
+    """
+    - ftext{bool}:
+    if False, we put the text in the title. Otherwise, we put
+    the text inside the figure, using `TEXT_LOC`{dict} as positions
+    - TEXT_LOC{dict}:
+    coordinates for the text inside the figure. The `TEXT_LOC['sh']`{2-tuple} are
+    the positions for the left part, and `TEXT_LOC['mc']`{2-tuple} for the right
+    part.
+    """
+    fmc,fsh = 3.0, 1.0      # escaleos temporales
+    fig     = figure(1, figsize=(13, 6))
+    ax      = fig.add_subplot(111)
+
+    # catch the name of the observable
+    varname = fname_fig[:-4].split('_')[-1]
+    if(varname == 'Temp'):
+        mc.med      /= 1.0e4; sh.med      /= 1.0e4
+        mc.avr      /= 1.0e4; sh.avr      /= 1.0e4
+        mc.std_err  /= 1.0e4; sh.std_err  /= 1.0e4
+        YLIMS[0]    /= 1.0e4; YLIMS[1] /= 1.0e4
+        if ftext:
+            TEXT_LOC['mc'][1] /= 1.0e4
+            TEXT_LOC['sh'][1] /= 1.0e4
+
+    # curvas del mc
+    time = fsh+fmc*mc.tnorm
+    cc = time>=fsh
+    ax.plot(time[cc], mc.avr[cc], 'o-', color='black', markersize=5, label='mean')
+    ax.plot(time[cc], mc.med[cc], 'o-', color='red', alpha=.8, markersize=5, markeredgecolor='none', label='median')
+    # sombra del mc
+    inf     = mc.avr + mc.std_err/np.sqrt(mc.nValues)
+    sup     = mc.avr - mc.std_err/np.sqrt(mc.nValues)
+    ax.fill_between(time[cc], inf[cc], sup[cc], facecolor='gray', alpha=0.5)
+    trans   = transforms.blended_transform_factory(
+                ax.transData, ax.transAxes)
+    rect1   = patches.Rectangle((fsh, 0.), width=fmc, height=1,
+                transform=trans, color='blue',
+                alpha=0.3)
+    ax.add_patch(rect1)
+
+    # curvas del sheath
+    time = fsh*sh.tnorm
+    cc = time<=fsh
+    ax.plot(time[cc], sh.avr[cc], 'o-', color='black', markersize=5)
+    ax.plot(time[cc], sh.med[cc], 'o-', color='red', alpha=.8, markersize=5, markeredgecolor='none')
+    # sombra del sheath
+    inf     = sh.avr + sh.std_err/np.sqrt(sh.nValues)
+    sup     = sh.avr - sh.std_err/np.sqrt(sh.nValues)
+    ax.fill_between(time[cc], inf[cc], sup[cc], facecolor='gray', alpha=0.5)
+    #trans   = transforms.blended_transform_factory(
+    #            ax.transData, ax.transAxes)
+    rect1   = patches.Rectangle((0., 0.), width=fsh, height=1,
+                transform=trans, color='orange',
+                alpha=0.3)
+    ax.add_patch(rect1)
+
+    ax.tick_params(labelsize=17)
+    ax.grid()
+    ax.set_xlim(-2.0, 7.0)
+    ax.set_ylim(YLIMS)
+    if ftext:
+        ax.text(TEXT_LOC['mc'][0], TEXT_LOC['mc'][1], TEXT['mc'], fontsize=22)
+        ax.text(TEXT_LOC['sh'][0], TEXT_LOC['sh'][1], TEXT['sh'], fontsize=22)
+    else:
+        if TEXT is not None:
+            ax.set_title(
+                'left:  '+TEXT['sh']+'\n'
+                'right: '+TEXT['mc']
+            )
+        else:
+            pass # no text anywhere
+
+    ax.set_xlabel('time normalized to sheath/MC passage [1]', fontsize=25)
+    ax.set_ylabel(YLAB, fontsize=27)
+
+    # if `varname` has any of these strings, plot in log-scale.
+    #import pdb; pdb.set_trace()
+    if any([(nm in varname) for nm in \
+        ('beta','Temp', 'rmsB', 'rmsBoB', 'ratio')]):
+        ax.set_yscale('log')
+    else:
+        ax.set_yscale('linear')
+
+    ax.legend(loc='best', fontsize=20)
+    savefig(fname_fig, format='png', dpi=100, bbox_inches='tight')
+    close()
+
 #--- chekea q el archivo no repita elementos de la 1ra columna
 def check_redundancy(fname, name):
     f = open(fname, 'r')
