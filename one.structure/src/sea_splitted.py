@@ -253,7 +253,7 @@ FILTER['z_filter_on']   = False
 FILTER['MCwant']        = MCwant
 FILTER['B_filter']      = False
 FILTER['filter_dR.icme'] = False #True
-FILTER['choose_1998-2006'] = False # False:no excluye el periodo 1998-2006
+FILTER['choose_1998-2006'] = True # if True, exclude this period
 
 CUTS                    = {}
 CUTS['ThetaThres']      = pa.wang[1] #90.0   # all events with theta>ThetaThres

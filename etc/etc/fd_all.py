@@ -10,6 +10,7 @@ from matplotlib.gridspec import GridSpec
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import matplotlib.transforms as transforms
+from os.path import isfile, isdir
 
 #--- retrieve args
 parser = argparse.ArgumentParser(
@@ -77,13 +78,13 @@ stf = {}
 #    'text_loc_2': {'mc':[4.5, 0.095], 'sh':[-1.95, 0.02]},
 #    'text_loc_3': {'mc':[4.5, 0.099], 'sh':[-1.95, 0.02]}
 #    }
-#stf['rmsB.ACE']    = {
-#    'label': 'rmsB [nT]',
-#    'ylims': [0.1, 4.],
-#    'text_loc_1': {'mc':[4.5, 1.0], 'sh':[-1.95, 1.0]},
-#    'text_loc_2': {'mc':[4.5, 1.0], 'sh':[-1.95, 1.0]},
-#    'text_loc_3': {'mc':[4.5, 0.8], 'sh':[-1.95, 1.0]}
-#    }
+stf['rmsB.ACE']    = {
+    'label': 'rmsB [nT]',
+    'ylims': [0.1, 4.],
+    'text_loc_1': {'mc':[4.5, 1.0], 'sh':[-1.95, 1.0]},
+    'text_loc_2': {'mc':[4.5, 1.0], 'sh':[-1.95, 1.0]},
+    'text_loc_3': {'mc':[4.5, 0.8], 'sh':[-1.95, 1.0]}
+    }
 #stf['beta.ACE']    = {
 #    'label': 'beta [1]',
 #    'ylims': [0.02, 10.0],
@@ -107,21 +108,21 @@ stf = {}
 #    }
 stf['CRs.Auger_scals']    = {
     'label': 'GCRs @Auger-scals [%]',
-    'ylims': [-1.0, 0.2],
+    'ylims': [-0.5, 0.2],
     'text_loc_1': {'mc':[4.5, -0.50], 'sh':[-1.95, -0.5]},
     'text_loc_2': {'mc':[4.5, -0.50], 'sh':[-1.95, -0.5]},
     'text_loc_3': {'mc':[4.5, -0.85], 'sh':[-1.95, -0.5]}
     }
 stf['CRs.Auger_BandScals']    = {
     'label': 'GCRs @Auger-BandScals [%]',
-    'ylims': [-1.0, 0.2],
+    'ylims': [-0.5, 0.2],
     'text_loc_1': {'mc':[4.5, -0.50], 'sh':[-1.95, -0.5]},
     'text_loc_2': {'mc':[4.5, -0.50], 'sh':[-1.95, -0.5]},
     'text_loc_3': {'mc':[4.5, -0.85], 'sh':[-1.95, -0.5]}
     }
 stf['CRs.Auger_BandMuons']    = {
     'label': 'GCRs @Auger-BandMuons [%]',
-    'ylims': [-1.0, 0.4],
+    'ylims': [-0.5, 0.2],
     'text_loc_1': {'mc':[4.5, -0.50], 'sh':[-1.95, -0.5]},
     'text_loc_2': {'mc':[4.5, -0.50], 'sh':[-1.95, -0.5]},
     'text_loc_3': {'mc':[4.5, -0.85], 'sh':[-1.95, -0.5]}
@@ -139,6 +140,7 @@ gs.update(left=0.1, right=0.98, hspace=0.13, wspace=0.15)
 #--- filename pattern 
 str_vsplit = '_' if pa.lim is None \
     else '_vlo.%3.1f.vhi.%3.1f'%(pa.lim[0], pa.lim[1])
+assert isdir(pa.left) and isdir(pa.right)
 
 #--- iterate over panels
 for varname, io in zip(stf.keys(), range(len(stf))):
@@ -186,17 +188,20 @@ for varname, io in zip(stf.keys(), range(len(stf))):
     'fig'       : fig,
     'ax'        : ax,
     'varname'   : varname,
+    'fleg'      : False, # if True, set legend
     }
     fig, ax = sf.makefig_ii(mc, sh, ylims, ylabel, **opt)
 
     if io==len(stf)-1:
-        ax.set_xlabel('days since shock',fontsize=222
+        ax.set_xlabel('days since shock',fontsize=22)
     else:
         ax.set_xlabel('')
         #ax.get_xaxis().set_ticks([])
         ax.xaxis.set_ticklabels([])
 
-fname_fig   = pa.plot + '/fig%s_%s.png'%(str_vsplit, varname)
+    ax.set_xlim(-2., 7.)
+
+fname_fig   = pa.plot + '/fig%s.png'%(str_vsplit)
 fig.savefig(fname_fig, dpi=135, bbox_inches='tight')
 close(fig)
 

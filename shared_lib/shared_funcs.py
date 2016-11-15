@@ -1083,14 +1083,9 @@ class events_mgr(object):
         #++++++++++++++++++ begin: SELECCION DE EVENTOS ++++++++++++++++++++++
         #------- fechas
         BETW1998_2006   = np.ones(tb.n_icmes, dtype=bool)
-        try: # si existe el filtro de fechas, q lo haga
-            if FILTER['choose_1998-2006']:
-                for i in range(307, tb.n_icmes)+range(0, 26):
-                        BETW1998_2006[i]=False # 'False' para excluir eventos
-
-        except: # sino, aplica el filtro por defecto (backwards compatibility)
-            for i in range(307, tb.n_icmes)+range(0, 26):
-                    BETW1998_2006[i]=False # 'False' para excluir eventos
+        if FILTER['choose_1998-2006']:
+            for i in range(294):
+                BETW1998_2006[i]=False # 'False' para excluir eventos
 
         #------- seleccionamos MCs con label-de-catalogo (lepping=2, etc)
         MC_FLAG = np.ones(tb.n_icmes, dtype=bool)
