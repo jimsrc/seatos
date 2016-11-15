@@ -331,7 +331,7 @@ def makefig(medVAR, avrVAR, stdVAR, nVAR, tnorm,
     close()
 
 
-def makefig_ii(mc, sh, YLIMS, YLAB, fname_fig, ftext=False, TEXT=None, TEXT_LOC=None):
+def makefig_ii(mc, sh, YLIMS, YLAB, **kws):
     """
     - ftext{bool}:
     if False, we put the text in the title. Otherwise, we put
@@ -341,12 +341,27 @@ def makefig_ii(mc, sh, YLIMS, YLAB, fname_fig, ftext=False, TEXT=None, TEXT_LOC=
     the positions for the left part, and `TEXT_LOC['mc']`{2-tuple} for the right
     part.
     """
+    #--- kws
+    ftext       = kws.get('ftext', False)
+    TEXT        = kws.get('TEXT', None)
+    TEXT_LOC    = kws.get('TEXT_LOC', None)
+    fname_fig   = kws.get('fname_fig', None)
+    #-------------------------------------
     fmc,fsh = 3.0, 1.0      # escaleos temporales
-    fig     = figure(1, figsize=(13, 6))
-    ax      = fig.add_subplot(111)
+
+    #--- if figure is not given, create one
+    if 'fig' in kws:
+        fig, ax = kws['fig'], kws['ax']
+    else:
+        fig     = figure(1, figsize=(13, 6))
+        ax      = fig.add_subplot(111)
 
     # catch the name of the observable
-    varname = fname_fig[:-4].split('_')[-1]
+    if 'varname' in kws:
+        varname = kws['varname']
+    else:
+        varname = fname_fig[:-4].split('_')[-1]
+
     if(varname == 'Temp'):
         mc.med      /= 1.0e4; sh.med      /= 1.0e4
         mc.avr      /= 1.0e4; sh.avr      /= 1.0e4
@@ -390,7 +405,6 @@ def makefig_ii(mc, sh, YLIMS, YLAB, fname_fig, ftext=False, TEXT=None, TEXT_LOC=
 
     ax.tick_params(labelsize=17)
     ax.grid()
-    ax.set_xlim(-2.0, 7.0)
     ax.set_ylim(YLIMS)
     if ftext:
         ax.text(TEXT_LOC['mc'][0], TEXT_LOC['mc'][1], TEXT['mc'], fontsize=22)
@@ -404,11 +418,9 @@ def makefig_ii(mc, sh, YLIMS, YLAB, fname_fig, ftext=False, TEXT=None, TEXT_LOC=
         else:
             pass # no text anywhere
 
-    ax.set_xlabel('time normalized to sheath/MC passage [1]', fontsize=25)
     ax.set_ylabel(YLAB, fontsize=27)
 
     # if `varname` has any of these strings, plot in log-scale.
-    #import pdb; pdb.set_trace()
     if any([(nm in varname) for nm in \
         ('beta','Temp', 'rmsB', 'rmsBoB', 'ratio')]):
         ax.set_yscale('log')
@@ -416,8 +428,15 @@ def makefig_ii(mc, sh, YLIMS, YLAB, fname_fig, ftext=False, TEXT=None, TEXT_LOC=
         ax.set_yscale('linear')
 
     ax.legend(loc='best', fontsize=20)
-    savefig(fname_fig, format='png', dpi=100, bbox_inches='tight')
-    close()
+    if 'fig' not in kws: # if figure not given, save to disk
+        ax.set_xlim(-2.0, 7.0)
+        ax.set_xlabel('time normalized to sheath/MC passage [1]', fontsize=25)
+        savefig(fname_fig, format='png', dpi=100, bbox_inches='tight')
+        close()
+        return None
+    else:
+        # return changes of passed figure
+        return fig, ax
 
 #--- chekea q el archivo no repita elementos de la 1ra columna
 def check_redundancy(fname, name):
