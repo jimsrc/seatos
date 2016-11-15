@@ -57,13 +57,13 @@ pa = parser.parse_args()
 
 #-----------------------------
 stf = {}
-#stf['B.ACE']    = {
-#    'label': 'B [T]',
-#    'ylims': [3., 14.],
-#    'text_loc_1': {'mc':[4.5, 10.0], 'sh':[-1.95, 12.0]},
-#    'text_loc_2': {'mc':[4.5, 10.0], 'sh':[-1.95, 12.0]},
-#    'text_loc_3': {'mc':[4.5, 12.0], 'sh':[-1.95, 12.0]}
-#    }
+stf['B.ACE']    = {
+    'label': 'B [nT]',
+    'ylims': [4., 13.],
+    'text_loc_1': {'mc':[4.5, 10.0], 'sh':[-1.95, 12.0]},
+    'text_loc_2': {'mc':[4.5, 10.0], 'sh':[-1.95, 12.0]},
+    'text_loc_3': {'mc':[4.5, 12.0], 'sh':[-1.95, 12.0]}
+    }
 #stf['V.ACE']    = {
 #    'label': 'Vsw [Km/s]',
 #    'ylims': [300., 600.],
@@ -80,7 +80,7 @@ stf = {}
 #    }
 stf['rmsB.ACE']    = {
     'label': 'rmsB [nT]',
-    'ylims': [0.1, 4.],
+    'ylims': [0.1, 1.],
     'text_loc_1': {'mc':[4.5, 1.0], 'sh':[-1.95, 1.0]},
     'text_loc_2': {'mc':[4.5, 1.0], 'sh':[-1.95, 1.0]},
     'text_loc_3': {'mc':[4.5, 0.8], 'sh':[-1.95, 1.0]}
@@ -107,21 +107,21 @@ stf['rmsB.ACE']    = {
 #    'text_loc_3': {'mc':[4.5,  2.0e4], 'sh':[-1.95, 20.0e4]}
 #    }
 stf['CRs.Auger_scals']    = {
-    'label': 'GCRs @Auger-scals [%]',
+    'label': '$S$ [%]',
     'ylims': [-0.5, 0.2],
     'text_loc_1': {'mc':[4.5, -0.50], 'sh':[-1.95, -0.5]},
     'text_loc_2': {'mc':[4.5, -0.50], 'sh':[-1.95, -0.5]},
     'text_loc_3': {'mc':[4.5, -0.85], 'sh':[-1.95, -0.5]}
     }
 stf['CRs.Auger_BandScals']    = {
-    'label': 'GCRs @Auger-BandScals [%]',
+    'label': '$H_{sc}$ [%]',
     'ylims': [-0.5, 0.2],
     'text_loc_1': {'mc':[4.5, -0.50], 'sh':[-1.95, -0.5]},
     'text_loc_2': {'mc':[4.5, -0.50], 'sh':[-1.95, -0.5]},
     'text_loc_3': {'mc':[4.5, -0.85], 'sh':[-1.95, -0.5]}
     }
 stf['CRs.Auger_BandMuons']    = {
-    'label': 'GCRs @Auger-BandMuons [%]',
+    'label': '$H_{\mu}$ [%]',
     'ylims': [-0.5, 0.2],
     'text_loc_1': {'mc':[4.5, -0.50], 'sh':[-1.95, -0.5]},
     'text_loc_2': {'mc':[4.5, -0.50], 'sh':[-1.95, -0.5]},
@@ -133,17 +133,22 @@ opt = {
 'ms'  : 3,
 'mec' : 'none',
 }
-#--- fig
-fig   = plt.figure(1, figsize=(9, 18))
-gs  = GridSpec(nrows=6*nr, ncols=2)
-gs.update(left=0.1, right=0.98, hspace=0.13, wspace=0.15)
 #--- filename pattern 
 str_vsplit = '_' if pa.lim is None \
     else '_vlo.%3.1f.vhi.%3.1f'%(pa.lim[0], pa.lim[1])
 assert isdir(pa.left) and isdir(pa.right)
 
 #--- iterate over panels
-for varname, io in zip(stf.keys(), range(len(stf))):
+VNMs  = ('B.ACE','rmsB.ACE',\
+        'CRs.Auger_scals','CRs.Auger_BandScals','CRs.Auger_BandMuons')
+nVNMs = len(VNMs)
+
+#--- fig
+fig   = plt.figure(1, figsize=(9, 18))
+gs  = GridSpec(nrows=nVNMs*nr, ncols=2)
+gs.update(left=0.1, right=0.98, hspace=0.13, wspace=0.15)
+
+for varname, io in zip(VNMs, range(nVNMs)):
     mc, sh  = sf.general(), sf.general()
     #--- filename pattern 
     pattern    = 'MC*%s_%s.txt' % (str_vsplit, varname)
@@ -192,7 +197,7 @@ for varname, io in zip(stf.keys(), range(len(stf))):
     }
     fig, ax = sf.makefig_ii(mc, sh, ylims, ylabel, **opt)
 
-    if io==len(stf)-1:
+    if io==nVNMs-1:
         ax.set_xlabel('days since shock',fontsize=22)
     else:
         ax.set_xlabel('')
