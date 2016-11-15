@@ -212,7 +212,7 @@ for i in range(len(ind)):
     ax.grid()
     ax.set_xlabel('time normalized to sheath/MC passage [1]', fontsize=14)
     ax.set_ylabel('$n_{CR}$ [%]', fontsize=21)
-    ax.set_ylim(-1., 0.5)
+    ax.set_ylim(-0.8, 0.3)
     #+++ save fig
     fig.savefig(fname_fig+'_%d'%i,format='png',dpi=135, bbox_inches='tight')
     print " ---> generamos: " + fname_fig
