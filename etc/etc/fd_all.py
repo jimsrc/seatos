@@ -108,21 +108,21 @@ stf['rmsB.ACE']    = {
 #    }
 stf['CRs.Auger_scals']    = {
     'label': '$S$ [%]',
-    'ylims': [-0.8, 0.3],
+    'ylims': [-0.5, 0.2],
     'text_loc_1': {'mc':[4.5, -0.50], 'sh':[-1.95, -0.5]},
     'text_loc_2': {'mc':[4.5, -0.50], 'sh':[-1.95, -0.5]},
     'text_loc_3': {'mc':[4.5, -0.85], 'sh':[-1.95, -0.5]}
     }
 stf['CRs.Auger_BandScals']    = {
     'label': '$H_{sc}$ [%]',
-    'ylims': [-0.8, 0.3],
+    'ylims': [-0.5, 0.2],
     'text_loc_1': {'mc':[4.5, -0.50], 'sh':[-1.95, -0.5]},
     'text_loc_2': {'mc':[4.5, -0.50], 'sh':[-1.95, -0.5]},
     'text_loc_3': {'mc':[4.5, -0.85], 'sh':[-1.95, -0.5]}
     }
 stf['CRs.Auger_BandMuons']    = {
     'label': '$H_{\mu}$ [%]',
-    'ylims': [-0.8, 0.3],
+    'ylims': [-0.5, 0.2],
     'text_loc_1': {'mc':[4.5, -0.50], 'sh':[-1.95, -0.5]},
     'text_loc_2': {'mc':[4.5, -0.50], 'sh':[-1.95, -0.5]},
     'text_loc_3': {'mc':[4.5, -0.85], 'sh':[-1.95, -0.5]}
@@ -198,7 +198,10 @@ for varname, io in zip(VNMs, range(nVNMs)):
     fig, ax = sf.makefig_ii(mc, sh, ylims, ylabel, **opt)
 
     if io==nVNMs-1:
-        ax.set_xlabel('days since shock',fontsize=22)
+        ax.set_xlabel(
+        'time normalized to\nsheath/ICME passage [1]',
+        fontsize=22
+        )
     else:
         ax.set_xlabel('')
         #ax.get_xaxis().set_ticks([])
