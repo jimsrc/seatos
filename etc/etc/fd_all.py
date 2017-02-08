@@ -12,48 +12,6 @@ import matplotlib.patches as patches
 import matplotlib.transforms as transforms
 from os.path import isfile, isdir
 
-#--- retrieve args
-parser = argparse.ArgumentParser(
-formatter_class=argparse.ArgumentDefaultsHelpFormatter
-)
-parser.add_argument(
-'-right', '--right',
-type=str,
-default='../../icmes/ascii3',
-help='input directory for right part',
-)
-parser.add_argument(
-'-left', '--left',
-type=str,
-default='../../sheaths.icmes/ascii3',
-help='input directory for left part',
-)
-parser.add_argument(
-'-plot', '--plot',
-type=str,
-default='../plots3'
-)
-parser.add_argument(
-'-lim', '--lim',
-type=float,
-nargs=2,
-default=None, # no split by default
-help="""
-SW speed values to describe the input partition of 
-the sample in three sub-groups of events.
-Is not specified, we asume that input filenames don't 
-include values of velocity splitting.
-""",
-metavar=('Vsw1','Vsw2'),
-)
-parser.add_argument(
-'-ftext', '--ftext',
-action='store_true',
-default=False,
-help='if not used, we put the number of events in the title.\
-Otherwise, we use the text-positions hardcoded in the script.',
-)
-pa = parser.parse_args()
 
 #-----------------------------
 stf = {}
@@ -128,6 +86,72 @@ stf['CRs.Auger_BandMuons']    = {
     'text_loc_3': {'mc':[4.5, -0.85], 'sh':[-1.95, -0.5]}
     }
 
+#--- iterate over THESE variables to build the panels
+VNMs  = ('B.ACE','rmsB.ACE',\
+        'CRs.Auger_scals','CRs.Auger_BandScals','CRs.Auger_BandMuons')
+nVNMs = len(VNMs)
+
+#--- retrieve args
+parser = argparse.ArgumentParser(
+formatter_class=argparse.ArgumentDefaultsHelpFormatter
+)
+parser.add_argument(
+'-right', '--right',
+type=str,
+default='../../icmes/ascii3',
+help='input directory for right part',
+)
+parser.add_argument(
+'-left', '--left',
+type=str,
+default='../../sheaths.icmes/ascii3',
+help='input directory for left part',
+)
+parser.add_argument(
+'-plot', '--plot',
+type=str,
+default='../plots3'
+)
+parser.add_argument(
+'-lim', '--lim',
+type=float,
+nargs=2,
+default=None, # no split by default
+help="""
+two SW speed values to describe the input partition of 
+the sample in three sub-groups of events.
+Is not specified, we asume that input filenames don't 
+include values of velocity splitting.
+""",
+metavar=('Vsw1','Vsw2'),
+)
+parser.add_argument(
+'-ftext', '--ftext',
+action='store_true',
+default=False,
+help='if not used, we put the number of events in the title.\
+Otherwise, we use the text-positions hardcoded in the script.',
+)
+
+#--- iteratively, define arguments for ylim values:
+for i in range(nVNMs):
+    _nm = VNMs[i]
+    parser.add_argument(
+    '-ylim_'+_nm, '--ylim_'+_nm,
+    type=float,
+    nargs=2,
+    default = stf[_nm]['ylims'],
+    help="""
+    range/limits for y-axis in the plot.
+    """,
+    metavar=('ymin','ymax'),
+    )
+
+pa = parser.parse_args()
+#import pdb; pdb.set_trace()
+
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++
 nr  = 2         # scale for row size
 opt = {
 'ms'  : 3,
@@ -138,10 +162,6 @@ str_vsplit = '_' if pa.lim is None \
     else '_vlo.%3.1f.vhi.%3.1f'%(pa.lim[0], pa.lim[1])
 assert isdir(pa.left) and isdir(pa.right)
 
-#--- iterate over panels
-VNMs  = ('B.ACE','rmsB.ACE',\
-        'CRs.Auger_scals','CRs.Auger_BandScals','CRs.Auger_BandMuons')
-nVNMs = len(VNMs)
 
 #--- fig
 fig   = plt.figure(1, figsize=(9, 18))
@@ -182,7 +202,7 @@ for varname, io in zip(VNMs, range(nVNMs)):
         TEXT     = None
         TEXT_LOC = None
 
-    ylims       = stf[varname]['ylims'] #[4., 17.]
+    ylims       = pa.__dict__['ylim_'+varname] #stf[varname]['ylims'] #[4., 17.]
     ylabel      = stf[varname]['label'] #'B [nT]'
     #--- fig objects
     ax      = plt.subplot(gs[io*nr:(io+1)*nr, 0:2])

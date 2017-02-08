@@ -374,8 +374,8 @@ def makefig_ii(mc, sh, YLIMS, YLAB, **kws):
     # curvas del mc
     time = fsh+fmc*mc.tnorm
     cc = time>=fsh
-    ax.plot(time[cc], mc.avr[cc], 'o-', color='black', markersize=5, label='mean')
-    ax.plot(time[cc], mc.med[cc], 'o-', color='red', alpha=.8, markersize=5, markeredgecolor='none', label='median')
+    ax.plot(time[cc], mc.avr[cc], 'o-', color='black', markersize=5)
+    ax.plot(time[cc], mc.med[cc], 'o-', color='red', alpha=.8, markersize=5, markeredgecolor='none')
     # sombra del mc
     inf     = mc.avr + mc.std_err/np.sqrt(mc.nValues)
     sup     = mc.avr - mc.std_err/np.sqrt(mc.nValues)
