@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import matplotlib.transforms as transforms
 from os.path import isfile, isdir
+import string # for letters beside each panel
 
 
 #-----------------------------
@@ -228,6 +229,10 @@ for varname, io in zip(VNMs, range(nVNMs)):
         ax.xaxis.set_ticklabels([])
 
     ax.set_xlim(-2., 7.)
+    #--- lettet beside
+    letter = list(string.ascii_lowercase)[io]
+    yl = 0.8*ax.get_ylim()[1] + 0.2*ax.get_ylim()[0]
+    ax.text(-4.0, yl, letter+')', fontsize=26)
 
 fname_fig   = pa.plot + '/fig%s.png'%(str_vsplit)
 fig.savefig(fname_fig, dpi=135, bbox_inches='tight')
