@@ -10,6 +10,11 @@ This generates an average profile of all events (global) and average profiles of
 ./auger.solphys.sh 
 ```
 
+Average Forbush profiles:
+```bash
+./figs_solphys.sh
+```
+
 ---
 ### A&A paper on sheaths && MCs:
 
