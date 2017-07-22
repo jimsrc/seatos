@@ -20,61 +20,38 @@
 FROM ubuntu:12.04
 MAINTAINER Roberto G. Hashioka "roberto_hashioka@hotmail.com"
 
-RUN useradd -m -g sudo -s /bin/bash dummy
-
+#RUN useradd -m -g sudo -s /bin/bash dummy
 #USER dummy
 
-ADD proxy.sh /etc/profile.d/proxy.sh
-RUN echo 'Defaults env_keep += "ftp_proxy http_proxy https_proxy"' >> /etc/sudoers
-CMD echo 'Defaults env_keep += "FTP_PROXY HTTP_PROXY HTTPS_PROXY"' >> /etc/sudoers
-
-#--- stupid proxies (no, i dont know how to source them)
-ENV http_proxy http://proxy.fcen.uba.ar:8080/
-ENV https_proxy http://proxy.fcen.uba.ar:8080/
-ENV ftp_proxy http://proxy.fcen.uba.ar:8080/
-ENV rsync_proxy http://proxy.fcen.uba.ar:8080/
-ENV HTTP_PROXY http://proxy.fcen.uba.ar:8080/
-ENV HTTPS_PROXY http://proxy.fcen.uba.ar:8080/
-ENV FTP_PROXY http://proxy.fcen.uba.ar:8080/
-ENV RSYNC_PROXY http://proxy.fcen.uba.ar:8080/
-
-RUN echo "$HTTP_PROXY"
 RUN apt-get update
 
 # Set the env variable DEBIAN_FRONTEND to noninteractive
 ENV DEBIAN_FRONTEND noninteractive
 
 # Installing the environment required: xserver, xdm, flux box, roc-filer and ssh
-RUN apt-get install -y xpra rox-filer ssh pwgen xserver-xephyr xdm fluxbox
+RUN apt-get install -y xpra rox-filer ssh pwgen xserver-xephyr xdm fluxbox sudo vim
 
-# Configuring xdm to allow connections from any IP address and ssh to allow X11 Forwarding. 
-RUN sed -i 's/DisplayManager.requestPort/!DisplayManager.requestPort/g' /etc/X11/xdm/xdm-config
-RUN sed -i '/#any host/c\*' /etc/X11/xdm/Xaccess
-RUN ln -s /usr/bin/Xorg /usr/bin/X
-RUN echo X11Forwarding yes >> /etc/ssh/ssh_config
-
-# Upstart and DBus have issues inside docker. We work around in order to install firefox.
-RUN dpkg-divert --local --rename --add /sbin/initctl && ln -sf /bin/true /sbin/initctl
-
-# Installing fuse package (libreoffice-java dependency) and it's going to try to create
-# a fuse device without success, due the container permissions. || : help us to ignore it. 
-# Then we are going to delete the postinst fuse file and try to install it again!
-# Thanks Jerome for helping me with this workaround solution! :)
-# Now we are able to install the libreoffice-java package  
-RUN apt-get -y install fuse  || :
-RUN rm -rf /var/lib/dpkg/info/fuse.postinst
-RUN apt-get -y install fuse
 
 # Installing the apps: Firefox, flash player plugin, LibreOffice and xterm
 # libreoffice-base installs libreoffice-java mentioned before
-RUN apt-get install -y libreoffice-base firefox libreoffice-gtk libreoffice-calc xterm
+#RUN apt-get install -y libreoffice-base firefox libreoffice-gtk libreoffice-calc xterm
 
 # Set locale (fix the locale warnings)
 RUN localedef -v -c -i en_US -f UTF-8 en_US.UTF-8 || :
 
 # Copy the files into the container
-ADD . /src
+ADD ./docker-x /src
 
 EXPOSE 22
+
+# Add docker user (user:pass is docker:docker):
+RUN DOCKER_ENCRYPYTED_PASSWORD=`perl -e 'print crypt(docker, "aa"),"\n"'`
+RUN useradd -m -G sudo -d /home/docker -p "$DOCKER_ENCRYPYTED_PASSWORD" -s /bin/bash docker
+#RUN sed -Ei 's/adm:x:4:/docker:x:4:docker/' /etc/group
+#RUN adduser docker sudo
+
 # Start xdm and ssh services.
 CMD ["/bin/bash", "/src/startup.sh"]
+
+
+#EOF

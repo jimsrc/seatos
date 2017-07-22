@@ -78,4 +78,28 @@ export SCLS=$PAO/data_auger/estudios_AoP/data/unir_con_presion/data_final_2006-2
 - [ ] Is there any way to better optimize the brute-force method? 
       See the [nCR-model](etc/n_CR) directory.
 
+
+---
+For execution inside Docker:
+```bash
+cd /home/docker
+
+# start X display (you can later check with `xauth list` if the 
+# display actually exists):
+./src/config/docker-desktop -s 800x600 -d 10
+
+# start IPython or whatever app that needs a valid DISPLAY environment variable:
+DISPLAY=:10 ipython
+```
+
+For our custom Docker config, run as:
+```bash
+HOME_GUST=/home/docker
+XCONFIG_HOST=$ASO/icmes_richardson/data/mean_profiles/ace_docker/docker-x
+XCONFIG_GUST=${HOME_GUST}/src
+EXEC=/home/docker/miniconda2/bin/ipython  # executable file (can be a Bash script inside $XCONFIG)
+docker run -it --name ubuntuX2 --volume=${XCONFIG_HOST}:${XCONFIG_GUST} --user=1000:1000 -w ${HOME_GUST} jimsrc/conda:scipy $EXEC 
+```
+
+
 <!--- EOF -->
