@@ -43,9 +43,10 @@ DISPLAY=:$DISP ${MEAN_PROFILES_ACE}/tests/auger.splitted.sh ${OUT_EventsData}
 
 
 #--- builds the mixed profiles
-# export LEFT, RIGHT, OUTDIR, etc...
+export LEFT=${OUT_EventsData}/MCflag0.1.2.2H/woShiftCorr/_sh.i_
+export RIGHT=${OUT_EventsData}/MCflag0.1.2.2H/woShiftCorr/_i_
 OUT_MixProfs=$DIRDATA/MixProfs && mkdir ${OUT_MixProfs}
 echo -e "\n [*] $me: starting script to build mixed profiles...\n"
-#DISPLAY=:$DISP ${MEAN_PROFILES_ACE}/tests/auger.solphys.sh ${OUT_MixProfs}
+DISPLAY=:$DISP ${MEAN_PROFILES_ACE}/tests/auger.solphys.sh ${OUT_MixProfs}
 
 #EOF

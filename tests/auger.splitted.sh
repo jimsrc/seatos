@@ -8,9 +8,9 @@ OUTDIR=$1      # 1st argument
 
 
 if [[ -d "$OUTDIR" ]]; then
-    echo -e "\n [+] output directory ok:\n $OUTDIR\n"
+    echo -e "\n [+] $me: output directory ok:\n $OUTDIR\n"
 else
-    echo -e "\n [-] Directory doesn't exist:\n $OUTDIR\n"
+    echo -e "\n [-] $me: Directory doesn't exist:\n $OUTDIR\n"
     return 1
 fi
 
@@ -20,7 +20,7 @@ fi
     || ok=false
 if [[ ! $ok ]]; then
     # if any of them is not set, set them all:
-    echo -e "\n [-] At least one env variable is not present, so"
+    echo -e "\n [-] $me: At least one env variable is not present, so"
     echo -e "     we'll set them...\n"
     export ACE=~/data_ace/64sec_mag-swepam/ace.1998-2015.nc
     export MURDO=~/actividad_solar/neutron_monitors/mcmurdo/mcmurdo_utc_correg.dat

@@ -39,8 +39,13 @@ DataList=('ACE' 'MURDO' 'AVR' 'RICH_CSV' 'HSTS' 'SCLS')
 nf=(`ls ${DIRDATA_HOST}`)
 if [[ ! $nf -eq 0 ]]; then
     echo -e "\n [-] $me: Not empty data directory: ${DIRDATA_HOST}"
-    echo -e " [*] $me: Deleting...\n"
-    rm -rf ${DIRDATA_HOST}/*
+    _dirbckp=${DIRDATA_HOST}/../DataBckp_`date +%d%b%Y_%H.%M.%S`
+    mkdir ${_dirbckp}
+    echo -e " [*] $me: backing up to: ${_dirbckp}\n"
+    # back up && remove origin
+    rsync -rvuthil --remove-source-files --progress ${DIRDATA_HOST}/* ${_dirbckp}/. \
+        && echo -e "\n [+] back up finished OK!\n" \
+        || echo -e "\n [-] ERROR: rsync exited with status:$?\n"
 else
     echo -e "\n [+] $me: OK: data directory is empty!\n"
 fi
@@ -57,9 +62,11 @@ for id in $(seq 0 1 $(($nData-1))); do
     dnm=${DataList[$id]}            # data name
     vfnm=fnm_"$dnm"                 # variable name for filename
     fnm_src=${!vfnm}                # filename of data
-    echo -e " > $dnm:\n ${fnm_src}\n"
+    echo -e " > $dnm:\n ${fnm_src}"
     # hard-link using the realpath of the source filename
-    ln -f "$(realpath ${fnm_src})" ${DIRDATA_HOST}/$dnm.dat && echo " ok!"
+    ln -f "$(realpath ${fnm_src})" ${DIRDATA_HOST}/$dnm.dat \
+        && echo -e " [+] hard-link ok!\n" \
+        || echo -e " [-] ERROR with hard-link! (status:$?)\n"
     ArgsEnv+="--env $dnm=${DIRDATA_GUST}/$dnm.dat "
 done
 
