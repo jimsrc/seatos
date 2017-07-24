@@ -2,6 +2,8 @@
 
 # NOTE: this should be run from a host bash terminal.
 
+me=`basename "$0"`
+
 # repo path in the host && guest respectively
 #REPO_HOST=${MEAN_PROFILES_ACE}
 REPO_HOST=$ASO/icmes_richardson/data/mean_profiles/ace_docker
@@ -17,7 +19,8 @@ DOCKER_IMAGE=jimsrc/conda:scipy
 DIRDATA_HOST=${XCONFIG_HOST}/data          # host
 DIRDATA_GUST=${HOME_GUST}/data      # guest
 
-#--- let's hard-link data source to a local directory
+# let's hard-link data source to a local directory
+# NOTE: give paths to files according to host space.
 fnm_ACE=/work/data/ace.1998-2015.nc
 fnm_MURDO=/work/actividad_solar/neutron_monitors/mcmurdo/mcmurdo_utc_correg.dat
 fnm_AVR=$ASO/icmes_richardson/data/rich_events2_ace.nc
@@ -35,11 +38,11 @@ DataList=('ACE' 'MURDO' 'AVR' 'RICH_CSV' 'HSTS' 'SCLS')
 # are supposed to start fresh && clean.
 nf=(`ls ${DIRDATA_HOST}`)
 if [[ ! $nf -eq 0 ]]; then
-    echo -e "\n [-] Not empty data directory: ${DIRDATA_HOST}"
-    echo -e " [*] Deleting...\n"
+    echo -e "\n [-] $me: Not empty data directory: ${DIRDATA_HOST}"
+    echo -e " [*] $me: Deleting...\n"
     rm -rf ${DIRDATA_HOST}/*
 else
-    echo -e "\n [+] OK: data directory is empty!\n"
+    echo -e "\n [+] $me: OK: data directory is empty!\n"
 fi
 
 
@@ -59,7 +62,9 @@ for id in $(seq 0 1 $(($nData-1))); do
     ln -f "$(realpath ${fnm_src})" ${DIRDATA_HOST}/$dnm.dat && echo " ok!"
     ArgsEnv+="--env $dnm=${DIRDATA_GUST}/$dnm.dat "
 done
-exit 1
+
+echo -e "\n [+] $me: Environment variables parsed to Docker:\n $ArgsEnv\n"
+#exit 1
 
 
 # script to run inside Docker
@@ -79,7 +84,7 @@ docker run --rm -t \
 
 
 #--- delete hard-links
-rm ${DIRDATA_HOST}/*
+#rm ${DIRDATA_HOST}/*
 
 
 #EOF
