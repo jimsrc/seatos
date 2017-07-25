@@ -40,7 +40,18 @@ EXE=${MEAN_PROFILES_ACE}/one.structure/src/sea_splitted.py
 for struct in sh.i i; do
     echo -e "\n [*] $me: running for structure: ($struct) ...\n"
     #--- run for the 3 subgroups && the global one
-    $EXE -- -ace $ACE -ace1sec 0 -murdo 0 -avr $AVR --rich_csv $RICH_CSV -ahs $HSTS -ahm $HSTS -as $SCLS --dir_plot $dir_out --dir_data $dir_out --suffix _${struct}_ --icme_flag 0.1.2.2H --struct $struct --Vsplit $vsplit --fgap 0.5
+    $EXE -- \
+        -ace $ACE -ace1sec 0 -murdo 0 -avr $AVR --rich_csv $RICH_CSV \
+        -ahs $HSTS -ahm $HSTS -as $SCLS \
+        --dir_plot $dir_out \
+        --dir_data $dir_out \
+        --suffix _${struct}_ \
+        --icme_flag 0.1.2.2H \
+        --struct $struct \
+        --Vsplit $vsplit \
+        --fgap 0.5 
+        #--lock 1 Auger_scals \
+        #--tshift
     #if [ $?!=0 ]; then break; fi # break bash script on python crash
     echo -e "\n [*] $me: exit status: ($?)\n"
 done

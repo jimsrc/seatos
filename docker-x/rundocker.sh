@@ -15,9 +15,18 @@ XCONFIG_GUST=${HOME_GUST}/src
 # name of out Docker image
 DOCKER_IMAGE=jimsrc/conda:scipy
 
-# input data paths for host && guest
-DIRDATA_HOST=${XCONFIG_HOST}/data          # host
+
+# define output-data paths for host && guest
+DIRDATA_HOST=$1             # 1st argument
+if [[ "${DIRDATA_HOST}" == "" ]]; then
+    echo -e "\n [*] $me: data directory path not parsed from CLI. Generating default...\n"
+    # default name for data directory
+    DIRDATA_HOST=${XCONFIG_HOST}/data_`date +%d%b%Y_%H.%M.%S`   # host
+fi
+echo -e " [*] $me: creating output-data directory:\n     ${DIRDATA_HOST}\n"
+mkdir -p ${DIRDATA_HOST}
 DIRDATA_GUST=${HOME_GUST}/data      # guest
+
 
 # let's hard-link data source to a local directory
 # NOTE: give paths to files according to host space.
@@ -37,17 +46,29 @@ DataList=('ACE' 'MURDO' 'AVR' 'RICH_CSV' 'HSTS' 'SCLS')
 # NOTE: we should start with an empty data directory, because we
 # are supposed to start fresh && clean.
 nf=(`ls ${DIRDATA_HOST}`)
-if [[ ! $nf -eq 0 ]]; then
-    echo -e "\n [-] $me: Not empty data directory: ${DIRDATA_HOST}"
-    _dirbckp=${DIRDATA_HOST}/../DataBckp_`date +%d%b%Y_%H.%M.%S`
+if [[ $nf -neq 0 ]]; then
+    echo -e "\n [-] $me: Not empty data directory:\n     ${DIRDATA_HOST}"
+    #_dirbckp=${DIRDATA_HOST}/../DataBckp_`date +%d%b%Y_%H.%M.%S`
+    _dirbckp=${DIRDATA_HOST}_bckp_`date +%d%b%Y_%H.%M.%S`
     mkdir ${_dirbckp}
-    echo -e " [*] $me: backing up to: ${_dirbckp}\n"
+    echo -e " [*] $me: backing up to:\n     ${_dirbckp}\n"
     # back up && remove origin
-    rsync -rvuthil --remove-source-files --progress ${DIRDATA_HOST}/* ${_dirbckp}/. \
-        && echo -e "\n [+] back up finished OK!\n" \
-        || echo -e "\n [-] ERROR: rsync exited with status:$?\n"
-else
+    rsync -rvuthil --remove-source-files \
+        --exclude=*.dat \
+        --progress ${DIRDATA_HOST}/* ${_dirbckp}/.
+    if [[ "$?" == "0" ]]; then
+        echo -e "\n [+] $me: back up finished OK!\n"
+    else
+        echo -e "\n [-] ERROR (@ $me): rsync exited with status:$?\n"
+        exit 1
+    fi
+    # remove remaining files
+    rm -rf ${DIRDATA_HOST}/*
+elif [[ -d ${DIRDATA_HOST} ]]; then
     echo -e "\n [+] $me: OK: data directory is empty!\n"
+else
+    echo -e "\n [-] $me: data directory doesn't exist:\n ${DIRDATA_HOST}\n"
+    exit 1
 fi
 
 
@@ -64,14 +85,16 @@ for id in $(seq 0 1 $(($nData-1))); do
     fnm_src=${!vfnm}                # filename of data
     echo -e " > $dnm:\n ${fnm_src}"
     # hard-link using the realpath of the source filename
-    ln -f "$(realpath ${fnm_src})" ${DIRDATA_HOST}/$dnm.dat \
-        && echo -e " [+] hard-link ok!\n" \
-        || echo -e " [-] ERROR with hard-link! (status:$?)\n"
+    ln -f "$(realpath ${fnm_src})" ${DIRDATA_HOST}/$dnm.dat
+    if [[ $? -eq 0 ]]; then
+        echo -e " [+] hard-link ok!\n"
+    else
+        echo -e " [-] ERROR with hard-link! (status:$?)\n" && exit 1
+    fi
     ArgsEnv+="--env $dnm=${DIRDATA_GUST}/$dnm.dat "
 done
 
-echo -e "\n [+] $me: Environment variables parsed to Docker:\n $ArgsEnv\n"
-#exit 1
+echo -e "\n [+] $me: Environment variables we'll parse to Docker:\n $ArgsEnv\n"
 
 
 # script to run inside Docker
@@ -89,6 +112,7 @@ docker run --rm -t \
     ${DOCKER_IMAGE} \
     ${SCRIPT}
 
+echo -e " [+] $me: All generated data is in:\n ${DIRDATA_HOST}"
 
 #--- delete hard-links
 #rm ${DIRDATA_HOST}/*

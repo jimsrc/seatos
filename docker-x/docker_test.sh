@@ -30,8 +30,8 @@ fi
 
 
 #-- set data paths:
-if [[ ! -v DIRDATA ]]; then
-    echo -e "\n [-] $me: ERROR: we need DIRDATA env variable!\n"
+if [[ ! -v DIRDATA && -v MEAN_PROFILES_ACE ]]; then
+    echo -e "\n [-] $me: ERROR: we need DIRDATA && MEAN_PROFILES_ACE env variables!\n"
     exit 1
 fi
 
