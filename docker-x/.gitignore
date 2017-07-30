@@ -1,0 +1,2 @@
+# don't follow output directories
+data_*/
