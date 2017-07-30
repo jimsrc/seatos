@@ -111,11 +111,9 @@ echo -e "\n [+] $me: Environment variables we'll parse to Docker:\n $ArgsEnv\n"
 # some data already extracted (so no data extraction will be performed now)
 ProvideExtractedData=1
 if [[ ${ProvideExtractedData} ]]; then
-    #LEFT_HOST=${MEAN_PROFILES_ACE}/mcs/ascii/MCflag2/wShiftCorr/_test_Vmc_
-    LEFT_HOST=${ASO}/icmes_richardson/data/mean_profiles/ace_docker/tmp_left
+    LEFT_HOST=${REPO_HOST}/etc/tmp_left
     LEFT_GUST=${REPO_GUST}/left
-    #RIGHT_HOST=${MEAN_PROFILES_ACE}/sheaths/ascii/MCflag2/wShiftCorr/_test_Vmc_
-    RIGHT_HOST=${ASO}/icmes_richardson/data/mean_profiles/ace_docker/tmp_right
+    RIGHT_HOST=${REPO_HOST}/etc/tmp_right
     RIGHT_GUST=${REPO_GUST}/right
     # set Docker-run arguments
     ArgExtractedData="--env ProvideExtractedData=${ProvideExtractedData} "

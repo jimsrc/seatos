@@ -59,7 +59,7 @@ some figures of the A&A paper.
 Just:
 ```bash
 cd docker-x
-./rundocker.sh <output-directory>
+./rundocker.sh <absolute-output-directory>
 ```
 ### Remarks:
 * the above script needs a valid `REPO_HOST` environment variable, which has to be the path to 
@@ -79,6 +79,10 @@ script [docker_test.sh](docker-x/docker_test.sh) to build mixed profiles.
 If the variable `ProvideExtractedData` equals `0`, the script will perform data extraction from the
 ACE and CR-detector datasets, and later the mixed profiles will be built. Note that for the later option,
 you'll have to modify the `LEFT` and `RIGHT` variable by hand in [docker_test.sh](docker-x/docker_test.sh).
+* you can use these [LEFT](etc/tmp_left) and [RIGHT](etc/tmp_right) directories as input for
+[this](mixed.icmes/src/splitted.py) script (which is called by the chain [script1](docker-x/docker_test.sh) 
+--> [script2](tests/auger.solphys.sh) --> [script3](mixed.icmes/src/splitted.py))
+They are set with the variables `LEFT_HOST` and `RIGHT_HOST`.
 
 
 <!--- EOF -->

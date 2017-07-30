@@ -1,0 +1,9 @@
+rmsB 13 13
+B 13 13
+Temp 12 13
+rmsBoB 13 13
+AlphaRatio 9 13
+beta 12 13
+V 13 13
+Pcc 12 13
+CRs 13 13

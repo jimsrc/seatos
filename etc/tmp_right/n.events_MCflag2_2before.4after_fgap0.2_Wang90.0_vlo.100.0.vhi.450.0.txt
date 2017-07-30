@@ -1,0 +1,9 @@
+rmsB 18 18
+B 18 18
+Temp 18 18
+rmsBoB 18 18
+AlphaRatio 11 18
+beta 18 18
+V 18 18
+Pcc 18 18
+CRs 18 18
