@@ -19,7 +19,7 @@ REPO_GUST=${HOME_GUST}/seatos # TODO: this $HOME doesn't exist in Docker image!
 XCONFIG_HOST=${REPO_HOST}/docker-x
 XCONFIG_GUST=${HOME_GUST}/src
 # name of out Docker image
-DOCKER_IMAGE=jimsrc/conda:scipy
+DOCKER_IMAGE=jimsrc/conda:seatos2
 
 
 # define output-data paths for host && guest
@@ -149,7 +149,9 @@ docker run --rm -it \
     ${DOCKER_IMAGE} \
     ${SCRIPT}
 
+echo -e "\n ++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 echo -e " [+] $me: All generated data is in:\n     ${DIRDATA_HOST}\n"
+echo -e " ++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n"
 
 #--- delete hard-links
 #rm ${DIRDATA_HOST}/*

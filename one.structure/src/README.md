@@ -25,7 +25,7 @@ export SCLS=$AUGER_REPO/scl.build_final/test.h5
 ---
 # to reproduce A&A paper
 ```bash
-./sea_splitted.py -- -ace $ACE -ace1sec 0 -murdo 0  -avr $AVR  --rich_csv $RICH_CSV -ahs 0  -ahm 0 -as 0 --dir_plot ./test  --dir_data ./test  --suffix _sh.mc_  --icme_flag 2  --struct sh.mc  --wang 1 90.  --Vsplit 450. 550.  --tshift
+./sea_splitted.py -- -ace $ACE -ace1sec 0 -murdo 0  -avr $AVR  --rich_csv $RICH_CSV -ahs 0  -ahm 0 -as 0 --dir_plot ./test  --dir_data ./test  --suffix _sh.mc_  --icme_flag 2  --struct sh.mc  --wang 1 90.  --Vsplit mc_V 450. 550.  --tshift
 ```
 Note that, you can use `0` for `--ace` and `--mcmurdo`, to avoid processing them.
 

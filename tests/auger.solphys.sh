@@ -35,7 +35,7 @@ else
 fi
 
 group=(lo mid hi)
-lims=('100. 375.' '375. 450.' '450. 3000.')
+lims=('100. 450.' '450. 550.' '550. 3000.')
 
 #--- splitted profiles
 EXE=$MEAN_PROFILES_ACE/mixed.icmes/src/splitted.py

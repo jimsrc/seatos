@@ -549,12 +549,13 @@ def grab_time_domain(adap, check=False):
 
 
 class events_mgr(object):
-    def __init__(self, gral, FILTER, CUTS, bd, nBin, fgap, tb, z_exp, structure='mc', verbose=True):
+    def __init__(self, gral, FILTER, CUTS, bd, nBin, fgap, tb, z_exp, structure='mc', fparam='mc_V', verbose=True):
         """
         structure: can be 'sh.mc', 'sh.i', 'mc', 'i', refering to sheath-of-mc,
                    sheath-of-icme, mc, and icme, respectively. This is to
                    use the proper mean values calculated in each structure.
         """
+        self.fparam     = fparam
         self.structure  = structure
         self.data_name  = gral.data_name
         self.FILTER     = FILTER
@@ -1063,6 +1064,8 @@ class events_mgr(object):
         i_B         = self.f_events.variables[structure+'_B'].data.copy() # B del icme
         i_dt        = self.f_events.variables[structure+'_dt'].data.copy() # B del icme
         i_dR            = i_dt*(i_V*AU_o_km*sec_o_day)
+        # values of the observables to use for filtering
+        vfparam         = get_fparam(self.f_events, self.fparam)
 
         #RatePre_Names = []
         #--- seteamos miembros de 'self' q se llamen 'rate_pre_...'
@@ -1081,12 +1084,13 @@ class events_mgr(object):
 
         #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         #++++++++++++++++++ begin: SELECCION DE EVENTOS ++++++++++++++++++++++
-        #------- fechas
+        #------- filter dates
         BETW1998_2006   = np.ones(tb.n_icmes, dtype=bool)
         if FILTER['choose_1998-2006']:
-            _until_2006 = range(294) # all events up to Jan/2006
-            for i in _until_2006:
-                BETW1998_2006[i]=False # 'False' para excluir eventos
+            _until_jan98 = range(0, 26) # all events up to Jan/98
+            _after_dec06 = range(307, tb.n_icmes) # all after Dec/2006
+            for i in (_until_jan98 + _after_dec06):
+                BETW1998_2006[i] = False # 'False' to exclude events
 
         #------- seleccionamos MCs con label-de-catalogo (lepping=2, etc)
         MC_FLAG = np.ones(tb.n_icmes, dtype=bool)
@@ -1116,7 +1120,7 @@ class events_mgr(object):
         if FILTER['vsw_filter']:
             v_lo        = self.CUTS['v_lo']
             v_hi        = self.CUTS['v_hi']
-            SpeedCond   = (i_V>=v_lo) & (i_V<v_hi)
+            SpeedCond   = (vfparam>=v_lo) & (vfparam<v_hi)
 
         #------- z expansion (a. gulisano)
         z_exp   = self.z_exp
@@ -1161,6 +1165,23 @@ class events_mgr(object):
             print ccl.Rn + "\n --------> FATAL ERROR!!!: self.n_SELECC=<0"
             print " exiting....... \n" + ccl.W
             raise SystemExit
+
+def get_fparam(finp, fparam='mc_V'):
+    """
+    you can implement more acceptable fparam values, that can
+    imply an operation of several keys of the finp.variable.keys()
+    for instance.
+    """
+    # keys of the usual .nc file
+    _keys_of_netcdf_file = ['sh.mc_V', 'mc_V', 'sh.mc_B', 'mc_B']
+    _keys_of_netcdf_file += ['sh.i_V', 'i_V', 'sh.i_B', 'i_B']
+
+    # check if it's a valid `fparam` && extract
+    if fparam in _keys_of_netcdf_file:
+        values = finp.variables[fparam].data.copy()
+    else:
+        raise SystemExit('\n [-] Unrecognized fparam value: '+fparam+'\n')
+    return values
 
 
 class RichTable(object):

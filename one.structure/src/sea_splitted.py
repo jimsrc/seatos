@@ -61,6 +61,23 @@ class str_to_other_ii(argparse.Action):
         value = [int(values[0]), values[1]]
         setattr(namespace, self.dest, value)
 
+#--- type for argparse
+class str_to_other_iii(argparse.Action):
+    """
+    converts a tuple of three strings (s1, s2, s3) into 
+    a tuple of (str(s1), float(s2), float(s3)).
+    """
+    def __init__(self, option_strings, dest, **kwargs):
+        #if nargs is not None:
+        #    raise ValueError("nargs not allowed")
+        super(str_to_other_iii, self).__init__(option_strings, dest, **kwargs)
+    def __call__(self, parser, namespace, values, option_string=None):
+        #print '%r %r %r' % (namespace, values, option_string)
+        #dd,mm,yyyy = map(int, values.split('/'))
+        value = [str(values[0]), float(values[1]), float(values[2])]
+        setattr(namespace, self.dest, value)
+
+
 
 #--- retrieve args
 parser = argparse.ArgumentParser(
@@ -163,11 +180,12 @@ metavar=('SWITCH','THRESHOLD'),
 )
 parser.add_argument(
 '-Vs', '--Vsplit',
-type=float,
-nargs=2,
-default=[375.,450.],
-help='SW speed values to define a partition of the sample in \
-three sub-groups of events.',
+type=str,
+nargs=3,
+default=['mc_V', 375.0, 450.0],
+help='name of observable (VarName) to use for filtering, and the threshold values to define a partition on the sample. The partition results in three sub-groups of events. NOTE that we need a lower threshold (ThresLower) and upper threshold (ThresUpper). The VarName has to be a valid input for the function get_fparam() in the shared_funcs.py file.',
+action=str_to_other_iii,
+metavar=('VarName', 'ThresLower', 'ThresUpper'),
 )
 parser.add_argument(
 '-lock', '--lock',
@@ -253,7 +271,7 @@ FILTER['z_filter_on']   = False
 FILTER['MCwant']        = MCwant
 FILTER['B_filter']      = False
 FILTER['filter_dR.icme'] = False #True
-FILTER['choose_1998-2006'] = True # if True, exclude this period
+FILTER['choose_1998-2006'] = True # False # if True, filter-in this period
 
 CUTS                    = {}
 CUTS['ThetaThres']      = pa.wang[1] #90.0   # all events with theta>ThetaThres
@@ -303,9 +321,9 @@ print lnm
 gral.data_name      = lnm[0] #'ACE' #'Auger_scals' #'McMurdo' #'ACE'
 emgr = sf.events_mgr(
          gral, FILTER, CUTS, bounds, nBin, fgap, tb, 
-         None, structure=pa.struct, verbose=pa.verb
+         None, structure=pa.struct, fparam=pa.Vsplit[0], verbose=pa.verb
        )
-LOW, MID1, MID2, TOP = 100., pa.Vsplit[0], pa.Vsplit[1], 3000.
+LOW, MID1, MID2, TOP = 100., pa.Vsplit[1], pa.Vsplit[2], 3000.
 
 #--- import lib of the i/o classes for
 #    each `dname`

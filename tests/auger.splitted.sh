@@ -18,7 +18,7 @@ OUTDIR=$1      # 1st argument
 if [[ -d "$OUTDIR" ]]; then
     echo -e "\n [+] $me: output directory ok:\n $OUTDIR\n"
 else
-    echo -e "\n [-] $me: Directory doesn't exist:\n $OUTDIR\n"
+    echo -e "\n [-] $me: output directory doesn't exist:\n $OUTDIR\n"
     return 1
 fi
 
@@ -42,25 +42,26 @@ else
 fi
 
 
-vsplit='375. 450.' # these 2 limits define the partition into 3 groups
-dir_out=$OUTDIR #./out.auger
+# NOTE: arguments for --Vsplit are 'VarName ThresLower ThresUpper':
+vsplit='mc_V 450. 550.' # these 2 limits define the partition into 3 groups
+dir_out=$OUTDIR # output directory
 
 EXE=${MEAN_PROFILES_ACE}/one.structure/src/sea_splitted.py
-for struct in sh.i i; do
+for struct in sh.mc mc; do
     echo -e "\n [*] $me: running for structure: ($struct) ...\n"
     #--- run for the 3 subgroups && the global one
     $EXE --pdb -- \
-        -ace $ACE -ace1sec 0 -murdo 0 -avr $AVR --rich_csv $RICH_CSV \
-        -ahs $HSTS -ahm $HSTS -as $SCLS \
-        --dir_plot $dir_out \
-        --dir_data $dir_out \
-        --suffix _${struct}_ \
-        --icme_flag 0.1.2.2H \
-        --struct $struct \
-        --Vsplit $vsplit \
-        --fgap 0.5 
-        #--lock 1 Auger_scals \
-        #--tshift
+        -ace $ACE -ace1sec 0 -murdo $MURDO  -avr $AVR  --rich_csv $RICH_CSV \
+        -ahs 0  -ahm 0 -as 0 \
+        --dir_plot ${dir_out}  \
+        --dir_data ${dir_out}  \
+        --suffix _${struct}_  \
+        --icme_flag 2  \
+        --struct $struct  \
+        --wang 1 90.  \
+        --Vsplit $vsplit  \
+        --tshift \
+        --fgap 0.2
     #if [ $?!=0 ]; then break; fi # break bash script on python crash
     echo -e "\n [*] $me: exit status: ($?)\n"
 done

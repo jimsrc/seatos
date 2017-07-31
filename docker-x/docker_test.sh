@@ -57,8 +57,8 @@ if [[ $ProvideExtractedData -eq 1 ]]; then
     export RIGHT=${EXTRACTED_RIGHT}
 else
     # this should be setted by hand
-    export LEFT=${OUT_EventsData}/MCflag0.1.2.2H/woShiftCorr/_sh.i_
-    export RIGHT=${OUT_EventsData}/MCflag0.1.2.2H/woShiftCorr/_i_
+    export LEFT=${OUT_EventsData}/MCflag2/wShiftCorr/_sh.mc_
+    export RIGHT=${OUT_EventsData}/MCflag2/wShiftCorr/_mc_
 fi 
 echo -e " [*] LEFT=$LEFT\n [*] RIGHT=$RIGHT\n"
 [[ "$LEFT" == "" || "$RIGHT" == "" ]] && return 1
