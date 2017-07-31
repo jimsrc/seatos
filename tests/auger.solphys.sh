@@ -35,25 +35,19 @@ else
 fi
 
 group=(lo mid hi)
-#lims=('100. 375.' '375. 450.' '450. 3000.')
-lims=('100. 450.' '450. 550.' '550. 3000.')
+lims=('100. 375.' '375. 450.' '450. 3000.')
 
 #--- splitted profiles
-#EXE=${MEAN_PROFILES_ACE}/mixed/figs/sheaths.paper/src/together4.py
-EXE=${MEAN_PROFILES_ACE}/mixed/figs/sheaths.paper/src/together2_global.py
-OUT=${OUTDIR}/
-$EXE $OUT
+EXE=$MEAN_PROFILES_ACE/mixed.icmes/src/splitted.py
+for i in $(seq 0 1 2); do
+    OUT=${OUTDIR}/${group[$i]} && mkdir -p $OUT
+    # build mixed profile
+    $EXE --pdb -- --left $LEFT  --right $RIGHT  --plot $OUT  --lim ${lims[$i]}
+done
 
-#EXE=$MEAN_PROFILES_ACE/mixed.icmes/src/splitted.py
-#for i in $(seq 0 1 2); do
-#    OUT=${OUTDIR}/${group[$i]} && mkdir -p $OUT
-#    # build mixed profile
-#    $EXE --pdb -- --left $LEFT  --right $RIGHT  --plot $OUT  --lim ${lims[$i]}
-#done
-#
-##--- global profiles
-#OUT=${OUTDIR}/all && mkdir $OUT
-## build mixed profile
-#$EXE --pdb -- --left $LEFT  --right $RIGHT  --plot $OUT
+#--- global profiles
+OUT=${OUTDIR}/all && mkdir $OUT
+# build mixed profile
+$EXE --pdb -- --left $LEFT  --right $RIGHT  --plot $OUT
 
 #EOF

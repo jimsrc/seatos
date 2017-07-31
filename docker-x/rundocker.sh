@@ -108,9 +108,10 @@ done
 echo -e "\n [+] $me: Environment variables we'll parse to Docker:\n $ArgsEnv\n"
 
 
-# some data already extracted (so no data extraction will be performed now)
-ProvideExtractedData=1
-if [[ ${ProvideExtractedData} ]]; then
+# some data already extracted (so no data extraction will be performed 
+# now && the above hard-links are not necessary)
+ProvideExtractedData=0
+if [[ ${ProvideExtractedData} -eq 1 ]]; then
     LEFT_HOST=${REPO_HOST}/etc/tmp_left
     LEFT_GUST=${REPO_GUST}/left
     RIGHT_HOST=${REPO_HOST}/etc/tmp_right

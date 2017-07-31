@@ -1084,7 +1084,8 @@ class events_mgr(object):
         #------- fechas
         BETW1998_2006   = np.ones(tb.n_icmes, dtype=bool)
         if FILTER['choose_1998-2006']:
-            for i in range(294):
+            _until_2006 = range(294) # all events up to Jan/2006
+            for i in _until_2006:
                 BETW1998_2006[i]=False # 'False' para excluir eventos
 
         #------- seleccionamos MCs con label-de-catalogo (lepping=2, etc)

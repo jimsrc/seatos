@@ -86,30 +86,30 @@ default='{HOME}/actividad_solar/neutron_monitors/mcmurdo/mcmurdo_utc_correg.dat'
 parser.add_argument(
 '-ahm', '--inp_Auger_BandMuons',
 type=str,
-default='{AUGER_REPO}/out/out.build_temp.corr/shape.ok_and_3pmt.ok/15min/histos_temp.corrected.h5'.format(**os.environ),
+default='<auger_histos_dir>' if 'AUGER_REPO' not in os.environ else '{AUGER_REPO}/out/out.build_temp.corr/shape.ok_and_3pmt.ok/15min/histos_temp.corrected.h5'.format(**os.environ),
 help='.h5 file with Auger charge-histograms data (until temperature-correction).'
 )
 parser.add_argument(
 '-ahs', '--inp_Auger_BandScals',
 type=str,
-default='{AUGER_REPO}/out/out.build_temp.corr/shape.ok_and_3pmt.ok/15min/histos_temp.corrected.h5'.format(**os.environ),
+default='<auger_histos_dir>' if 'AUGER_REPO' not in os.environ else '{AUGER_REPO}/out/out.build_temp.corr/shape.ok_and_3pmt.ok/15min/histos_temp.corrected.h5'.format(**os.environ),
 help='.h5 file with Auger charge-histograms data (until temperature-correction).'
 )
 parser.add_argument(
 '-as', '--inp_Auger_scals',
-default='{PAO}/data_auger/estudios_AoP/data/unir_con_presion/data_final_2006-2013.h5'.format(**os.environ),
+default='<auger_scals_dir>' if 'AUGER_REPO' not in os.environ else '{PAO}/data_auger/estudios_AoP/data/unir_con_presion/data_final_2006-2013.h5'.format(**os.environ),
 help='.h5 file with Auger scalers (until pressure correction).'
 )
 parser.add_argument(
 '-avr', '--avr',
 type=str,
-default='{ASO}/icmes_richardson/data/rich_events2_ace.nc'.format(**os.environ),
+default='<netcdf-file>' if 'ASO' not in os.environ else '{ASO}/icmes_richardson/data/rich_events2_ace.nc'.format(**os.environ),
 help='.nc file with the average values inside diferent ICME sub-structures.'
 )
 parser.add_argument(
 '-rc', '--rich_csv',
 type=str,
-default='{ASO}/icmes_richardson/RichardsonList_until.2016.csv'.format(**os.environ),
+default='<richardson-table-csv>' if 'ASO' not in os.environ else '{ASO}/icmes_richardson/RichardsonList_until.2016.csv'.format(**os.environ),
 help='.csv file of Richardson\'s table',
 )
 parser.add_argument(

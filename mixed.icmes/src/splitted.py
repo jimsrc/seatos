@@ -100,84 +100,84 @@ stf['rmsB_ratio.ACE1sec']    = {
     'text_loc_2': {'mc':[4.5, 2.0], 'sh':[-1.95, 2.0]},
     'text_loc_3': {'mc':[4.5, 2.0], 'sh':[-1.95, 2.0]}
     }
-stf['B']    = {
+stf['B.ACE']    = {
     'label': 'B [T]',
     'ylims': [3., 14.],
     'text_loc_1': {'mc':[4.5, 10.0], 'sh':[-1.95, 12.0]},
     'text_loc_2': {'mc':[4.5, 10.0], 'sh':[-1.95, 12.0]},
     'text_loc_3': {'mc':[4.5, 12.0], 'sh':[-1.95, 12.0]}
     }
-stf['V']    = {
+stf['V.ACE']    = {
     'label': 'Vsw [Km/s]',
     'ylims': [300., 600.],
     'text_loc_1': {'mc':[4.5, 500.0], 'sh':[-1.95, 520.0]},
     'text_loc_2': {'mc':[4.5, 600.0], 'sh':[-1.95, 600.0]},
     'text_loc_3': {'mc':[4.5, 410.0], 'sh':[-1.95, 500.0]}
     }
-stf['rmsBoB']    = {
+stf['rmsBoB.ACE']    = {
     'label': 'rmsBoB [1]',
     'ylims': [0.015, 0.21],
     'text_loc_1': {'mc':[4.5, 0.020], 'sh':[-1.95, 0.02]},
     'text_loc_2': {'mc':[4.5, 0.095], 'sh':[-1.95, 0.02]},
     'text_loc_3': {'mc':[4.5, 0.099], 'sh':[-1.95, 0.02]}
     }
-stf['rmsB']    = {
+stf['rmsB.ACE']    = {
     'label': 'rmsB [nT]',
     'ylims': [0.1, 4.],
     'text_loc_1': {'mc':[4.5, 1.0], 'sh':[-1.95, 1.0]},
     'text_loc_2': {'mc':[4.5, 1.0], 'sh':[-1.95, 1.0]},
     'text_loc_3': {'mc':[4.5, 0.8], 'sh':[-1.95, 1.0]}
     }
-stf['beta']    = {
+stf['beta.ACE']    = {
     'label': 'beta [1]',
     'ylims': [0.02, 10.0],
     'text_loc_1': {'mc':[4.5, 0.1], 'sh':[-1.95, 0.2]},
     'text_loc_2': {'mc':[4.5, 0.1], 'sh':[-1.95, 0.2]},
     'text_loc_3': {'mc':[4.5, 0.1], 'sh':[-1.95, 0.2]}
     }
-stf['Pcc']    = {
+stf['Pcc.ACE']    = {
     'label': 'proton density [#/cc]',
     'ylims': [1, 23],
     'text_loc_1': {'mc':[4.5, 14], 'sh':[-1.95, 16.0]},
     'text_loc_2': {'mc':[4.5, 14], 'sh':[-1.95, 16.0]},
     'text_loc_3': {'mc':[4.5, 11], 'sh':[-1.95, 18.0]}
     }
-stf['Temp']    = {
+stf['Temp.ACE']    = {
     'label': 'Temp ($\\times 10^4$) [K]',
     'ylims': [1e4, 100e4],
     'text_loc_1': {'mc':[4.5, 18.0e4], 'sh':[-1.95, 20.0e4]},
     'text_loc_2': {'mc':[4.5,  2.0e4], 'sh':[-1.95, 20.0e4]},
     'text_loc_3': {'mc':[4.5,  2.0e4], 'sh':[-1.95, 20.0e4]}
     }
-stf['AlphaRatio']    = {
+stf['AlphaRatio.ACE']    = {
     'label': 'alpha ratio [1]',
     'ylims': [0.02, 0.09],
     'text_loc_1': {'mc':[4.5, 0.022], 'sh':[-1.95, 0.07]},
     'text_loc_2': {'mc':[4.5, 0.022], 'sh':[-1.95, 0.07]},
     'text_loc_3': {'mc':[4.5, 0.022], 'sh':[-1.95, 0.07]}
     }
-stf['CRs']    = {
+stf['CRs.McMurdo']    = {
     'label': 'GCRs @McMurdo [%]',
     'ylims': [-8.0, 1.0],
     'text_loc_1': {'mc':[4.5, -4.0], 'sh':[-1.95, -4.5]},
     'text_loc_2': {'mc':[4.5, -7.0], 'sh':[-1.95, -4.5]},
     'text_loc_3': {'mc':[4.5, -7.5], 'sh':[-1.95, -4.5]}
     }
-stf['Auger_scals']    = {
+stf['CRs.Auger_scals']    = {
     'label': 'GCRs @Auger-scals [%]',
     'ylims': [-1.0, 0.2],
     'text_loc_1': {'mc':[4.5, -0.50], 'sh':[-1.95, -0.5]},
     'text_loc_2': {'mc':[4.5, -0.50], 'sh':[-1.95, -0.5]},
     'text_loc_3': {'mc':[4.5, -0.85], 'sh':[-1.95, -0.5]}
     }
-stf['Auger_BandScals']    = {
+stf['CRs.Auger_BandScals']    = {
     'label': 'GCRs @Auger-BandScals [%]',
     'ylims': [-1.0, 0.2],
     'text_loc_1': {'mc':[4.5, -0.50], 'sh':[-1.95, -0.5]},
     'text_loc_2': {'mc':[4.5, -0.50], 'sh':[-1.95, -0.5]},
     'text_loc_3': {'mc':[4.5, -0.85], 'sh':[-1.95, -0.5]}
     }
-stf['Auger_BandMuons']    = {
+stf['CRs.Auger_BandMuons']    = {
     'label': 'GCRs @Auger-BandMuons [%]',
     'ylims': [-1.0, 0.4],
     'text_loc_1': {'mc':[4.5, -0.50], 'sh':[-1.95, -0.5]},
