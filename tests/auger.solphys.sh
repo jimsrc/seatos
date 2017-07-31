@@ -39,7 +39,8 @@ group=(lo mid hi)
 lims=('100. 450.' '450. 550.' '550. 3000.')
 
 #--- splitted profiles
-EXE=${MEAN_PROFILES_ACE}/mixed/figs/sheaths.paper/src/together4.py
+#EXE=${MEAN_PROFILES_ACE}/mixed/figs/sheaths.paper/src/together4.py
+EXE=${MEAN_PROFILES_ACE}/mixed/figs/sheaths.paper/src/together2_global.py
 OUT=${OUTDIR}/
 $EXE $OUT
 

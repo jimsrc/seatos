@@ -3,7 +3,7 @@ from pylab import *
 import numpy as np
 import console_colors as ccl
 from scipy.io.netcdf import netcdf_file
-import os
+import os, sys
 import matplotlib.patches as patches
 import matplotlib.transforms as transforms
 from numpy import array
@@ -125,9 +125,12 @@ stf['CRs']    = {
                 }
 
 
-dir_figs        = '../figs'
-dir_inp_mc      = '../../../../mcs/ascii/MCflag2/wShiftCorr/_test_Vmc_'
-dir_inp_sh      = '../../../../sheaths/ascii/MCflag2/wShiftCorr/_test_Vmc_'
+#dir_figs        = '../figs'
+#dir_inp_mc      = '../../../../mcs/ascii/MCflag2/wShiftCorr/_test_Vmc_'
+#dir_inp_sh      = '../../../../sheaths/ascii/MCflag2/wShiftCorr/_test_Vmc_'
+dir_figs        = sys.argv[1]
+dir_inp_sh      = os.environ['LEFT']
+dir_inp_mc      = os.environ['RIGHT']
 fname_fig       = '%s/figs_all.global.png' % dir_figs
 #vlo     = [100.0, 450.0, 550.0]
 #vhi     = [450.0, 550.0, 3000.0]
