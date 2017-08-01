@@ -18,7 +18,9 @@
 
 
 FROM ubuntu:12.04
-MAINTAINER Roberto G. Hashioka "roberto_hashioka@hotmail.com"
+MAINTAINER Jimmy Masías "jimmy.ilws@gmail.com"
+
+ENV HomeDocker /home/docker
 
 #RUN useradd -m -g sudo -s /bin/bash dummy
 #USER dummy
@@ -29,7 +31,9 @@ RUN apt-get update
 ENV DEBIAN_FRONTEND noninteractive
 
 # Installing the environment required: xserver, xdm, flux box, roc-filer and ssh
-RUN apt-get install -y xpra rox-filer ssh pwgen xserver-xephyr xdm fluxbox sudo vim
+RUN apt-get install -y xpra rox-filer ssh pwgen xserver-xephyr xdm fluxbox 
+# just in case
+RUN apt-get install -y sudo vim expect
 
 
 # Installing the apps: Firefox, flash player plugin, LibreOffice and xterm
@@ -40,19 +44,50 @@ RUN apt-get install -y xpra rox-filer ssh pwgen xserver-xephyr xdm fluxbox sudo 
 RUN localedef -v -c -i en_US -f UTF-8 en_US.UTF-8 || :
 
 # Copy the files into the container
-ADD ./docker-x /src
+#ADD ./docker-x /src
 
 # TODO: need to re-direct this
-EXPOSE 22
+#EXPOSE 22
 
 # Add docker user (user:pass is docker:docker) (TODO: password doen't seem to work!):
 RUN DOCKER_ENCRYPYTED_PASSWORD=`perl -e 'print crypt(docker, "aa"),"\n"'`
-RUN useradd -m -G sudo -d /home/docker -p "$DOCKER_ENCRYPYTED_PASSWORD" -s /bin/bash docker
+RUN useradd -m -G sudo -d ${HomeDocker} -p "$DOCKER_ENCRYPYTED_PASSWORD" -s /bin/bash docker
+# switch to docker user
+USER docker
 #RUN sed -Ei 's/adm:x:4:/docker:x:4:docker/' /etc/group
 #RUN adduser docker sudo
 
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#++++++++++++++    A N A C O N D A    ++++++++++++++++++++
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+# we'll need these files
+ADD docker-x ${HomeDocker}/src
+
+#--- download && install Miniconda
+WORKDIR ${HomeDocker}
+ENV Miniconda_sh=Miniconda-latest-Linux-x86_64.sh
+# this *has* to be done in one line in order to avoid 
+# accumulating weight (by removing the downloaded
+# file) to this image snapshot
+RUN wget -c http://repo.continuum.io/miniconda/${Miniconda_sh} \
+	&& chmod +x ${Miniconda_sh} \
+	&& ${HomeDocker}/src/conda_installer.sh ${HomeDocker}/${Miniconda_sh} \
+	&& rm ./${Miniconda_sh}
+
+#--- set python workflow
+# install bunch of packages (this will take a while)
+RUN conda env create --name work -f ${HomeDocker}/src/requirements/export_work.yml
+RUN conda install -c anaconda -y matplotlib=1.5.1 scipy=0.19.0
+# useful for interaction
+RUN conda install -c anaconda -y ipython ipdb
+
+# delete temp files
+RUN rm -rf ${HomeDocker}/src
+
 # Start xdm and ssh services.
-CMD ["/bin/bash", "/src/startup.sh"]
+CMD ["/bin/bash"] #, "/src/startup.sh"]
 
 
 #EOF

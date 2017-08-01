@@ -2,9 +2,9 @@
 # Docker 
 ---
 
-You must build a Docker image (say `ImageName1`) using this [Dockerfile](docker-x/Dockerfile) as:
+You must build a Docker image (say `ImageName1`) using this [Dockerfile](Dockerfile) as:
 ```bash
-docker build -t <ImageName1> <path/to/Dockerfile>
+docker build -t <ImageName1> --build-arg REPO_HOST=<root-path-of-this-repository> <path/to/Dockerfile>
 ```
 
 After building our Docker image with the above
@@ -54,7 +54,7 @@ In [1]: run ./script.py  ## IT WORKS GREAT!!
 ---
 <!--- THIS IS TESTED! -->
 ## Reproduction of A&A figures
-The script [rundocker.sh](docker-x/rundocker.sh) has the settings to run scripts that reproduce 
+The script [rundocker.sh](rundocker.sh) has the settings to run scripts that reproduce 
 some figures of the A&A paper.
 Just:
 ```bash
@@ -75,13 +75,13 @@ already exists and is not empty, a backup will be made using the current date an
 for the backup directory (see `_dirbckp` variable).
 * If the variable `ProvideExtractedData` equals `1`, the script won't perform data extraction.
 Instead, the paths given by `LEFT_HOST` and `RIGHT_HOST` will be used by the 
-script [docker_test.sh](docker-x/docker_test.sh) to build mixed profiles.
+script [docker_test.sh](docker_test.sh) to build mixed profiles.
 If the variable `ProvideExtractedData` equals `0`, the script will perform data extraction from the
 ACE and CR-detector datasets, and later the mixed profiles will be built. Note that for the later option,
-you'll have to modify the `LEFT` and `RIGHT` variable by hand in [docker_test.sh](docker-x/docker_test.sh).
-* you can use these [LEFT](etc/tmp_left) and [RIGHT](etc/tmp_right) directories as input for
-[this](mixed.icmes/src/splitted.py) script (which is called by the chain [script1](docker-x/docker_test.sh) 
---> [script2](tests/auger.solphys.sh) --> [script3](mixed.icmes/src/splitted.py))
+you'll have to modify the `LEFT` and `RIGHT` variable by hand in [docker_test.sh](docker_test.sh).
+* you can use these [LEFT](../etc/tmp_left) and [RIGHT](../etc/tmp_right) directories as input for
+[this](../mixed.icmes/src/splitted.py) script (which is called by the chain [script1](docker_test.sh) 
+--> [script2](../tests/auger.solphys.sh) --> [script3](../mixed.icmes/src/splitted.py))
 They are set with the variables `LEFT_HOST` and `RIGHT_HOST`.
 
 
