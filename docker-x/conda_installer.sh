@@ -4,4 +4,5 @@
 $1 1> /dev/null <<-EOF
 q
 yes
+
 EOF

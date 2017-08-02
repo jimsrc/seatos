@@ -9,6 +9,10 @@
 
 me=`basename "$0"`
 
+# name of out Docker image
+#DOCKER_IMAGE=jimsrc/conda:seatos2
+DOCKER_IMAGE=jimsrc/seatos:v1
+
 HOME_GUST=/home/docker
 # repo path in the host && guest respectively
 #REPO_HOST=${MEAN_PROFILES_ACE}
@@ -18,9 +22,6 @@ REPO_GUST=${HOME_GUST}/seatos # TODO: this $HOME doesn't exist in Docker image!
 
 XCONFIG_HOST=${REPO_HOST}/docker-x
 XCONFIG_GUST=${HOME_GUST}/src
-# name of out Docker image
-DOCKER_IMAGE=jimsrc/conda:seatos2
-
 
 # define output-data paths for host && guest
 DIRDATA_HOST=$1             # 1st argument
