@@ -1,43 +1,26 @@
 <!--- Docker -->
-# Docker 
----
+# Docker (only for Linux)
 
-You must build a Docker image (say `ImageName1`) using this [Dockerfile](Dockerfile) as:
+In order to run the present work in a Docker container, you can directly pull the built image as:
 ```bash
-docker build -t <ImageName1> --build-arg REPO_HOST=<root-path-of-this-repository> <path/to/Dockerfile>
+docker pull jimjdocker/seatos:v1
+```
+Or you can build the Docker image (say `ImageName`) using this [Dockerfile](Dockerfile) as:
+```bash
+# Note that <Dockerfile-directory> must be the absolute path 
+# to the directory where the Dockerfile is placed (not the path
+# to the Dockerfile itself)
+docker build --rm -t <ImageName> <Dockerfile-directory>
+# this might take ~20min the first time
 ```
 
-After building our Docker image with the above
-instructions, run the `ImageName1` in a container:
+Now you are ready to run Python inside a Docker container:
 ```bash
 HOME_GUST=/home/docker
 XCONFIG_HOST=<this-repository>/docker-x
 XCONFIG_GUST=${HOME_GUST}/src
-docker run -it --name ubuntuX2 --volume=${XCONFIG_HOST}:${XCONFIG_GUST} <ImageName1> /bin/bash
-```
-
-Then, while the container is running, install some other stuff inside 
-the container.
-NOTE: for each stuff you install, it's recommended to commit the
-changes and then stop and remove the container; for the next installation, 
-you should run the last commited image.
-```bash
-# install Miniconda, then:
-conda env create --name work -f $HOME/src/requirements/export_work.yml
-conda install -c anaconda ipython
-conda install -c anaconda matplotlib=1.5.1 scipy=0.19.0
-
-# the last commit should be:
-docker commit -m "conda install -c anaconda matplotlib=1.5.1 scipy=0.19.0" ubuntuX2 <ImageNameN>
-```
-<!--- TODO: we can include these commands in the Docker file by
-      adding the '-y' flag to 'conda install'.            
--->
-
-Now you are ready to run Python inside the Docker container:
-```bash
-EXEC=/home/docker/miniconda2/bin/ipython # executable file (can also be a Bash script inside $XCONFIG)
-docker run -it --name ubuntuX2 --volume=${XCONFIG_HOST}:${XCONFIG_GUST} --user=1000:1000 -w ${HOME_GUST} <ImageNameN> $EXEC 
+EXEC=${HOME_GUST}/miniconda2/bin/ipython # executable file (can also be a Bash script inside $XCONFIG)
+docker run -it --rm --name ubuntuX2 --volume=${XCONFIG_HOST}:${XCONFIG_GUST} --user=$UID:${GID} -w ${HOME_GUST} <ImageName> $EXEC 
 ```
 
 ---

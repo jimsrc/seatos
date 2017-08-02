@@ -34,11 +34,9 @@ RUN localedef -v -c -i en_US -f UTF-8 en_US.UTF-8 || :
 # TODO: need to re-direct this
 #EXPOSE 22
 
-# Add docker user (user:pass is docker:docker):
-RUN DOCKER_ENCRYPYTED_PASSWORD=`perl -e 'print crypt(docker, "docker"),"\n"'`
-RUN useradd -m -G sudo -d ${HomeDocker} -p "$DOCKER_ENCRYPYTED_PASSWORD" -s /bin/bash docker
-#RUN sed -Ei 's/adm:x:4:/docker:x:4:docker/' /etc/group
-#RUN adduser docker sudo
+# Add docker user (user:pass is docker:docker), in case we want to ssh with X:
+RUN DOCKER_ENCRYPTED_PASSWORD=`perl -e 'print crypt(docker, "docker"),"\n"'` \
+    && useradd -m -G sudo -d ${HomeDocker} -p "$DOCKER_ENCRYPTED_PASSWORD" -s /bin/bash docker
 
 
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -46,54 +44,52 @@ RUN useradd -m -G sudo -d ${HomeDocker} -p "$DOCKER_ENCRYPYTED_PASSWORD" -s /bin
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 # we'll need some files
-#ADD ./docker-x/ ${HomeDocker}/src
 ENV REPO_GUST=${HomeDocker}/seatos
-#RUN git clone https://github.com/jimsrc/mean_profiles.ace.git ${REPO_GUST}
-
-# switch to docker user
-USER docker
 #--- download && install Miniconda
 WORKDIR ${HomeDocker}
-
-
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #++++ set python workspacce
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 ENV Miniconda_sh=Miniconda-latest-Linux-x86_64.sh
+# where to install Anaconda/Miniconda
+ENV CONDADIR=/condadir
+# bashrc of the system (change according to Linux distribution)
+ENV BASHRC_SYS=/etc/bash.bashrc
+
 # this *has* to be done in one line in order to avoid 
 # accumulating weight (by removing the downloaded
 # file) to this image snapshot
 RUN git clone https://github.com/jimsrc/seatos.git ${REPO_GUST} \
 	&& wget -c http://repo.continuum.io/miniconda/${Miniconda_sh} \
 	&& chmod +x ${Miniconda_sh} \
-	&& ${REPO_GUST}/docker-x/conda_installer.sh ${HomeDocker}/${Miniconda_sh} \
+	&& ${REPO_GUST}/docker-x/conda_installer.sh ${HomeDocker}/${Miniconda_sh} ${CONDADIR} \
 	&& rm ./${Miniconda_sh} \
 	&& cp ${REPO_GUST}/docker-x/requirements/list_work.txt ${HomeDocker}/reqs.txt \
 	&& cp ${REPO_GUST}/docker-x/requirements/export_work.yml ${HomeDocker}/reqs.yml \
-	&& echo 'export PATH="$HOME/miniconda2/bin:$PATH"' >> ${HomeDocker}/.bashrc \
+	&& echo "export PATH=\"${CONDADIR}/bin:$PATH\"" >> ${BASHRC_SYS} \
+    && tail ${BASHRC_SYS} \
 	&& rm -rf ${REPO_GUST}
 
-# update
+
+# update conda
 RUN echo -e "\n [*] Updating conda...\n" \
-	&& ${HomeDocker}/miniconda2/bin/conda install -c anaconda -y conda=4.3.23 \
+	&& ${CONDADIR}/bin/conda install -c anaconda -y conda=4.3.23 \
 	&& echo -e "\n [+] Finished updating conda!\n"
 
 # install bunch of packages (this might take a while)
 # NOTE: the "-c" arguments are the channels
 # NOTE2: this creates an Anaconda environment, whose name is inside the .yml
 #RUN ${HomeDocker}/miniconda2/bin/conda env create --name work -f ${HomeDocker}/reqs.yml
-RUN ${HomeDocker}/miniconda2/bin/conda env update -f ${HomeDocker}/reqs.yml \
+RUN ${CONDADIR}/bin/conda env update -f ${HomeDocker}/reqs.yml \
     && echo -e "\n [+] Finished installing requirements!\n"
-#RUN ${HomeDocker}/miniconda2/bin/conda install -c anaconda -c trung -c astropy -c nmoraitakis -c auto -c defaults --file=${HomeDocker}/reqs.txt
 
 # useful for interaction && debugging
-RUN ${HomeDocker}/miniconda2/bin/conda install -c anaconda -y ipython
-RUN ${HomeDocker}/miniconda2/bin/conda install -c jjhelmus -y ipdb
-#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
+RUN ${CONDADIR}/bin/conda install -c anaconda -y ipython
+RUN ${CONDADIR}/bin/conda install -c jjhelmus -y ipdb
 
 # Start xdm and ssh services.
 CMD ["/bin/bash"] #, "/src/startup.sh"]
+
 
 
 #EOF
