@@ -1,45 +1,29 @@
-# This file creates a container that runs X11 and SSH services
-# The ssh is used to forward X11 and provide you encrypted data
-# communication between the docker container and your local 
-# machine.
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #
-# Xpra allows to display the programs running inside of the
-# container such as Firefox, LibreOffice, xterm, etc. 
-# with disconnection and reconnection capabilities
+# What we do:
+# 1) We create an X environment for xpra.
+#    Xpra works as an X server, which we'll need in order
+#    to be able to generate figures with python.
+# 2) install python packages in a Miniconda "environment".
+#    The requirements are read from a .yml file, which is 
+#    pulled from the web version of this Git repository.
 #
-# Xephyr allows to display the programs running inside of the
-# container such as Firefox, LibreOffice, xterm, etc. 
-#
-# Fluxbox and ROX-Filer creates a very minimalist way to 
-# manages the windows and files.
-#
-# Author: Roberto Gandolfo Hashioka
-# Date: 07/28/2013
-
-
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 FROM ubuntu:12.04
 MAINTAINER Jimmy Masías "jimmy.ilws@gmail.com"
 
 ENV HomeDocker /home/docker
-
-#RUN useradd -m -g sudo -s /bin/bash dummy
-#USER dummy
 
 RUN apt-get update
 
 # Set the env variable DEBIAN_FRONTEND to noninteractive
 ENV DEBIAN_FRONTEND noninteractive
 
-# Installing the environment required: xserver, xdm, flux box, roc-filer and ssh
+# We need an X environment: xserver, xdm, flux box, roc-filer and ssh
 RUN apt-get install -y xpra rox-filer ssh pwgen xserver-xephyr xdm fluxbox 
 # just in case
 RUN apt-get install -y sudo vim
 RUN apt-get install -y expect git
-
-
-# Installing the apps: Firefox, flash player plugin, LibreOffice and xterm
-# libreoffice-base installs libreoffice-java mentioned before
-#RUN apt-get install -y libreoffice-base firefox libreoffice-gtk libreoffice-calc xterm
 
 # Set locale (fix the locale warnings)
 RUN localedef -v -c -i en_US -f UTF-8 en_US.UTF-8 || :
@@ -50,8 +34,8 @@ RUN localedef -v -c -i en_US -f UTF-8 en_US.UTF-8 || :
 # TODO: need to re-direct this
 #EXPOSE 22
 
-# Add docker user (user:pass is docker:docker) (TODO: password doen't seem to work!):
-RUN DOCKER_ENCRYPYTED_PASSWORD=`perl -e 'print crypt(docker, "aa"),"\n"'`
+# Add docker user (user:pass is docker:docker):
+RUN DOCKER_ENCRYPYTED_PASSWORD=`perl -e 'print crypt(docker, "docker"),"\n"'`
 RUN useradd -m -G sudo -d ${HomeDocker} -p "$DOCKER_ENCRYPYTED_PASSWORD" -s /bin/bash docker
 #RUN sed -Ei 's/adm:x:4:/docker:x:4:docker/' /etc/group
 #RUN adduser docker sudo
@@ -84,6 +68,7 @@ RUN git clone https://github.com/jimsrc/seatos.git ${REPO_GUST} \
 	&& chmod +x ${Miniconda_sh} \
 	&& ${REPO_GUST}/docker-x/conda_installer.sh ${HomeDocker}/${Miniconda_sh} \
 	&& rm ./${Miniconda_sh} \
+	&& cp ${REPO_GUST}/docker-x/requirements/list_work.txt ${HomeDocker}/reqs.txt \
 	&& cp ${REPO_GUST}/docker-x/requirements/export_work.yml ${HomeDocker}/reqs.yml \
 	&& echo 'export PATH="$HOME/miniconda2/bin:$PATH"' >> ${HomeDocker}/.bashrc \
 	&& rm -rf ${REPO_GUST}
@@ -94,12 +79,15 @@ RUN echo -e "\n [*] Updating conda...\n" \
 	&& echo -e "\n [+] Finished updating conda!\n"
 
 # install bunch of packages (this might take a while)
+# NOTE: the "-c" arguments are the channels
+# NOTE2: this creates an Anaconda environment, whose name is inside the .yml
 #RUN ${HomeDocker}/miniconda2/bin/conda env create --name work -f ${HomeDocker}/reqs.yml
-RUN ${HomeDocker}/miniconda2/bin/conda install --file=${HomeDocker}/reqs.yml
-# specific matplotlib && scipy (maybe this is not necessary)
-#RUN ${HomeDocker}/miniconda2/bin/conda install -c anaconda -y matplotlib=1.5.1 scipy=0.19.0
-# useful for interaction
-RUN ${HomeDocker}/miniconda2/bin/conda install -c anaconda -y ipython 
+RUN ${HomeDocker}/miniconda2/bin/conda env update -f ${HomeDocker}/reqs.yml \
+    && echo -e "\n [+] Finished installing requirements!\n"
+#RUN ${HomeDocker}/miniconda2/bin/conda install -c anaconda -c trung -c astropy -c nmoraitakis -c auto -c defaults --file=${HomeDocker}/reqs.txt
+
+# useful for interaction && debugging
+RUN ${HomeDocker}/miniconda2/bin/conda install -c anaconda -y ipython
 RUN ${HomeDocker}/miniconda2/bin/conda install -c jjhelmus -y ipdb
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
