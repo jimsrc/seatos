@@ -45,7 +45,10 @@ export RICH_CSV=$ASO/icmes_richardson/RichardsonList_until.2016.csv
 export HSTS=$AUGER_REPO/out/out.build_temp.corr/shape.ok_and_3pmt.ok/15min/histos_temp.corrected.h5
 export SCLS=$PAO/data_auger/estudios_AoP/data/unir_con_presion/data_final_2006-2013.h5
 # run script
-./sea_splitted.py -- --ace $ACE --mcmurdo $MURDO --avr $ASO/icmes_richardson/data/rich_events2_ace.nc --rich_csv $ASO/icmes_richardson/RichardsonList_until.2016.csv --auger_hsts $AUGER_REPO/out/out.build_temp.corr/shape.ok_and_3pmt.ok/15min/histos_temp.corrected.h5 --auger_scls $PAO/data_auger/estudios_AoP/data/unir_con_presion/data_final_2006-2013.h5 --dir_plot ../plots3 --dir_data ../ascii3 --suffix _auger_ --icme_flag 0.1.2.2H  --struct sh.i
+cd one.structure/src
+./sea_splitted.py -- --ace $ACE --mcmurdo $MURDO --avr $AVR --rich_csv $RICH_CSV \
+    --dir_plot ../plots3 --dir_data ../ascii3 --suffix _out_ \
+    --icme_flag 0.1.2.2H  --struct sh.i
 ```
 
 
@@ -53,8 +56,8 @@ export SCLS=$PAO/data_auger/estudios_AoP/data/unir_con_presion/data_final_2006-2
 ## Docker
 For more reproducibility, a [Dockerfile](docker-x/Dockerfile) has been created in order to 
 be able to run the present work inside a Docker container.
-The build steps are detailed inside that file. which basically grabs an Ubuntu 12.04 and installs 
-an X server to provide a valid `DISPLAY` environment variable for Python later.
+The build steps are detailed inside that file, which basically grabs an Ubuntu 12.04 "environment" 
+and installs an X server to provide a valid `DISPLAY` environment variable for Python later.
 This image is already built and uploaded to [DockerHub](https://hub.docker.com), and can be pulled 
 from a bash terminal like so:
 ```bash

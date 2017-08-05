@@ -11,7 +11,7 @@ me=`basename "$0"`
 
 # name of out Docker image
 #DOCKER_IMAGE=jimsrc/conda:seatos2
-DOCKER_IMAGE=jimsrc/seatos:v1
+DOCKER_IMAGE=jimsrc/seatos:beta
 
 HOME_GUST=/home/docker
 # repo path in the host && guest respectively

@@ -16,8 +16,7 @@ export DISPLAY=:$DISP
 
 
 # since `source ~/.bashrc` doesn't work, we append to PATH manually:
-export PATH="$HOME/miniconda2/bin:$PATH"
-
+export PATH="$CONDADIR/bin:$PATH"
 
 # switch to our Conda environment for work
 echo -e "\n [*] $me: switching to our conda env...\n"
@@ -25,8 +24,8 @@ source activate work
 if [[ "$?" == "0" ]]; then
     echo -e "\n [+] $me: OK!, we'll use:\n $(which ipython)\n"
 else
-    echo -e "\n [-] $me: we couldn't load the conda env!\n"
-    return 1
+    echo -e "\n [-] $me: ERROR: we couldn't load the conda env!\n"
+    exit 1
 fi
 
 

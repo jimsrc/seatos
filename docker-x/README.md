@@ -19,7 +19,7 @@ Now you are ready to run Python inside a Docker container:
 HOME_GUST=/home/docker
 XCONFIG_HOST=<this-repository>/docker-x
 XCONFIG_GUST=${HOME_GUST}/src
-EXEC=${HOME_GUST}/miniconda2/bin/ipython # executable file (can also be a Bash script inside $XCONFIG)
+EXEC=/condadir/bin/ipython # (can be replaced by any executable file)
 docker run -it --rm --name ubuntuX2 --volume=${XCONFIG_HOST}:${XCONFIG_GUST} --user=$UID:${GID} -w ${HOME_GUST} <ImageName> $EXEC 
 ```
 

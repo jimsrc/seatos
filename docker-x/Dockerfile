@@ -53,6 +53,8 @@ WORKDIR ${HomeDocker}
 ENV Miniconda_sh=Miniconda-latest-Linux-x86_64.sh
 # where to install Anaconda/Miniconda
 ENV CONDADIR=/condadir
+# name of the conda environment
+ENV CONDAENV=work
 # bashrc of the system (change according to Linux distribution)
 ENV BASHRC_SYS=/etc/bash.bashrc
 
@@ -79,13 +81,15 @@ RUN echo -e "\n [*] Updating conda...\n" \
 # install bunch of packages (this might take a while)
 # NOTE: the "-c" arguments are the channels
 # NOTE2: this creates an Anaconda environment, whose name is inside the .yml
-#RUN ${HomeDocker}/miniconda2/bin/conda env create --name work -f ${HomeDocker}/reqs.yml
-RUN ${CONDADIR}/bin/conda env update -f ${HomeDocker}/reqs.yml \
-    && echo -e "\n [+] Finished installing requirements!\n"
+RUN echo -e "\n [*] installing requirements...\n"\
+    && ${CONDADIR}/bin/conda env create --name ${CONDAENV} -f ${HomeDocker}/reqs.yml \
+    && echo -e "\n [+] Finished requirements installation!\n"
+#RUN ${CONDADIR}/bin/conda env update -f ${HomeDocker}/reqs.yml \
+    #&& echo -e "\n [+] Finished installing requirements!\n"
 
 # useful for interaction && debugging
-RUN ${CONDADIR}/bin/conda install -c anaconda -y ipython
-RUN ${CONDADIR}/bin/conda install -c jjhelmus -y ipdb
+RUN ${CONDADIR}/bin/conda install --name ${CONDAENV} -c anaconda -y ipython
+RUN ${CONDADIR}/bin/conda install --name ${CONDAENV} -c jjhelmus -y ipdb
 
 # Start xdm and ssh services.
 CMD ["/bin/bash"] #, "/src/startup.sh"]

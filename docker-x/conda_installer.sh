@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# the Anaconda/Miniconda installer is interactive, so we make
+# the Anaconda/Miniconda installer is interactive, so this is
 # a programatic version of that installation
 
 # installer executable

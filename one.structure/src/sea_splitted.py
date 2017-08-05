@@ -86,47 +86,47 @@ formatter_class=argparse.ArgumentDefaultsHelpFormatter
 parser.add_argument(
 '-ace', '--inp_ACE',
 type=str,
-default='{HOME}/data_ace/64sec_mag-swepam/ace.1998-2015.nc'.format(**os.environ),
+default='0',
 help='input filename of ACE data',
 )
 parser.add_argument(
 '-ace1sec', '--inp_ACE1sec',
 type=str,
-default='{HOME}/data_ace/64sec_mag-swepam/ace.1998-2015.nc'.format(**os.environ),
+default='0',
 help='input filename of ACE data',
 )
 parser.add_argument(
 '-murdo', '--inp_McMurdo',
 type=str,
-default='{HOME}/actividad_solar/neutron_monitors/mcmurdo/mcmurdo_utc_correg.dat'.format(**os.environ)
+default='0',
 )
 parser.add_argument(
 '-ahm', '--inp_Auger_BandMuons',
 type=str,
-default='<auger_histos_dir>' if 'AUGER_REPO' not in os.environ else '{AUGER_REPO}/out/out.build_temp.corr/shape.ok_and_3pmt.ok/15min/histos_temp.corrected.h5'.format(**os.environ),
+default='0' if 'AUGER_REPO' not in os.environ else '{AUGER_REPO}/out/out.build_temp.corr/shape.ok_and_3pmt.ok/15min/histos_temp.corrected.h5'.format(**os.environ),
 help='.h5 file with Auger charge-histograms data (until temperature-correction).'
 )
 parser.add_argument(
 '-ahs', '--inp_Auger_BandScals',
 type=str,
-default='<auger_histos_dir>' if 'AUGER_REPO' not in os.environ else '{AUGER_REPO}/out/out.build_temp.corr/shape.ok_and_3pmt.ok/15min/histos_temp.corrected.h5'.format(**os.environ),
+default='0' if 'AUGER_REPO' not in os.environ else '{AUGER_REPO}/out/out.build_temp.corr/shape.ok_and_3pmt.ok/15min/histos_temp.corrected.h5'.format(**os.environ),
 help='.h5 file with Auger charge-histograms data (until temperature-correction).'
 )
 parser.add_argument(
 '-as', '--inp_Auger_scals',
-default='<auger_scals_dir>' if 'AUGER_REPO' not in os.environ else '{PAO}/data_auger/estudios_AoP/data/unir_con_presion/data_final_2006-2013.h5'.format(**os.environ),
+default='0' if 'AUGER_REPO' not in os.environ else '{PAO}/data_auger/estudios_AoP/data/unir_con_presion/data_final_2006-2013.h5'.format(**os.environ),
 help='.h5 file with Auger scalers (until pressure correction).'
 )
 parser.add_argument(
 '-avr', '--avr',
 type=str,
-default='<netcdf-file>' if 'ASO' not in os.environ else '{ASO}/icmes_richardson/data/rich_events2_ace.nc'.format(**os.environ),
+default='0' if 'ASO' not in os.environ else '{ASO}/icmes_richardson/data/rich_events2_ace.nc'.format(**os.environ),
 help='.nc file with the average values inside diferent ICME sub-structures.'
 )
 parser.add_argument(
 '-rc', '--rich_csv',
 type=str,
-default='<richardson-table-csv>' if 'ASO' not in os.environ else '{ASO}/icmes_richardson/RichardsonList_until.2016.csv'.format(**os.environ),
+default='0' if 'ASO' not in os.environ else '{ASO}/icmes_richardson/RichardsonList_until.2016.csv'.format(**os.environ),
 help='.csv file of Richardson\'s table',
 )
 parser.add_argument(
@@ -190,7 +190,7 @@ metavar=('VarName', 'ThresLower', 'ThresUpper'),
 parser.add_argument(
 '-lock', '--lock',
 type=str,
-default=[0,'Auger_BandMuons'],
+default=[0, 'Auger_BandMuons'],
 nargs=2,
 help='name of dataset of which we\'ll lock the set of selected \
     events; so that the analysis of other datasets are made with \
