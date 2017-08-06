@@ -28,28 +28,31 @@ This is a collection of Python (a little bit of Cython too) scripts to:
 ---
 ## Mean profiles:
 
-Tweaked script that that uses pre-defined time-windows of Interplanetary Coronal Mass
-Ejections, to generate mean profiles (along with its standard deviation and median 
+Tweaked script that uses pre-defined time-windows of Interplanetary Coronal Mass
+Ejections (see [Richardson's catalog](http://www.srl.caltech.edu/ACE/ASC/DATA/level3/icmetable2.htm)), to generate mean profiles (along with its standard deviation and median 
 values).
-It uses the `events_mgr` class (see [shared functions](link here) directory) to generate, to parse 
-to it the border times given by [Richardson's List](link here).
-
 As example, calculate the mean profile of a collection of ICME's sheath:
-
 ```bash
 # path to input files
-export ACE=~/data_ace/64sec_mag-swepam/ace.1998-2015.nc
-export MURDO=~/actividad_solar/neutron_monitors/mcmurdo/mcmurdo_utc_correg.dat
-export AVR=$ASO/icmes_richardson/data/rich_events2_ace.nc
-export RICH_CSV=$ASO/icmes_richardson/RichardsonList_until.2016.csv
-export HSTS=$AUGER_REPO/out/out.build_temp.corr/shape.ok_and_3pmt.ok/15min/histos_temp.corrected.h5
-export SCLS=$PAO/data_auger/estudios_AoP/data/unir_con_presion/data_final_2006-2013.h5
+ACE=~/data_ace/64sec_mag-swepam/ace.1998-2015.nc
+MURDO=~/actividad_solar/neutron_monitors/mcmurdo/mcmurdo_utc_correg.dat
+AVR=$ASO/icmes_richardson/data/rich_events2_ace.nc
+RICH_CSV=$ASO/icmes_richardson/RichardsonList_until.2016.csv
+HSTS=$AUGER_REPO/out/out.build_temp.corr/shape.ok_and_3pmt.ok/15min/histos_temp.corrected.h5
+SCLS=$PAO/data_auger/estudios_AoP/data/unir_con_presion/data_final_2006-2013.h5
+
 # run script
 cd one.structure/src
 ./sea_splitted.py -- --ace $ACE --mcmurdo $MURDO --avr $AVR --rich_csv $RICH_CSV \
     --dir_plot ../plots3 --dir_data ../ascii3 --suffix _out_ \
     --icme_flag 0.1.2.2H  --struct sh.i
 ```
+
+---
+### Technical remarks:
+* the more busy routines for the data processing are inside the `events_mgr` class (see the library [shared_funcs.py](shared_lib/shared_funcs.py)).
+* for each `--inp_SOMETHING` argument that the [sea_splitted.py](one.structure/src/sea_splitted.py) script recieves, there is a `_data_SOMETHING` class defined in the [readers.py](shared_lib/readers.py) file.
+* In case you need to process another data set (let's call it `NEWDATA`), you need to implement a way to access the variables of interest inside the file by writing a new class named `_data_NEWDATA` in [readers.py](shared_lib/readers.py), and a respective `argparse` argument in [sea_splitted.py](one.structure/src/sea_splitted.py) that accepts the argument `--inp_NEWDATA`.
 
 
 ---
@@ -65,7 +68,7 @@ from a bash terminal like so:
 docker pull jimjdocker/seatos:v1
 ```
 
-Alternatively, this image can be build in your host like:
+Alternatively, this image can be built in your host like:
 ```bash
 # Note that <Dockerfile-directory> must be the absolute path 
 # to the directory where the Dockerfile is placed (not the path

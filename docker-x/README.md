@@ -1,5 +1,5 @@
 <!--- Docker -->
-# Docker (only for Linux)
+## The Docker way (only for Linux)
 
 In order to run the present work in a Docker container, you can directly pull the built image as:
 ```bash
@@ -37,16 +37,17 @@ In [1]: run ./script.py  ## IT WORKS GREAT!!
 ---
 <!--- THIS IS TESTED! -->
 ## Reproduction of A&A figures
-The script [rundocker.sh](rundocker.sh) has the settings to run scripts that reproduce 
-some figures of the A&A paper.
-Just:
+The bash script [rundocker.sh](rundocker.sh) uses a Docker container (associated to the Docker image above) as a "friendly" environment to run python scripts that generate some figures of the A&A paper _"[Superposed epoch study of ICME sub-structures near Earth and their effects on Galactic cosmic rays](https://www.aanda.org/articles/aa/abs/2016/08/aa28571-16/aa28571-16.html)"_.
+Execute it by passing as argument an empty directory `<absolute-output-directory>` (an absolute path) for the output files:
 ```bash
 cd docker-x
 ./rundocker.sh <absolute-output-directory>
 ```
-### Remarks:
-* the above script needs a valid `REPO_HOST` environment variable, which has to be the path to 
-this Git repository (in this commit).
+
+---
+### Technical remarks:
+* the above script ([rundocker.sh](rundocker.sh)) needs a valid `REPO_HOST` environment variable, 
+which has to be the path to this Git repository (in this commit).
 * all variables with suffixes `_HOST` and `_GUST` refers to paths in the host ("real") and 
 guest (i.e. inside the Docker container) systems.
 * the `DOCKER_IMAGE` env variable refers to the Docker image you'll execute.

@@ -575,14 +575,16 @@ class events_mgr(object):
         self.f_events   = netcdf_file(gral.fnames['table_richardson'], 'r')
         print " -------> archivos input leidos!"
 
-        #--- put False to all possible data-flags (all CR detector-names must be included in 'self.CR_observs')
-        self.names_ok   = ('Auger_BandMuons', 'Auger_BandScals',  'Auger_scals', 'McMurdo', 'ACE', 'ACE_o7o6', 'ACE1sec')
+        #--- put False to all possible data-flags (all CR detector-names 
+        #    must be included in 'self.CR_observs')
+        self.names_ok   = ('Auger_BandMuons', 'Auger_BandScals',  'Auger_scals', \
+            'McMurdo', 'ACE', 'ACE_o7o6', 'ACE1sec')
         for name in self.names_ok:
             read_flag   = 'read_'+name
             setattr(self, read_flag, False) # True: if files are already read
 
         #--- names of CR observatories
-        self.CR_observs = ( #debe *incluir* a los metodos 'load_data_..()'
+        self.CR_observs = ( #must **include** the 'load_data_..()' methods
             'Auger_scals', 'Auger_BandMuons', 'Auger_BandScals',\
             'McMurdo')
 
@@ -591,7 +593,7 @@ class events_mgr(object):
             if att_name.startswith('load_data_'):
                 att_suffix = att_name.replace('load_data_', '')
                 assert att_suffix in self.names_ok,\
-                    " ---> uno de los metodos '%s' no esta tomando en cuenta en 'self.CR_observs' (%s) " % (att_name, att_suffix)
+                    " [-] ERROR: one of the methods '%s' is NOT taken into account in 'self.CR_observs' (%s) " % (att_name, att_suffix)
 
         self.data_name_ = str(self.data_name) # nombre de la data input inicial (*1)
         self.IDs_locked = False      # (*2)

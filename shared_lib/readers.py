@@ -13,6 +13,11 @@ from shared.shared_funcs import nans, My2DArray, selecc_window_ii
 import shared.shared_funcs as sf
 
 
+
+#+++++++++++++++++++++++++++++++++++++
+#---- auxiliary functions for the
+#---- data-handlers below
+#+++++++++++++++++++++++++++++++++++++
 def calc_beta(Temp, Pcc, B):
     """
     Agarramos la definicion de OMNI, de:
@@ -308,7 +313,10 @@ def calc_rmsB(t_inp, B, width=3600., fgap=0.2, res_o=60):
     return tnew, rmsB, rmsB_para, rmsB_perp
 
 
+
+#+++++++++++++++++++++++++++++++++++++
 #----------- data handlers -----------
+#+++++++++++++++++++++++++++++++++++++
 class _data_ACE(object):
     """
     to read the .nc file of ACE data, built from ASCII versions
@@ -563,7 +571,7 @@ class _data_McMurdo(object):
     def grab_block(self, vname=None, **kws):
         return selecc_window_ii(**kws)
 
-#--- reader para ACE 1seg MAG data
+#--- reader for ACE 1seg MAG data
 class _data_ACE1sec(object):
     """
     the parameters below are for the processing of deduced 
@@ -634,8 +642,9 @@ class _data_ACE1sec(object):
         assert self.bartels[0]['date']<=tini and \
                 self.bartels[self.nbartels-1]['date']>=tend,\
             """
+            [-] ERROR:
             # no data for this `vname` in 
-            # this window!
+            # this time window!!
             --- window of available data:
             ini: {d_ini}
             end: {d_end}
@@ -718,8 +727,17 @@ class _data_ACE1sec(object):
                 **kws
                 )
 
-if __name__=='__main__':
+
+
+
+#+++++++++++++++++++++++++++++++++++++
+#------------  testing  --------------
+#+++++++++++++++++++++++++++++++++++++
+def main():
     ini, end = datetime(2005,1,1), datetime(2005,6,1)
     bartels = get_all_bartels()
+
+if __name__=='__main__':
+    main()
 
 #EOF
