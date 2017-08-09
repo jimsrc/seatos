@@ -8,22 +8,34 @@ This is a collection of Python (a little bit of Cython too) scripts to:
 
    * build average time profiles: the average being made along similar events 
      occurring in different physical intervals of time.
-     See the [icmes](icmes/src), [sheath.icmes](sheaths.icmes/src) directories for instance.
-<!--- referenciar directorio -->
+     See the [one.structure/src](one.structure/src) directory for source codes; in particular the [sea_splitted.py](one.structure/src/sea_splitted.py) script.
 
    * calculate average values of different observables: these observables are 
      associated to the mentioned events.
-<!--- referenciar directorio -->
+<!--- TODO: referenciar directorio -->
 
    * evaluate a semi-empirical model of Galactic Cosmic Rays to Neutron monitor 
      data, using interplanetary measurements as input. 
-     See [nCR-model](etc/n_CR) directory.
+     See the [nCR-model](etc/n_CR) directory; in particular the [apply_model.py](etc/n_CR/individual/apply_model.py) script.
 
    * characterize Forbush decrease parameters, such as: recovery time (using 
      completely automatic algorithm, which also determines the best time interval
      to fit), the relative amplitude, and offset of the post-recovery CR-flux 
      respect to the pre-shock CR-flux.
-<!--- referenciar directorio -->
+<!--- TODO: referenciar directorio -->
+
+
+---
+### Related publications using this tool:
+* _"[Superposed epoch study of ICME sub-structures near Earth and their effects on Galactic cosmic rays](https://www.aanda.org/articles/aa/abs/2016/08/aa28571-16/aa28571-16.html)"_, 
+J. J. Masías-Meza, S. Dasso, P. Démoulin, L. Rodriguez and M. Janvier,
+Astronomy & Astrophysics (ISSN 0004-6361), Vol. 592, A118. 
+Published on Aug/2016.
+* _"[Typical Profiles and Distributions of Plasma and Magnetic Field Parameters in Magnetic Clouds at 1 AU](https://link.springer.com/article/10.1007/s11207-016-0955-5)"_, 
+L. Rodriguez, J. J. Masías-Meza, S. Dasso, P. Démoulin, A. N. Zhukov, A. M. Gulisano, M. Mierla, E. Kilpua, M. West, D. Lacatus, A. Paraschiv, M. Janvier,
+Solar Physics (ISSN 0038-0938), Vol. 291, Issue 7, pp.2145-2163.
+Published on July/2016.
+
 
 ---
 ## Mean profiles:
