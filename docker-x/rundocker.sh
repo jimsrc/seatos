@@ -10,14 +10,12 @@
 me=`basename "$0"`
 
 # name of out Docker image
-#DOCKER_IMAGE=jimsrc/conda:seatos2
-DOCKER_IMAGE=jimsrc/seatos:beta
+DOCKER_IMAGE=jimjdocker/seatos:v1
 
 HOME_GUST=/home/docker
 # repo path in the host && guest respectively
-#REPO_HOST=${MEAN_PROFILES_ACE}
+REPO_HOST=${MEAN_PROFILES_ACE}
 #REPO_HOST=$ASO/icmes_richardson/data/mean_profiles/ace_docker
-REPO_HOST=$ASO/icmes_richardson/data/mean_profiles/ace_defensa_doc
 REPO_GUST=${HOME_GUST}/seatos # TODO: this $HOME doesn't exist in Docker image!
 
 XCONFIG_HOST=${REPO_HOST}/docker-x
@@ -57,7 +55,8 @@ DataList=('ACE' 'MURDO' 'AVR' 'RICH_CSV' 'HSTS' 'SCLS')
 # check that we got nothing in ${DIRDATA_HOST}
 # NOTE: we should start with an empty data directory, because we
 # are supposed to start fresh && clean.
-nf=(`ls ${DIRDATA_HOST}`)
+_fs=(`ls ${DIRDATA_HOST}`)      # list of files
+nf=${#_fs[@]}                   # number of files
 if [[ $nf -ne 0 ]]; then
     echo -e "\n [-] $me: Not empty data directory:\n     ${DIRDATA_HOST}"
     #_dirbckp=${DIRDATA_HOST}/../DataBckp_`date +%d%b%Y_%H.%M.%S`

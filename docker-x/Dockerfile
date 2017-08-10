@@ -61,7 +61,7 @@ ENV BASHRC_SYS=/etc/bash.bashrc
 # this *has* to be done in one line in order to avoid 
 # accumulating weight (by removing the downloaded
 # file) to this image snapshot
-RUN git clone https://github.com/jimsrc/seatos.git ${REPO_GUST} \
+RUN git clone --depth=1 https://github.com/jimsrc/seatos.git ${REPO_GUST} \
 	&& wget -c http://repo.continuum.io/miniconda/${Miniconda_sh} \
 	&& chmod +x ${Miniconda_sh} \
 	&& ${REPO_GUST}/docker-x/conda_installer.sh ${HomeDocker}/${Miniconda_sh} ${CONDADIR} \

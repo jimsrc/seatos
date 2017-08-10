@@ -43,9 +43,14 @@ if [[ -v ProvideExtractedData ]]; then
     echo -e "     because we already have available extracted data."
 else
     #--- extracts data from ICMEs/MCs/sheaths passages
-    OUT_EventsData=$DIRDATA/EventsData && mkdir ${OUT_EventsData}
-    echo -e "\n [*] $me: starting script for event data extraction...\n"
-    ${MEAN_PROFILES_ACE}/tests/auger.splitted.sh ${OUT_EventsData}
+    OUT_EventsData=$DIRDATA/EventsData
+    mkdir ${OUT_EventsData} 
+    if [[ $? -eq 0 ]]; then
+        echo -e "\n [*] $me: starting script for event-data extraction...\n"
+        ${MEAN_PROFILES_ACE}/tests/auger.splitted.sh ${OUT_EventsData}
+    else
+        echo -e " [-] ERROR (status:$?), exiting..." && exit 1
+    fi
 fi
 
 

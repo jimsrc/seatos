@@ -19,7 +19,7 @@ if [[ -d "$OUTDIR" ]]; then
     echo -e "\n [+] $me: output directory ok:\n $OUTDIR\n"
 else
     echo -e "\n [-] $me: output directory doesn't exist:\n $OUTDIR\n"
-    return 1
+    exit 1
 fi
 
 #--- check that all data paths are set:
@@ -62,8 +62,10 @@ for struct in sh.mc mc; do
         --Vsplit $vsplit  \
         --tshift \
         --fgap 0.2
-    #if [ $?!=0 ]; then break; fi # break bash script on python crash
+
     echo -e "\n [*] $me: exit status: ($?)\n"
+    # interrupt if something went work!
+    [[ $? -ne 0 ]] && exit 1
 done
 
 #EOF
